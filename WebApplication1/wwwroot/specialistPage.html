@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Specialist</title></head>
+<body>
+<h2>SPECIALIST</h2>
+<p id="hello"></p>
+<button onclick="logout()">Logout</button>
+
+<script src="/js/guard.js"></script>
+<script>
+  requireRole(["SPECIALIST"]);
+</script>
+<button onclick="logout()">Logout</button>
+</body>
+</html>

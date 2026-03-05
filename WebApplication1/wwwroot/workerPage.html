@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Worker</title>
+</head>
+
+<body>
+
+<h2>WORKER PANEL</h2>
+
+<p id="hello"></p>
+
+<button onclick="logout()">Logout</button>
+
+<hr>
+
+<h3>My Orders</h3>
+
+<select id="status">
+<option value="">ALL</option>
+<option value="NEW">NEW</option>
+<option value="IN_PROGRESS">IN_PROGRESS</option>
+<option value="DONE">DONE</option>
+</select>
+
+<button onclick="loadOrders()">Load orders</button>
+
+<pre id="orders"></pre>
+
+<script src="/js/guard.js"></script>
+<script src="/js/worker.js"></script>
+
+</body>
+</html>
