@@ -1,7 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using WebApplication1.Infrastructure.Mongo;
 
@@ -30,38 +31,37 @@ public static class ServiceCollectionExtensions
     }
 
     public static IServiceCollection AddJwtAuth(this IServiceCollection services, IConfiguration config)
-{
-    var jwt = config.GetSection("Jwt");
+    {
+        var jwt = config.GetSection("Jwt");
 
-    var issuer = jwt["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is missing");
-    var audience = jwt["Audience"] ?? throw new InvalidOperationException("Jwt:Audience is missing");
-    var secret = jwt["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing");
+        var issuer = jwt["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is missing");
+        var audience = jwt["Audience"] ?? throw new InvalidOperationException("Jwt:Audience is missing");
+        var secret = jwt["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing");
 
-    services
-        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(o =>
-        {
-            o.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(o =>
             {
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
+                o.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = issuer,
 
-                ValidateAudience = true,
-                ValidAudience = audience,
+                    ValidateAudience = true,
+                    ValidAudience = audience,
 
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
 
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromSeconds(30),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30),
 
-                RoleClaimType = "role",
-                NameClaimType = "login"
-                
-            };
-        });
+                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = ClaimTypes.NameIdentifier
+                };
+            });
 
-    services.AddAuthorization();
-    return services;
-}
+        services.AddAuthorization();
+        return services;
+    }
 }

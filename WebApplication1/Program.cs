@@ -13,21 +13,26 @@ builder.Services.AddCors(opt =>
         .AllowAnyMethod());
 });
 
-// Mongo + JWT
 builder.Services.AddMongo(builder.Configuration);
 builder.Services.AddJwtAuth(builder.Configuration);
 
-// сервисы
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
 app.UseCors("dev");
 
 app.UseStaticFrontend();
-app.UseAuthPipeline();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

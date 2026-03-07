@@ -26,31 +26,28 @@ public class AuthService
         if (!string.Equals(user.AccountStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase))
             return (false, null, null);
 
-        // ✅ Правильная проверка хеша
         var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (verify == PasswordVerificationResult.Failed)
             return (false, null, null);
 
         var jwt = _config.GetSection("Jwt");
-        var issuer = jwt["Issuer"]!;
-        var audience = jwt["Audience"]!;
-        var secret = jwt["Secret"]!;
+        var issuer = jwt["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is missing");
+        var audience = jwt["Audience"] ?? throw new InvalidOperationException("Jwt:Audience is missing");
+        var secret = jwt["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing");
         var minutes = int.Parse(jwt["AccessTokenMinutes"] ?? "120");
 
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(minutes);
 
-       var claims = new List<Claim>
-{
-    new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-    new Claim("login", user.Login),
+        // ✅ нормализуем роль один раз и используем везде одинаково
+        var role = (user.RoleInSystem ?? "").Trim().ToUpperInvariant();
 
-    // добавляем простую роль
-    new Claim("role", user.RoleInSystem),
-
-    // можно оставить и это (не мешает)
-    new Claim(ClaimTypes.Role, user.RoleInSystem)
-};
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim("login", user.Login),
+            new Claim(ClaimTypes.Role, role)
+        };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -66,6 +63,6 @@ public class AuthService
 
         var tokenStr = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return (true, user.RoleInSystem, tokenStr);
+        return (true, role, tokenStr);
     }
 }

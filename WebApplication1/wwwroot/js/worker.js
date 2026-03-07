@@ -1,35 +1,40 @@
 requireRole(["WORKER"])
 
-async function loadOrders(){
+async function loadOrders() {
+  const token = localStorage.getItem("token");
 
-const token = localStorage.getItem("token")
+  if (!token) {
+    window.location.href = "/";
+    return;
+  }
 
-if(!token){
-window.location.href="/"
-return
-}
+  const status = document.getElementById("status").value;
 
-const status=document.getElementById("status").value
+  let url = "http://localhost:5122/api/orders/my";
+  if (status) url += "?status=" + encodeURIComponent(status);
 
-let url="/api/orders/my"
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: "Bearer " + token }
+    });
 
-if(status)
-url+="?status="+status
+    const text = await res.text(); // <-- читаем тело ответа ВСЕГДА
 
-const res = await fetch(url,{
-headers:{
-Authorization:"Bearer "+token
-}
-})
+    if (!res.ok) {
+      document.getElementById("orders").textContent =
+        "Error " + res.status + "\n\n" + text;
+      return;
+    }
 
-if(!res.ok){
-document.getElementById("orders").textContent="Error "+res.status
-return
-}
-
-const data = await res.json()
-
-document.getElementById("orders").textContent =
-JSON.stringify(data,null,2)
-
+    // если ответ JSON — красиво распарсим
+    try {
+      const data = JSON.parse(text);
+      document.getElementById("orders").textContent = JSON.stringify(data, null, 2);
+    } catch {
+      // если не JSON
+      document.getElementById("orders").textContent = text;
+    }
+  } catch (e) {
+    document.getElementById("orders").textContent = "Fetch failed:\n" + e;
+  }
 }

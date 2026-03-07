@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace WebApplication1.Domain;
 
+[BsonIgnoreExtraElements]   // чтобы другие лишние поля тоже не ломали
 public class Order
 {
     [BsonId]
@@ -12,6 +13,11 @@ public class Order
     [BsonElement("worker_id")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string WorkerId { get; set; } = null!;
+
+    // ✅ добавляем specialist_id
+    [BsonElement("specialist_id")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? SpecialistId { get; set; }
 
     [BsonElement("status")]
     public string Status { get; set; } = null!;

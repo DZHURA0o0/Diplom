@@ -7,11 +7,9 @@ window.location.href="/"
 return
 }
 
-const res = await fetch("/api/auth/me",{
-headers:{
-Authorization:"Bearer "+token
-}
-})
+const res = await fetch("http://localhost:5122/api/auth/me", {
+  headers: { Authorization: "Bearer " + token }
+});
 
 if(!res.ok){
 window.location.href="/"

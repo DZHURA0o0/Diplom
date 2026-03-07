@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
@@ -21,9 +20,9 @@ public class OrdersController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> My([FromQuery] string? status)
     {
-        var workerId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (workerId == null)
+        if (string.IsNullOrWhiteSpace(workerId))
             return Unauthorized();
 
         var orders = await _repo.GetByWorkerAsync(workerId, status);
