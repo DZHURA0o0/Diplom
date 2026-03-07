@@ -1,6 +1,5 @@
 using MongoDB.Driver;
 
-
 namespace WebApplication1.Repositories;
 
 public class UserRepository
@@ -15,6 +14,21 @@ public class UserRepository
     public Task<User?> FindByLoginAsync(string login)
     {
         return _users.Find(x => x.Login == login).FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> ExistsByLoginAsync(string login)
+    {
+        return await _users.Find(x => x.Login == login).AnyAsync();
+    }
+
+    public async Task<bool> ExistsByPassNumberAsync(int passNumber)
+    {
+        return await _users.Find(x => x.PassNumber == passNumber).AnyAsync();
+    }
+
+    public async Task CreateAsync(User user)
+    {
+        await _users.InsertOneAsync(user);
     }
 
     public Task UpdatePasswordHashAsync(string id, string newHash)
