@@ -1,4 +1,4 @@
-requireRole(["WORKER"])
+requireRole(["WORKER"]);
 
 async function loadOrders() {
   const token = localStorage.getItem("token");
@@ -10,15 +10,17 @@ async function loadOrders() {
 
   const status = document.getElementById("status").value;
 
-  let url = "http://localhost:5122/api/orders/my";
+  let url = "/api/orders/my";
   if (status) url += "?status=" + encodeURIComponent(status);
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {
+        Authorization: "Bearer " + token
+      }
     });
 
-    const text = await res.text(); // <-- читаем тело ответа ВСЕГДА
+    const text = await res.text();
 
     if (!res.ok) {
       document.getElementById("orders").textContent =
@@ -26,12 +28,10 @@ async function loadOrders() {
       return;
     }
 
-    // если ответ JSON — красиво распарсим
     try {
       const data = JSON.parse(text);
       document.getElementById("orders").textContent = JSON.stringify(data, null, 2);
     } catch {
-      // если не JSON
       document.getElementById("orders").textContent = text;
     }
   } catch (e) {

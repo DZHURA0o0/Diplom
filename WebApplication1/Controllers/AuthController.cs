@@ -42,39 +42,33 @@ public class AuthController : ControllerBase
         return Ok(new { message = "User registered successfully" });
     }
 
-    [Authorize]
-    [HttpGet("me")]
-    public IActionResult Me()
+[Authorize]
+[HttpGet("me")]
+public async Task<IActionResult> Me()
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var login = User.FindFirstValue("login");
+    var role = User.FindFirstValue(ClaimTypes.Role);
+
+    if (string.IsNullOrWhiteSpace(userId))
+        return Unauthorized();
+
+    var user = await _auth.GetByIdAsync(userId);
+    if (user is null)
+        return NotFound(new { message = "User not found" });
+
+    return Ok(new
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var login = User.FindFirstValue("login");
-        var role = User.FindFirstValue(ClaimTypes.Role);
-
-        return Ok(new { userId, login, role });
-    }
-
-    [HttpPost("seed-hash")]
-    public async Task<IActionResult> SeedHash(
-        [FromServices] UserRepository repo,
-        [FromBody] SeedHashRequest req)
-    {
-        var login = (req.Login ?? "").Trim();
-        var password = req.Password ?? "";
-
-        if (login.Length == 0 || password.Length == 0)
-            return BadRequest(new { message = "login/password required" });
-
-        var user = await repo.FindByLoginAsync(login);
-        if (user is null)
-            return NotFound(new { message = "User not found" });
-
-        var hasher = new PasswordHasher<User>();
-        var newHash = hasher.HashPassword(user, password);
-
-        await repo.UpdatePasswordHashAsync(user.Id, newHash);
-
-        return Ok(new { message = "Password hashed and updated", login });
-    }
-
-    public record SeedHashRequest(string Login, string Password);
+        userId,
+        login,
+        role,
+        fullName = user.FullName,
+        floorNumber = user.FloorNumber,
+        officeNumber = user.OfficeNumber,
+        workshopNumber = user.WorkshopNumber,
+        phone = user.Phone,
+        email = user.Email,
+        position = user.Position
+    });
+}
 }

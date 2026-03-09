@@ -24,4 +24,9 @@ public class OrderRepository
             .SortByDescending(x => x.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task CreateAsync(Order order)
+    {
+        await _orders.InsertOneAsync(order);
+    }
 }

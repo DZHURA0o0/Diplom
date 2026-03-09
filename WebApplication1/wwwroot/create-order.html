@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Create Order</title>
+</head>
+<body>
+
+  <h2>Create Order</h2>
+
+  <p><b>Created by:</b> <span id="createdBy">unknown user</span></p>
+  <p id="msg" style="font-weight:bold"></p>
+
+  <div>
+    <label>Service Type</label><br>
+    <select id="serviceType">
+      <option value="">Select service type</option>
+      <option value="ELECTRICAL">ELECTRICAL</option>
+      <option value="PLUMBING">PLUMBING</option>
+      <option value="HEATING">HEATING</option>
+      <option value="INTERNET">INTERNET</option>
+      <option value="OTHER">OTHER</option>
+    </select>
+  </div>
+
+  <br>
+
+  <div>
+    <label>Description Problem</label><br>
+    <textarea id="descriptionProblem" rows="5" cols="50" spellcheck="false"></textarea>
+  </div>
+
+  <br>
+
+  <div>
+    <label>Workshop Number</label><br>
+    <input id="workshopNumber" type="number">
+  </div>
+
+  <br>
+
+  <div>
+    <label>Floor Number</label><br>
+    <input id="floorNumber" type="number">
+  </div>
+
+  <br>
+
+  <div>
+    <label>Room Number</label><br>
+    <input id="roomNumber" type="number">
+  </div>
+
+  <br>
+
+  <button id="btnCreateOrder" onclick="createOrder()">Create Order</button>
+
+  <br><br>
+
+  <a href="/workerPage.html">Back to worker panel</a>
+
+  <script src="/js/guard.js"></script>
+  <script src="/js/create-order.js"></script>
+</body>
+</html>

@@ -107,9 +107,17 @@ public class AuthService
         };
 
         user.PasswordHash = _hasher.HashPassword(user, request.Password);
+        
 
         await _repo.CreateAsync(user);
 
         return (true, "User registered successfully");
     }
+    public async Task<User?> GetByIdAsync(string userId)
+{
+    if (string.IsNullOrWhiteSpace(userId))
+        return null;
+
+    return await _repo.FindByIdAsync(userId);
+}
 }

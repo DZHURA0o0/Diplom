@@ -19,6 +19,7 @@ builder.Services.AddJwtAuth(builder.Configuration);
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<OrderService>();
 
 var app = builder.Build();
 

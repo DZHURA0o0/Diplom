@@ -40,4 +40,8 @@ public class UserRepository
 
         return _users.UpdateOneAsync(filter, update);
     }
+    public Task<User?> FindByIdAsync(string id)
+{
+    return _users.Find(x => x.Id == id).FirstOrDefaultAsync();
+}
 }

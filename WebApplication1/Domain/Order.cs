@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace WebApplication1.Domain;
 
-[BsonIgnoreExtraElements]   // чтобы другие лишние поля тоже не ломали
+[BsonIgnoreExtraElements]
 public class Order
 {
     [BsonId]
@@ -14,13 +14,16 @@ public class Order
     [BsonRepresentation(BsonType.ObjectId)]
     public string WorkerId { get; set; } = null!;
 
-    // ✅ добавляем specialist_id
     [BsonElement("specialist_id")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? SpecialistId { get; set; }
 
-    [BsonElement("status")]
-    public string Status { get; set; } = null!;
+    [BsonElement("detail_request_id")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? DetailRequestId { get; set; }
+
+    [BsonElement("work_report_ids")]
+    public List<ObjectId> WorkReportIds { get; set; } = new();
 
     [BsonElement("service_type")]
     public string ServiceType { get; set; } = null!;
@@ -28,12 +31,24 @@ public class Order
     [BsonElement("description_problem")]
     public string DescriptionProblem { get; set; } = null!;
 
+    [BsonElement("inspection_result")]
+    public string? InspectionResult { get; set; }
+
+    [BsonElement("production_workshop_number")]
+    public int ProductionWorkshopNumber { get; set; }
+
     [BsonElement("floor_number")]
     public int FloorNumber { get; set; }
 
     [BsonElement("room_number")]
     public int RoomNumber { get; set; }
 
+    [BsonElement("status")]
+    public string Status { get; set; } = null!;
+
     [BsonElement("created_at")]
     public DateTime CreatedAt { get; set; }
+
+    [BsonElement("complaint")]
+    public BsonDocument Complaint { get; set; } = new();
 }
