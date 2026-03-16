@@ -40,8 +40,37 @@ public class UserRepository
 
         return _users.UpdateOneAsync(filter, update);
     }
+
     public Task<User?> FindByIdAsync(string id)
-{
-    return _users.Find(x => x.Id == id).FirstOrDefaultAsync();
-}
+    {
+        return _users.Find(x => x.Id == id).FirstOrDefaultAsync();
+    }
+
+    // Получить всех пользователей определённой роли
+    // Например: WORKER или SPECIALIST
+    public async Task<List<User>> GetByRoleAsync(string role)
+    {
+        return await _users
+            .Find(x => x.RoleInSystem == role && x.AccountStatus == "ACTIVE")
+            .SortBy(x => x.FullName)
+            .ToListAsync();
+    }
+
+    // Получить всех работников
+    public async Task<List<User>> GetWorkersAsync()
+    {
+        return await _users
+            .Find(x => x.RoleInSystem == "WORKER" && x.AccountStatus == "ACTIVE")
+            .SortBy(x => x.FullName)
+            .ToListAsync();
+    }
+
+    // Получить всех специалистов
+    public async Task<List<User>> GetSpecialistsAsync()
+    {
+        return await _users
+            .Find(x => x.RoleInSystem == "SPECIALIST" && x.AccountStatus == "ACTIVE")
+            .SortBy(x => x.FullName)
+            .ToListAsync();
+    }
 }

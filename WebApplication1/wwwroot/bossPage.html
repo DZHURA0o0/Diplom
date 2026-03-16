@@ -1,5 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boss Orders</title>
+
 <script src="/js/guard.js"></script>
 <script>
-  requireRole(["BOSS"]);
+requireRole(["BOSS"]);
 </script>
+
+<script src="/js/boss.js" defer></script>
+
+</head>
+
+<body>
+
+<h1>Orders (Boss)</h1>
+
 <button onclick="logout()">Logout</button>
+
+<br><br>
+
+Status filter:
+<select id="statusFilter">
+<option value="">ALL</option>
+<option value="NEW">NEW</option>
+<option value="ASSIGNED">ASSIGNED</option>
+<option value="IN_PROGRESS">IN_PROGRESS</option>
+<option value="DONE">DONE</option>
+</select>
+
+<button onclick="loadOrders()">Reload</button>
+
+<br><br>
+
+<div id="status"></div>
+
+<br>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Worker</th>
+<th>Specialist</th>
+<th>Status</th>
+<th>Service</th>
+<th>Description</th>
+<th>Assign specialist</th>
+</tr>
+</thead>
+
+<tbody id="orders"></tbody>
+
+</table>
+
+</body>
+<script src="/js/boss.js" defer></script>
+</html>

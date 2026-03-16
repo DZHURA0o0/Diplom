@@ -147,7 +147,6 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\rjimswa
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\scopedcss\bundle\WebApplication1.styles.css
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-t2zoed8z5k-t2zoed8z5k.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\j3ixr6gvk7-{0}-t63ws0eayr-t63ws0eayr.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\83im8w92i2-{0}-qmgphlz1mm-qmgphlz1mm.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\0hpzxnbmqn-{0}-6eqvnw0x4f-6eqvnw0x4f.gz
@@ -169,3 +168,5 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compres
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\9cprdz3sqb-{0}-i463j8qaam-i463j8qaam.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2pneo29zqs-{0}-8nk2wy0nta-8nk2wy0nta.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\b54sq0otj8-{0}-qimjwod1pe-qimjwod1pe.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-gd3augyk0p-gd3augyk0p.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\ekwu4l5xsj-{0}-no86j6625y-no86j6625y.gz

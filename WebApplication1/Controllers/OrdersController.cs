@@ -11,10 +11,12 @@ namespace WebApplication1.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly OrderService _service;
+    private readonly UserService _userService;
 
-    public OrdersController(OrderService service)
+    public OrdersController(OrderService service, UserService userService)
     {
         _service = service;
+        _userService = userService;
     }
 
     [Authorize(Roles = "WORKER")]
@@ -28,30 +30,61 @@ public class OrdersController : ControllerBase
 
         var orders = await _service.GetByWorkerAsync(workerId, status);
 
-        var result = orders.Select(o => new
-        {
-            id = o.Id,
-            workerId = o.WorkerId,
-            specialistId = o.SpecialistId,
-            detailRequestId = o.DetailRequestId,
-            status = o.Status,
-            serviceType = o.ServiceType,
-            descriptionProblem = o.DescriptionProblem,
-            productionWorkshopNumber = o.ProductionWorkshopNumber,
-            floorNumber = o.FloorNumber,
-            roomNumber = o.RoomNumber,
-            createdAt = o.CreatedAt,
-            complaint = new
-            {
-                isSubmitted = o.Complaint.Contains("is_submitted") && o.Complaint["is_submitted"].IsBoolean
-                    ? o.Complaint["is_submitted"].AsBoolean
-                    : false,
+        var result = new List<object>();
 
-                complaintId = o.Complaint.Contains("complaint_id") && o.Complaint["complaint_id"].IsObjectId
-                    ? o.Complaint["complaint_id"].AsObjectId.ToString()
-                    : null
+        foreach (var o in orders)
+        {
+            string? workerName = null;
+            string? specialistName = null;
+
+            var worker = await _userService.GetByIdAsync(o.WorkerId);
+            if (worker != null)
+            {
+                workerName = worker.FullName;
             }
-        });
+
+            if (!string.IsNullOrWhiteSpace(o.SpecialistId))
+            {
+                var specialist = await _userService.GetByIdAsync(o.SpecialistId);
+                if (specialist != null)
+                {
+                    specialistName = specialist.FullName;
+                }
+            }
+
+            var item = new
+            {
+                id = o.Id,
+                workerId = o.WorkerId,
+                workerName = workerName,
+                specialistId = o.SpecialistId,
+                specialistName = specialistName,
+                detailRequestId = o.DetailRequestId,
+                status = o.Status,
+                serviceType = o.ServiceType,
+                descriptionProblem = o.DescriptionProblem,
+                productionWorkshopNumber = o.ProductionWorkshopNumber,
+                floorNumber = o.FloorNumber,
+                roomNumber = o.RoomNumber,
+                createdAt = o.CreatedAt,
+                complaint = new
+                {
+                    isSubmitted = o.Complaint != null &&
+                                  o.Complaint.Contains("is_submitted") &&
+                                  o.Complaint["is_submitted"].IsBoolean
+                        ? o.Complaint["is_submitted"].AsBoolean
+                        : false,
+
+                    complaintId = o.Complaint != null &&
+                                  o.Complaint.Contains("complaint_id") &&
+                                  o.Complaint["complaint_id"].IsObjectId
+                        ? o.Complaint["complaint_id"].AsObjectId.ToString()
+                        : null
+                }
+            };
+
+            result.Add(item);
+        }
 
         return Ok(result);
     }
@@ -70,6 +103,8 @@ public class OrdersController : ControllerBase
         if (!ok || order is null)
             return BadRequest(new { message });
 
+        var worker = await _userService.GetByIdAsync(order.WorkerId);
+
         return Ok(new
         {
             message,
@@ -77,7 +112,9 @@ public class OrdersController : ControllerBase
             {
                 id = order.Id,
                 workerId = order.WorkerId,
+                workerName = worker != null ? worker.FullName : null,
                 specialistId = order.SpecialistId,
+                specialistName = (string?)null,
                 detailRequestId = order.DetailRequestId,
                 status = order.Status,
                 serviceType = order.ServiceType,
