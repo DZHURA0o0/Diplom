@@ -6,92 +6,74 @@ namespace WebApplication1.Repositories;
 
 public class OrderService
 {
-    // Репозиторий - слой, который напрямую работает с базой данных
     private readonly OrderRepository _repo;
+    private readonly DetailRequestRepository _detailRequestRepo;
+    private readonly WorkReportRepository _workReportRepo;
 
-    public OrderService(OrderRepository repo)
+    public OrderService(
+        OrderRepository repo,
+        DetailRequestRepository detailRequestRepo,
+        WorkReportRepository workReportRepo)
     {
         _repo = repo;
+        _detailRequestRepo = detailRequestRepo;
+        _workReportRepo = workReportRepo;
     }
 
-    // Получить заявки конкретного рабочего.
-    // status можно передать как фильтр, например "NEW" или "ASSIGNED".
+    // =========================================
+    // Worker
+    // =========================================
+
     public async Task<List<Order>> GetByWorkerAsync(string workerId, string? status)
     {
         return await _repo.GetByWorkerAsync(workerId, status);
     }
 
-    // Получить все заявки для босса / начальника отделения.
-    // Если status == null, вернутся все заявки.
-    // Если status передан, вернутся только заявки с этим статусом.
+    // =========================================
+    // Boss
+    // =========================================
+
     public async Task<List<Order>> GetAllAsync(string? status)
     {
         return await _repo.GetAllAsync(status);
     }
 
-    // Создание новой заявки от имени рабочего.
-    // Метод:
-    // 1) валидирует входные данные
-    // 2) собирает новый объект Order
-    // 3) сохраняет его в БД
-    // 4) возвращает результат
     public async Task<(bool ok, string? message, Order? order)> CreateAsync(
         string workerId,
         CreateOrderRequest req)
     {
-        // Проверка: workerId обязан быть
         if (string.IsNullOrWhiteSpace(workerId))
             return (false, "Unauthorized", null);
 
-        // Проверка: тип услуги обязателен
         if (string.IsNullOrWhiteSpace(req.ServiceType))
             return (false, "ServiceType required", null);
 
-        // Проверка: описание проблемы обязательно
         if (string.IsNullOrWhiteSpace(req.DescriptionProblem))
             return (false, "DescriptionProblem required", null);
 
-        // Проверка: описание не должно быть слишком коротким
         if (req.DescriptionProblem.Trim().Length < 5)
             return (false, "Description too short", null);
 
-        // Создаём новый объект заявки
         var order = new Order
         {
-            // Кто создал заявку
             WorkerId = workerId,
-
-            // Пока специалист не назначен
             SpecialistId = null,
-
-            // Пока запрос на детали не создан
             DetailRequestId = null,
+            WorkReportId = null,
 
-            // Пока отчётов по работе нет
-            WorkReportIds = new List<ObjectId>(),
-
-            // Нормализуем тип услуги: убираем пробелы и делаем верхний регистр
             ServiceType = req.ServiceType.Trim().ToUpperInvariant(),
-
-            // Нормализуем описание
             DescriptionProblem = req.DescriptionProblem.Trim(),
 
-            // Результат осмотра пока отсутствует
             InspectionResult = null,
+            InspectionAt = null,
 
-            // Локация проблемы
             ProductionWorkshopNumber = req.WorkshopNumber,
             FloorNumber = req.FloorNumber,
             RoomNumber = req.RoomNumber,
 
-            // Начальный статус новой заявки
             Status = "NEW",
-
-            // Время создания лучше хранить в UTC
             CreatedAt = DateTime.UtcNow,
 
-            // Инициализируем блок complaint сразу,
-            // чтобы потом код не падал на null и структура была одинаковой у всех заявок
             Complaint = new BsonDocument
             {
                 { "is_submitted", false },
@@ -99,53 +81,245 @@ public class OrderService
             }
         };
 
-        // Сохраняем заявку в БД
         await _repo.CreateAsync(order);
 
-        // Возвращаем успех и саму созданную заявку
         return (true, "Order created", order);
     }
 
-    // Назначение специалиста на заявку.
-    // Это уже логика для босса / начальника отделения.
-    // Метод:
-    // 1) проверяет входные данные
-    // 2) ищет заявку по id
-    // 3) записывает specialistId
-    // 4) при необходимости переводит статус в ASSIGNED
-    // 5) сохраняет изменения
-   public async Task<(bool ok, string? message, Order? order)> AssignSpecialistAsync(
-    string orderId,
-    AssignSpecialistRequest req)
-{
-    if (string.IsNullOrWhiteSpace(orderId))
-        return (false, "OrderId required", null);
-
-    if (req == null)
-        return (false, "Request body required", null);
-
-    var order = await _repo.GetByIdAsync(orderId);
-
-    if (order == null)
-        return (false, "Order not found", null);
-
-    // Если пришла пустая строка или null - снимаем специалиста
-    if (string.IsNullOrWhiteSpace(req.SpecialistId))
+    public async Task<(bool ok, string? message, Order? order)> AssignSpecialistAsync(
+        string orderId,
+        AssignSpecialistRequest req)
     {
-        order.SpecialistId = null;
-        order.Status = "NEW";
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required", null);
+
+        if (req == null)
+            return (false, "Request body required", null);
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found", null);
+
+        if (string.IsNullOrWhiteSpace(req.SpecialistId))
+        {
+            order.SpecialistId = null;
+            order.Status = "NEW";
+
+            await _repo.UpdateAsync(order);
+
+            return (true, "Specialist removed", order);
+        }
+
+        order.SpecialistId = req.SpecialistId.Trim();
+        order.Status = "ASSIGNED";
 
         await _repo.UpdateAsync(order);
 
-        return (true, "Specialist removed", order);
+        return (true, "Specialist assigned", order);
     }
 
-    // Иначе назначаем / переназначаем специалиста
-    order.SpecialistId = req.SpecialistId.Trim();
-    order.Status = "ASSIGNED";
+    // =========================================
+    // Specialist
+    // =========================================
 
-    await _repo.UpdateAsync(order);
+    public async Task<List<Order>> GetBySpecialistAsync(string specialistId, string? status)
+    {
+        return await _repo.GetBySpecialistAsync(specialistId, status);
+    }
 
-    return (true, "Specialist assigned", order);
-}
+    public async Task<Order?> GetByIdAsync(string orderId)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return null;
+
+        return await _repo.GetByIdAsync(orderId);
+    }
+
+    // ASSIGNED -> IN_PROGRESS
+    public async Task<(bool ok, string? message)> StartWorkAsync(string orderId, string? specialistId)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required");
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Unauthorized");
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found");
+
+        if (order.SpecialistId != specialistId)
+            return (false, "This order is not assigned to you");
+
+        if (order.Status != "ASSIGNED")
+            return (false, "Only ASSIGNED order can be moved to IN_PROGRESS");
+
+        order.Status = "IN_PROGRESS";
+
+        await _repo.UpdateAsync(order);
+
+        return (true, "Order moved to IN_PROGRESS");
+    }
+
+    // IN_PROGRESS -> INSPECTION
+    public async Task<(bool ok, string? message)> SaveInspectionAsync(
+        string orderId,
+        string? specialistId,
+        string? inspectionResult)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required");
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Unauthorized");
+
+        if (string.IsNullOrWhiteSpace(inspectionResult))
+            return (false, "InspectionResult required");
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found");
+
+        if (order.SpecialistId != specialistId)
+            return (false, "This order is not assigned to you");
+
+        if (order.Status != "IN_PROGRESS")
+            return (false, "Only IN_PROGRESS order can be moved to INSPECTION");
+
+        order.InspectionResult = inspectionResult.Trim();
+        order.InspectionAt = DateTime.UtcNow;
+        order.Status = "INSPECTION";
+
+        await _repo.UpdateAsync(order);
+
+        return (true, "Inspection saved");
+    }
+
+    // INSPECTION -> WAITING_DETAILS
+    public async Task<(bool ok, string? message)> CreateDetailRequestAsync(
+        string orderId,
+        string? specialistId,
+        string? detailNeeds,
+        string? explanation)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required");
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Unauthorized");
+
+        if (string.IsNullOrWhiteSpace(detailNeeds))
+            return (false, "Detail needs required");
+
+        if (string.IsNullOrWhiteSpace(explanation))
+            return (false, "Explanation required");
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found");
+
+        if (order.SpecialistId != specialistId)
+            return (false, "This order is not assigned to you");
+
+        if (order.Status != "INSPECTION")
+            return (false, "Only INSPECTION order can be moved to WAITING_DETAILS");
+
+        var detailRequest = new DetailRequest
+        {
+            OrderId = order.Id,
+            SpecialistId = specialistId,
+            DetailNeeds = detailNeeds.Trim(),
+            Explanation = explanation.Trim(),
+            Photos = new List<string>(),
+            Status = "CREATED",
+            ApprovedBy = null,
+            ApprovedAt = null,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _detailRequestRepo.CreateAsync(detailRequest);
+
+        order.DetailRequestId = detailRequest.Id;
+        order.Status = "WAITING_DETAILS";
+
+        await _repo.UpdateAsync(order);
+
+        return (true, "Detail request created");
+    }
+
+    // INSPECTION -> EXECUTION
+    // WAITING_DETAILS -> EXECUTION
+    public async Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required");
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Unauthorized");
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found");
+
+        if (order.SpecialistId != specialistId)
+            return (false, "This order is not assigned to you");
+
+        if (order.Status != "INSPECTION" && order.Status != "WAITING_DETAILS")
+            return (false, "Only INSPECTION or WAITING_DETAILS order can be moved to EXECUTION");
+
+        order.Status = "EXECUTION";
+
+        await _repo.UpdateAsync(order);
+
+        return (true, "Order moved to EXECUTION");
+    }
+
+    // EXECUTION -> DONE
+    public async Task<(bool ok, string? message)> FinishOrderAsync(
+        string orderId,
+        string? specialistId,
+        string? workReportText)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required");
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Unauthorized");
+
+        if (string.IsNullOrWhiteSpace(workReportText))
+            return (false, "Work report required");
+
+        var order = await _repo.GetByIdAsync(orderId);
+
+        if (order == null)
+            return (false, "Order not found");
+
+        if (order.SpecialistId != specialistId)
+            return (false, "This order is not assigned to you");
+
+        if (order.Status != "EXECUTION")
+            return (false, "Only EXECUTION order can be moved to DONE");
+
+        var report = new WorkReport
+        {
+            OrderId = order.Id,
+            SpecialistId = specialistId,
+            ReportText = workReportText.Trim(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _workReportRepo.CreateAsync(report);
+
+        order.WorkReportId = report.Id;
+        order.Status = "DONE";
+
+        await _repo.UpdateAsync(order);
+
+        return (true, "Order completed");
+    }
 }

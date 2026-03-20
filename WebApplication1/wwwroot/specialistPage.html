@@ -1,15 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Specialist</title></head>
-<body>
-<h2>SPECIALIST</h2>
-<p id="hello"></p>
-<button onclick="logout()">Logout</button>
+<head>
+    <meta charset="UTF-8">
+    <title>Specialist Orders</title>
 
-<script src="/js/guard.js"></script>
-<script>
-  requireRole(["SPECIALIST"]);
-</script>
-<button onclick="logout()">Logout</button>
+    <script src="/js/guard.js"></script>
+    <script>
+        requireRole(["SPECIALIST"]);
+    </script>
+
+    <script src="/js/specialist-data.js" defer></script>
+    <script src="/js/specialist-page.js" defer></script>
+</head>
+<body>
+
+    <h1>Orders (Specialist)</h1>
+
+    <button onclick="logout()">Logout</button>
+
+    <br><br>
+
+    Status filter:
+    <select id="statusFilter">
+        <option value="">ALL</option>
+        <option value="ASSIGNED">ASSIGNED</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="INSPECTION">INSPECTION</option>
+        <option value="WAITING_DETAILS">WAITING_DETAILS</option>
+        <option value="EXECUTION">EXECUTION</option>
+        <option value="DONE">DONE</option>
+        <option value="CANCELED">CANCELED</option>
+    </select>
+
+    <button onclick="loadOrders()">Reload</button>
+
+    <br><br>
+
+    <div id="status"></div>
+
+    <br>
+
+    <table cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Worker</th>
+                <th>Status</th>
+                <th>Service</th>
+                <th>Description</th>
+                <th>Location</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="orders"></tbody>
+    </table>
+
+    <br><br>
+
+    <div id="actionPanel" style="display:none; border:1px solid #999; padding:12px;">
+        <h3 id="panelTitle">Action</h3>
+
+        <input type="hidden" id="panelOrderId">
+
+        <!-- Осмотр -->
+        <div id="inspectionBlock" style="display:none;">
+            <label for="inspectionResult">Inspection result:</label>
+            <br>
+            <textarea id="inspectionResult" rows="5" cols="80" placeholder="Введіть результат огляду"></textarea>
+            <br><br>
+            <button id="btnSaveInspection" type="button">Save inspection</button>
+        </div>
+
+        <!-- Запрос деталей -->
+        <div id="detailRequestBlock" style="display:none;">
+            <label for="detailNeeds">Detail needs:</label>
+            <br>
+            <input id="detailNeeds" type="text" placeholder="Що саме потрібно">
+            <br><br>
+
+            <label for="explanation">Explanation:</label>
+            <br>
+            <textarea id="explanation" rows="4" cols="80" placeholder="Пояснення до запиту"></textarea>
+            <br><br>
+
+            <button id="btnSendDetailRequest" type="button">Send detail request</button>
+        </div>
+
+        <!-- Финальный отчёт -->
+        <div id="workReportBlock" style="display:none;">
+            <label for="workReport">Work report:</label>
+            <br>
+            <textarea id="workReport" rows="5" cols="80" placeholder="Введіть звіт про виконану роботу"></textarea>
+            <br><br>
+            <button id="btnFinishOrder" type="button">Finish order</button>
+        </div>
+
+        <br>
+        <button id="btnClosePanel" type="button">Close</button>
+    </div>
+
 </body>
 </html>

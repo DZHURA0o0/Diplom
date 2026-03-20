@@ -73,4 +73,16 @@ public class OrderRepository
             order
         );
     }
+  public Task<List<Order>> GetBySpecialistAsync(string specialistId, string? status)
+{
+    var filter = Builders<Order>.Filter.Eq(x => x.SpecialistId, specialistId);
+
+    if (!string.IsNullOrWhiteSpace(status))
+        filter &= Builders<Order>.Filter.Eq(x => x.Status, status);
+
+    return _orders
+        .Find(filter)
+        .SortByDescending(x => x.CreatedAt)
+        .ToListAsync();
+}
 }

@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Boss Orders</title>
+    <meta charset="UTF-8">
+    <title>Boss Orders</title>
 
-<script src="/js/guard.js"></script>
-<script>
-requireRole(["BOSS"]);
-</script>
+    <script src="/js/guard.js"></script>
+    <script>
+        requireRole(["BOSS"]);
+    </script>
 
-<script src="/js/boss.js" defer></script>
-
+    <script src="/js/boss-data.js" defer></script>
+    <script src="/js/boss-page.js" defer></script>
 </head>
-
 <body>
 
 <h1>Orders (Boss)</h1>
@@ -23,11 +22,15 @@ requireRole(["BOSS"]);
 
 Status filter:
 <select id="statusFilter">
-<option value="">ALL</option>
-<option value="NEW">NEW</option>
-<option value="ASSIGNED">ASSIGNED</option>
-<option value="IN_PROGRESS">IN_PROGRESS</option>
-<option value="DONE">DONE</option>
+    <option value="">ALL</option>
+    <option value="NEW">NEW</option>
+    <option value="ASSIGNED">ASSIGNED</option>
+    <option value="IN_PROGRESS">IN_PROGRESS</option>
+    <option value="INSPECTION">INSPECTION</option>
+    <option value="WAITING_DETAILS">WAITING_DETAILS</option>
+    <option value="EXECUTION">EXECUTION</option>
+    <option value="DONE">DONE</option>
+    <option value="CANCELED">CANCELED</option>
 </select>
 
 <button onclick="loadOrders()">Reload</button>
@@ -38,23 +41,21 @@ Status filter:
 
 <br>
 
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Worker</th>
-<th>Specialist</th>
-<th>Status</th>
-<th>Service</th>
-<th>Description</th>
-<th>Assign specialist</th>
-</tr>
-</thead>
-
-<tbody id="orders"></tbody>
-
+<table  cellspacing="0" cellpadding="6">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Worker</th>
+            <th>Specialist</th>
+            <th>Status</th>
+            <th>Service</th>
+            <th>Description</th>
+            <th>Location</th>
+            <th>Assign specialist</th>
+        </tr>
+    </thead>
+    <tbody id="orders"></tbody>
 </table>
 
 </body>
-<script src="/js/boss.js" defer></script>
 </html>

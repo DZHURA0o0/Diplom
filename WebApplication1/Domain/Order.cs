@@ -22,8 +22,9 @@ public class Order
     [BsonRepresentation(BsonType.ObjectId)]
     public string? DetailRequestId { get; set; }
 
-    [BsonElement("work_report_ids")]
-    public List<ObjectId> WorkReportIds { get; set; } = new();
+    [BsonElement("work_report_id")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? WorkReportId { get; set; }
 
     [BsonElement("service_type")]
     public string ServiceType { get; set; } = null!;
@@ -33,6 +34,9 @@ public class Order
 
     [BsonElement("inspection_result")]
     public string? InspectionResult { get; set; }
+
+    [BsonElement("inspection_at")]
+    public DateTime? InspectionAt { get; set; }
 
     [BsonElement("production_workshop_number")]
     public int ProductionWorkshopNumber { get; set; }

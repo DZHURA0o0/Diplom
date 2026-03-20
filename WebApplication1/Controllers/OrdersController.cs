@@ -39,30 +39,29 @@ public class OrdersController : ControllerBase
 
             var worker = await _userService.GetByIdAsync(o.WorkerId);
             if (worker != null)
-            {
                 workerName = worker.FullName;
-            }
 
             if (!string.IsNullOrWhiteSpace(o.SpecialistId))
             {
                 var specialist = await _userService.GetByIdAsync(o.SpecialistId);
                 if (specialist != null)
-                {
                     specialistName = specialist.FullName;
-                }
             }
 
             var item = new
             {
                 id = o.Id,
                 workerId = o.WorkerId,
-                workerName = workerName,
+                workerName,
                 specialistId = o.SpecialistId,
-                specialistName = specialistName,
+                specialistName,
                 detailRequestId = o.DetailRequestId,
+                workReportId = o.WorkReportId,
                 status = o.Status,
                 serviceType = o.ServiceType,
                 descriptionProblem = o.DescriptionProblem,
+                inspectionResult = o.InspectionResult,
+                inspectionAt = o.InspectionAt,
                 productionWorkshopNumber = o.ProductionWorkshopNumber,
                 floorNumber = o.FloorNumber,
                 roomNumber = o.RoomNumber,
@@ -116,9 +115,12 @@ public class OrdersController : ControllerBase
                 specialistId = order.SpecialistId,
                 specialistName = (string?)null,
                 detailRequestId = order.DetailRequestId,
+                workReportId = order.WorkReportId,
                 status = order.Status,
                 serviceType = order.ServiceType,
                 descriptionProblem = order.DescriptionProblem,
+                inspectionResult = order.InspectionResult,
+                inspectionAt = order.InspectionAt,
                 productionWorkshopNumber = order.ProductionWorkshopNumber,
                 floorNumber = order.FloorNumber,
                 roomNumber = order.RoomNumber,

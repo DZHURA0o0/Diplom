@@ -15,6 +15,9 @@ builder.Services.AddCors(opt =>
 
 builder.Services.AddMongo(builder.Configuration);
 builder.Services.AddJwtAuth(builder.Configuration);
+
+builder.Services.AddScoped<DetailRequestRepository>();
+builder.Services.AddScoped<WorkReportRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<OrderRepository>();
