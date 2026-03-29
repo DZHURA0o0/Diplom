@@ -1,40 +1,67 @@
 ﻿<!doctype html>
-<html>
+<html lang="uk">
 <head>
-<meta charset="utf-8">
-<title>Login</title>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="css/login.css">
 </head>
 
 <body>
+  <div class="page">
 
-<h2>Вход</h2>
+    <!-- HEADER -->
+    <header class="site-header">
+      <div class="header-left">
+        <img src="img/logohader.png" alt="logo" class="logo-img">
+      </div>
 
-<div>
-<input id="login" placeholder="Login">
-</div>
+      <div class="header-center">
+        <div class="title-main">
+          Відділ системного адміністрування та обчислювальної техніки
+        </div>
+        <div class="title-sub">
+          Сайт подачі скарг та заявок на ремонт
+        </div>
+      </div>
+    </header>
 
-<br>
+    <!-- CENTER -->
+    <main class="main">
+      <div class="login-card">
+        <h2>Вхід в систему</h2>
 
-<div>
-<input id="password" type="password" placeholder="Password">
-</div>
+        <form id="loginForm">
+          <div class="input-group">
+            <label for="login">Логін</label>
+            <input id="login" type="text" placeholder="Введіть логін" autocomplete="username">
+          </div>
 
-<br>
+          <div class="input-group">
+            <label for="password">Пароль</label>
+            <input id="password" type="password" placeholder="Введіть пароль" autocomplete="current-password">
+          </div>
 
-<button id="btnLogin">Войти</button>
+          <button type="submit" id="btnLogin" class="btn-login">
+            Увійти
+          </button>
 
-<br><br>
+          <div class="form-footer">
+            <span>Немає акаунта?</span>
+            <a href="/register.html">Зареєструватися</a>
+          </div>
 
-<!-- кнопка перехода на регистрацию -->
-<a href="/register.html">
-<button>Регистрация</button>
-</a>
+          <pre id="result"></pre>
+        </form>
+      </div>
+    </main>
 
-<br><br>
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
 
-<pre id="result"></pre>
+  </div>
 
-<script src="/js/auth.js"></script>
-
+  <script src="/js/auth.js"></script>
 </body>
 </html>

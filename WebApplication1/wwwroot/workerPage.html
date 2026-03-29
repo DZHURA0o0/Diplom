@@ -1,36 +1,84 @@
 <!doctype html>
-<html>
+<html lang="uk">
 <head>
-<meta charset="utf-8">
-<title>Worker</title>
+  <meta charset="utf-8">
+  <title>Worker</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/worker.css">
 </head>
 
-<body>
+<body onload="loadOrders()">
+  <div class="page">
 
-<h2>WORKER PANEL</h2>
+    <header class="site-header">
+      <div class="header-left">
+        <img src="/img/logohader.png" alt="logo" class="logo-img">
+      </div>
 
-<p id="hello"></p>
+      <div class="header-center">
+        <div class="title-main">Відділ системного адміністрування</div>
+        <div class="title-sub">Панель працівника</div>
+      </div>
+    </header>
 
-<button onclick="logout()">Logout</button>
-<a href="/create-order.html"><button>Create order</button></a>
+    <main class="main worker-main">
+      <div class="worker-card">
 
-<hr>
+        <div class="worker-top">
+          <div id="hello" class="hello-text"></div>
 
-<h3>My Orders</h3>
+          <div class="top-actions">
+            <button type="button" class="btn-secondary" onclick="logout()">Вийти</button>
 
-<select id="status">
-  <option value="">ALL</option>
-  <option value="NEW">NEW</option>
-  <option value="IN_PROGRESS">IN_PROGRESS</option>
-  <option value="DONE">DONE</option>
-</select>
+            <a href="/create-order.html" class="action-link">
+              <button type="button" class="btn-primary">Створити заявку</button>
+            </a>
+          </div>
+        </div>
 
-<button onclick="loadOrders()">Load orders</button>
+        <div class="worker-filter">
+          <select id="status">
+            <option value="">Усі статуси</option>
+            <option value="NEW">Нова</option>
+            <option value="ASSIGNED">Призначена</option>
+            <option value="IN_PROGRESS">У роботі</option>
+            <option value="INSPECTION">На перевірці</option>
+            <option value="WAITING_DETAILS">Очікує деталей</option>
+            <option value="EXECUTION">На виконанні</option>
+            <option value="DONE">Виконана</option>
+            <option value="CANCELED">Скасована</option>
+          </select>
 
-<pre id="orders"></pre>
+          <button type="button" class="btn-secondary" onclick="loadOrders()">Оновити</button>
+        </div>
 
-<script src="/js/guard.js"></script>
-<script src="/js/worker.js"></script>
+        <div class="orders-wrapper">
+          <div class="orders-header">
+            <div>Статус</div>
+            <div>Тип заявки</div>
+            <div>Опис проблеми</div>
+            <div>Локація</div>
+            <div>Спеціаліст</div>
+            <div>Дата</div>
+          </div>
 
+          <div id="orders">
+            <div class="empty">Завантаження...</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+  </div>
+
+  <script src="/js/js_workers/guard.js"></script>
+  <script src="/js/js_workers/worker-utils.js"></script>
+  <script src="/js/js_workers/worker-api.js"></script>
+  <script src="/js/js_workers/worker-render.js"></script>
+  <script src="/js/js_workers/worker-page.js"></script>
 </body>
 </html>

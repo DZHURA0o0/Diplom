@@ -24,10 +24,49 @@ public class OrderService
     // Worker
     // =========================================
 
-    public async Task<List<Order>> GetByWorkerAsync(string workerId, string? status)
+    public async Task<List<OrderDto>> GetByWorkerAsync(string workerId, string? status)
+{
+    var orders = await _repo.GetByWorkerAsync(workerId, status);
+
+    var result = new List<OrderDto>();
+
+    foreach (var o in orders)
     {
-        return await _repo.GetByWorkerAsync(workerId, status);
+        string? reportText = null;
+
+        if (!string.IsNullOrWhiteSpace(o.WorkReportId))
+        {
+            var report = await _workReportRepo.GetByIdAsync(o.WorkReportId);
+            reportText = report?.ReportText;
+        }
+
+        result.Add(new OrderDto
+        {
+            Id = o.Id,
+            WorkerId = o.WorkerId,
+            SpecialistId = o.SpecialistId,
+
+            WorkReportText = reportText,
+
+            ServiceType = o.ServiceType,
+            DescriptionProblem = o.DescriptionProblem,
+
+            InspectionResult = o.InspectionResult,
+            InspectionAt = o.InspectionAt,
+
+            ProductionWorkshopNumber = o.ProductionWorkshopNumber,
+            FloorNumber = o.FloorNumber,
+            RoomNumber = o.RoomNumber,
+
+            Status = o.Status,
+            CreatedAt = o.CreatedAt,
+
+            Complaint = o.Complaint
+        });
     }
+
+    return result;
+}
 
     // =========================================
     // Boss
@@ -279,7 +318,7 @@ public class OrderService
         return (true, "Order moved to EXECUTION");
     }
 
-    // EXECUTION -> DONE
+
     public async Task<(bool ok, string? message)> FinishOrderAsync(
         string orderId,
         string? specialistId,
@@ -322,4 +361,10 @@ public class OrderService
 
         return (true, "Order completed");
     }
+    public async Task UpdateAsync(Order order)
+{
+    await _repo.UpdateAsync(order);
+}
+    
+    
 }

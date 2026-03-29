@@ -2,38 +2,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Boss Orders</title>
-
-    <script src="/js/guard.js"></script>
-    <script>
-        requireRole(["BOSS"]);
-    </script>
-
-    <script src="/js/boss-data.js" defer></script>
-    <script src="/js/boss-page.js" defer></script>
+    <title>Boss Panel</title>
+<script>
+    requireRole(["BOSS"]);
+</script>
+<script src="/js/guard.js"></script>
+<script src="/js/boss-data.js" defer></script>
+<script src="/js/boss-orders.js" defer></script>
+<script src="/js/boss-users.js" defer></script>
+<script src="/js/boss-page.js" defer></script>
+    
 </head>
 <body>
 
-<h1>Orders (Boss)</h1>
+<h1>Boss Panel</h1>
 
-<button onclick="logout()">Logout</button>
+<button type="button" onclick="logout()">Logout</button>
 
 <br><br>
 
-Status filter:
-<select id="statusFilter">
-    <option value="">ALL</option>
-    <option value="NEW">NEW</option>
-    <option value="ASSIGNED">ASSIGNED</option>
-    <option value="IN_PROGRESS">IN_PROGRESS</option>
-    <option value="INSPECTION">INSPECTION</option>
-    <option value="WAITING_DETAILS">WAITING_DETAILS</option>
-    <option value="EXECUTION">EXECUTION</option>
-    <option value="DONE">DONE</option>
-    <option value="CANCELED">CANCELED</option>
-</select>
-
-<button onclick="loadOrders()">Reload</button>
+<button type="button" onclick="showTab('orders')">Orders</button>
+<button type="button" onclick="showTab('users')">Users</button>
 
 <br><br>
 
@@ -41,21 +30,81 @@ Status filter:
 
 <br>
 
-<table  cellspacing="0" cellpadding="6">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Worker</th>
-            <th>Specialist</th>
-            <th>Status</th>
-            <th>Service</th>
-            <th>Description</th>
-            <th>Location</th>
-            <th>Assign specialist</th>
-        </tr>
-    </thead>
-    <tbody id="orders"></tbody>
-</table>
+<div id="ordersTab">
+    <h2>Orders</h2>
+
+    Status filter:
+    <select id="statusFilter">
+        <option value="">ALL</option>
+        <option value="NEW">NEW</option>
+        <option value="ASSIGNED">ASSIGNED</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="INSPECTION">INSPECTION</option>
+        <option value="WAITING_DETAILS">WAITING_DETAILS</option>
+        <option value="EXECUTION">EXECUTION</option>
+        <option value="DONE">DONE</option>
+        <option value="CANCELED">CANCELED</option>
+    </select>
+
+    <button type="button" onclick="loadOrders()">Reload</button>
+
+    <br><br>
+
+    <table cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Worker</th>
+                <th>Specialist</th>
+                <th>Status</th>
+                <th>Service</th>
+                <th>Description</th>
+                <th>Location</th>
+                <th>Assign specialist</th>
+            </tr>
+        </thead>
+        <tbody id="orders"></tbody>
+    </table>
+</div>
+
+<div id="usersTab" hidden>
+    <h2>Users</h2>
+
+    Role filter:
+    <select id="roleFilter">
+        <option value="">ALL</option>
+        <option value="WORKER">WORKER</option>
+        <option value="SPECIALIST">SPECIALIST</option>
+        <option value="BOSS">BOSS</option>
+    </select>
+
+    Account status filter:
+    <select id="accountStatusFilter">
+        <option value="">ALL</option>
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+    </select>
+
+    <button type="button" onclick="loadUsers()">Reload</button>
+
+    <br><br>
+
+    <table cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Full name</th>
+                <th>Login</th>
+                <th>Role</th>
+                <th>Position</th>
+                <th>Account status</th>
+                <th>Change role</th>
+                <th>Change account status</th>
+            </tr>
+        </thead>
+        <tbody id="users"></tbody>
+    </table>
+</div>
 
 </body>
 </html>

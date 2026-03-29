@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0tH6zmQ5dIE=",
+  "dgSpecHash": "g0VivrKnvQk=",
   "success": true,
-  "projectFilePath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+  "projectFilePath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\malts\\.nuget\\packages\\dnsclient\\1.6.1\\dnsclient.1.6.1.nupkg.sha512",
     "C:\\Users\\malts\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.3\\microsoft.aspnetcore.authentication.jwtbearer.10.0.3.nupkg.sha512",
@@ -27,9 +27,9 @@
       "code": "NU1510",
       "level": "Warning",
       "message": "PackageReference Microsoft.AspNetCore.Identity will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
-      "projectPath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+      "projectPath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+      "filePath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
       "libraryId": "Microsoft.AspNetCore.Identity",
       "targetGraphs": [
         "net10.0"

@@ -67,17 +67,18 @@ public class BossController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("specialists")]
-    public async Task<IActionResult> GetSpecialists()
+  [HttpGet("specialists")]
+public async Task<IActionResult> GetSpecialists()
+{
+    var specialists = await _userService.GetAllSpecialistsAsync();
+
+    var result = specialists.Select(x => new
     {
-        var specialists = await _userService.GetSpecialistsAsync();
+        id = x.Id,
+        fullName = x.FullName,
+        accountStatus = x.AccountStatus
+    });
 
-        var result = specialists.Select(x => new
-        {
-            id = x.Id,
-            fullName = x.FullName
-        });
-
-        return Ok(result);
-    }
+    return Ok(result);
+}
 }

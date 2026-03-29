@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Подання скарги</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/create-complaint.css">
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="site-header">
+      <div class="header-left">
+        <img src="/img/logohader.png" alt="logo" class="logo-img">
+      </div>
+
+      <div class="header-center">
+        <div class="title-main">Відділ системного адміністрування</div>
+        <div class="title-sub">Подання скарги</div>
+      </div>
+    </header>
+
+    <main class="main complaint-main">
+      <div class="complaint-card">
+
+        <div class="complaint-top">
+          <h2>Скарга по заявці</h2>
+          <p>Заповніть форму для подання скарги</p>
+        </div>
+
+        <div class="complaint-form">
+          <div class="input-group">
+            <label for="orderId">Номер заявки</label>
+            <input id="orderId" type="text" readonly>
+          </div>
+
+          <div class="input-group">
+            <label for="complaintText">Текст скарги</label>
+            <textarea
+              id="complaintText"
+              placeholder="Опишіть причину скарги..."
+              rows="10"
+            ></textarea>
+          </div>
+
+          <div id="msg" class="form-msg"></div>
+
+          <div class="form-actions">
+            <a href="/workerPage.html" class="btn-back">Назад</a>
+            <button type="button" class="btn-submit" onclick="submitComplaint()">
+              Подати скаргу
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+
+  </div>
+
+  <script src="js\js_workers\create-complaint.js"></script>
+</body>
+</html>

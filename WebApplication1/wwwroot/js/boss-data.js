@@ -100,3 +100,86 @@ async function assignSpecialist(orderId, specialistId) {
 
     return data;
 }
+
+async function fetchUsers(role = "", status = "") {
+    const params = new URLSearchParams();
+
+    if (role) {
+        params.append("role", role);
+    }
+
+    if (status) {
+        params.append("status", status);
+    }
+
+    const query = params.toString();
+    const url = query
+        ? `${API}/api/boss/users?${query}`
+        : `${API}/api/boss/users`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: authHeaders()
+    });
+
+    const data = await readResponse(response);
+
+    if (!response.ok) {
+        const message = typeof data === "string"
+            ? data
+            : data?.message ?? `Users load error: ${response.status}`;
+        throw new Error(message);
+    }
+
+    if (!Array.isArray(data)) {
+        throw new Error("Wrong users response format");
+    }
+
+    return data;
+}
+
+async function updateUserRole(userId, role) {
+    const response = await fetch(`${API}/api/boss/users/${userId}/role`, {
+        method: "PUT",
+        headers: authHeaders({
+            "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+            role: role
+        })
+    });
+
+    const data = await readResponse(response);
+
+    if (!response.ok) {
+        const message = typeof data === "string"
+            ? data
+            : data?.message ?? "Role update error";
+        throw new Error(message);
+    }
+
+    return data;
+}
+
+async function updateUserAccountStatus(userId, accountStatus) {
+    const response = await fetch(`${API}/api/boss/users/${userId}/status`, {
+        method: "PUT",
+        headers: authHeaders({
+            "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+            accountStatus: accountStatus
+        })
+    });
+
+    const data = await readResponse(response);
+
+    if (!response.ok) {
+        const message = typeof data === "string"
+            ? data
+            : data?.message ?? "Status update error";
+        throw new Error(message);
+    }
+
+    return data;
+}

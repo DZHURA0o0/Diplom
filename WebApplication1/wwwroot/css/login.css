@@ -1,0 +1,144 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+/* PAGE LAYOUT */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* HEADER */
+.site-header {
+  height: 70px;
+  background: #1e1e2f;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+/* ЛОГО */
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  height: 50px;
+  object-fit: contain;
+}
+
+/* ТЕКСТ В ХЕДЕРЕ */
+.header-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title-main {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.title-sub {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* CENTER */
+.main {
+  flex: 1;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+}
+
+/* LOGIN CARD */
+.login-card {
+  background: white;
+  padding: 30px;
+  width: 320px;
+
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.login-card h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* INPUTS */
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* BUTTON */
+.btn-login {
+  width: 100%;
+  padding: 10px;
+
+  background: #3a7bd5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-login:hover {
+  background: #2f63b3;
+}
+
+/* FOOTER (форма) */
+.form-footer {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.form-footer a {
+  color: #3a7bd5;
+  text-decoration: none;
+}
+
+/* SITE FOOTER */
+.site-footer {
+  height: 50px;
+  background: #f1f1f1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 13px;
+}

@@ -1,65 +1,154 @@
 <!doctype html>
-<html>
+<html lang="uk">
 <head>
   <meta charset="utf-8">
   <title>Create Order</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/create-order.css">
 </head>
 <body>
 
-  <h2>Create Order</h2>
+  <div class="page">
 
-  <p><b>Created by:</b> <span id="createdBy">unknown user</span></p>
-  <p id="msg" style="font-weight:bold"></p>
+    <header class="site-header">
+      <div class="header-left">
+        <img src="/img/logohader.png" alt="logo" class="logo-img">
+      </div>
 
-  <div>
-    <label>Service Type</label><br>
-    <select id="serviceType">
-      <option value="">Select service type</option>
-      <option value="ELECTRICAL">ELECTRICAL</option>
-      <option value="PLUMBING">PLUMBING</option>
-      <option value="HEATING">HEATING</option>
-      <option value="INTERNET">INTERNET</option>
-      <option value="OTHER">OTHER</option>
-    </select>
+      <div class="header-center">
+        <div class="title-main">Відділ системного адміністрування</div>
+        <div class="title-sub">Подання нової заявки</div>
+      </div>
+    </header>
+
+    <main class="main create-order-main">
+      <div class="create-order-card">
+
+        <div class="create-order-top">
+          <h2>Створення заявки</h2>
+          <p>Заповніть форму для подання нової заявки</p>
+        </div>
+
+        <div class="created-by-block">
+          <span class="created-by-label">Створює:</span>
+          <span id="createdBy" class="created-by-value">unknown user</span>
+        </div>
+
+        <p id="msg" class="form-msg"></p>
+
+        <div class="create-order-form">
+
+          <div class="input-group service-type-group">
+            <label>Тип заявки</label>
+
+            <div class="custom-select" id="serviceTypeSelect">
+              <div class="custom-select-trigger">
+                <span id="serviceTypeText">Оберіть тип заявки</span>
+                <div class="arrow"></div>
+              </div>
+
+              <div class="custom-options">
+                <div class="custom-option" data-value="ELECTRICAL">
+                  Електроживлення / електрика
+                </div>
+
+                <div class="custom-option" data-value="PC_PROBLEM">
+                  Проблема з комп’ютером
+                </div>
+
+                <div class="custom-option" data-value="PRINTER_PROBLEM">
+                  Проблема з принтером
+                </div>
+
+                <div class="custom-option" data-value="SOFTWARE_BUG">
+                  Баг програмного забезпечення
+                </div>
+
+                <div class="custom-option" data-value="INTERNET">
+                  Інтернет / мережа
+                </div>
+
+                <div class="custom-option" data-value="SEAL_DAMAGE">
+                  Відсутня пломба / пошкоджена
+                </div>
+
+                <div class="custom-option" data-value="AUDIO_VIDEO">
+                  Проблема з відео/аудіо обладнанням
+                </div>
+
+                <div class="custom-option" data-value="OTHER">
+                  Інше
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group full">
+            <label for="descriptionProblem">Опис проблеми</label>
+            <textarea
+              id="descriptionProblem"
+              rows="5"
+              spellcheck="false"
+              placeholder="Опишіть проблему..."
+            ></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="workshopNumber">Номер цеху</label>
+              <input id="workshopNumber" type="number" placeholder="Напр. 1">
+            </div>
+
+            <div class="input-group">
+              <label for="floorNumber">Номер поверху</label>
+              <input id="floorNumber" type="number" placeholder="Напр. 2">
+            </div>
+
+            <div class="input-group full-grid">
+              <label for="roomNumber">Номер кімнати</label>
+              <input id="roomNumber" type="number" placeholder="Напр. 215">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a href="/workerPage.html" class="btn-back">Назад</a>
+            <button id="btnCreateOrder" type="button" class="btn-submit">
+              Створити заявку
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+
   </div>
 
-  <br>
+  <div id="successModal" class="custom-modal hidden">
+    <div class="custom-modal-backdrop"></div>
 
-  <div>
-    <label>Description Problem</label><br>
-    <textarea id="descriptionProblem" rows="5" cols="50" spellcheck="false"></textarea>
+    <div class="custom-modal-content">
+      <div class="custom-modal-icon">✔</div>
+      <h3 class="custom-modal-title">Заявка подана</h3>
+      <p class="custom-modal-text">
+        Вашу заявку успішно створено та передано в систему.
+      </p>
+
+      <div class="custom-modal-actions">
+        <button id="successModalOk" type="button" class="btn-submit modal-btn">
+          Повернутися до заявок
+        </button>
+      </div>
+    </div>
   </div>
-
-  <br>
-
-  <div>
-    <label>Workshop Number</label><br>
-    <input id="workshopNumber" type="number">
-  </div>
-
-  <br>
-
-  <div>
-    <label>Floor Number</label><br>
-    <input id="floorNumber" type="number">
-  </div>
-
-  <br>
-
-  <div>
-    <label>Room Number</label><br>
-    <input id="roomNumber" type="number">
-  </div>
-
-  <br>
-
-  <button id="btnCreateOrder" onclick="createOrder()">Create Order</button>
-
-  <br><br>
-
-  <a href="/workerPage.html">Back to worker panel</a>
 
   <script src="/js/guard.js"></script>
-  <script src="/js/create-order.js"></script>
+  <script src="/js/js_create_order/create-order-ui.js"></script>
+  <script src="/js/js_create_order/create-order-service.js"></script>
+  <script src="/js/js_create_order/create-order.js"></script>
 </body>
 </html>
