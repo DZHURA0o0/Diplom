@@ -1,11 +1,12 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Repositories;
 
-namespace WebApplication1.Controllers;
+namespace WebApplication1.Controllers.WorkerPageControllers;
 
 [ApiController]
-[Route("api/orders")]
+[Route("api/orders/{orderId}/reports")]
 [Authorize]
 public class OrderReportsController : ControllerBase
 {
@@ -16,14 +17,39 @@ public class OrderReportsController : ControllerBase
         _orderService = orderService;
     }
 
-    [HttpGet("{id}/reports")]
-    public async Task<IActionResult> GetReports(string id)
+    [HttpGet]
+    public async Task<IActionResult> GetReports(string orderId)
     {
-        var order = await _orderService.GetByIdAsync(id);
+        var order = await _orderService.GetByIdAsync(orderId);
         if (order == null)
-            return NotFound(new { message = "Заявку не знайдено." });
+            return NotFound(new { message = "Order not found" });
 
-        var reports = await _orderService.GetReportsByOrderIdAsync(id);
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            return Unauthorized(new { message = "User id not found in token" });
+
+        var canView =
+            currentUserRole == "BOSS" ||
+            order.WorkerId == currentUserId ||
+            (!string.IsNullOrWhiteSpace(order.SpecialistId) && order.SpecialistId == currentUserId);
+
+        if (!canView)
+            return Forbid();
+
+        var reports = await _orderService.GetReportsByOrderIdAsync(orderId);
         return Ok(reports);
+    }
+
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    private string? GetCurrentUserRole()
+    {
+        return User.FindFirstValue(ClaimTypes.Role)?.Trim().ToUpperInvariant();
     }
 }

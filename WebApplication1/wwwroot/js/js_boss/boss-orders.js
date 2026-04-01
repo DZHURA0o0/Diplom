@@ -6,6 +6,31 @@ let bossSpecialists = [];
 let bossSpecialistsMap = {};
 let bossPeopleLoaded = false;
 
+const STATUS_LABELS = {
+    NEW: "Нова",
+    ASSIGNED: "Призначена",
+    IN_PROGRESS: "У роботі",
+    INSPECTION: "На огляді",
+    WAITING_DETAILS: "Очікує деталей",
+    EXECUTION: "На виконанні",
+    REWORK: "На переробці",
+    DONE: "Виконана",
+    CANCELED: "Скасована"
+};
+
+const SERVICE_TYPE_LABELS = {
+    ELECTRICAL: "Електроживлення / електрика",
+    PC_PROBLEM: "Проблема з ПК",
+    PRINTER_PROBLEM: "Проблема з принтером",
+    SOFTWARE_BUG: "Проблема з ПЗ",
+    INTERNET: "Інтернет / мережа",
+    SEAL_DAMAGE: "Пошкодження пломби",
+    AUDIO_VIDEO: "Аудіо / відео",
+    OTHER: "Інше",
+    HEATING: "Опалення",
+    PLUMBING: "Сантехніка"
+};
+
 function escapeHtml(value) {
     if (value === null || value === undefined) return "";
     return String(value)
@@ -47,6 +72,7 @@ function getComplaint(order) {
 
 function getComplaintSubmitted(order) {
     const complaint = getComplaint(order);
+
     if (!complaint) {
         return !!order.complaintSubmitted;
     }
@@ -74,14 +100,12 @@ function getComplaintStatus(order) {
 
     status = String(status || "").trim().toUpperCase();
 
-    // новая логика: если скарга подана, но статус не пришёл явно
     if (!status && getComplaintSubmitted(order)) {
         if (orderStatus === "REWORK") return "IN_REWORK";
         if (complaint?.resolvedByReportId || complaint?.resolved_by_report_id) return "RESOLVED";
         return "SUBMITTED";
     }
 
-    // совместимость со старым OPEN
     if (status === "OPEN") return "SUBMITTED";
 
     return status || null;
@@ -90,10 +114,10 @@ function getComplaintStatus(order) {
 function getComplaintStatusLabel(order) {
     const status = getComplaintStatus(order);
 
-    if (status === "SUBMITTED") return "ПОДАНА";
-    if (status === "IN_REWORK") return "НА ПЕРЕРОБЦІ";
-    if (status === "RESOLVED") return "ВИРІШЕНА";
-    if (status === "REJECTED") return "ВІДХИЛЕНА";
+    if (status === "SUBMITTED") return "Подана";
+    if (status === "IN_REWORK") return "На переробці";
+    if (status === "RESOLVED") return "Вирішена";
+    if (status === "REJECTED") return "Відхилена";
 
     return status || "—";
 }
@@ -110,9 +134,14 @@ function getSpecialistName(order) {
     return bossSpecialistsMap[specialistId] || specialistId;
 }
 
+function localizeStatus(status) {
+    const key = String(status || "").trim().toUpperCase();
+    return STATUS_LABELS[key] || status || "—";
+}
+
 function getStatusBadge(order) {
-    const status = order.status || "UNKNOWN";
-    return `<span class="status-badge status-${escapeHtml(status)}">${escapeHtml(status)}</span>`;
+    const status = String(order.status || "UNKNOWN").trim().toUpperCase();
+    return `<span class="status-badge status-${escapeHtml(status)}">${escapeHtml(localizeStatus(status))}</span>`;
 }
 
 function shortText(value, max = 60) {
@@ -123,20 +152,8 @@ function shortText(value, max = 60) {
 }
 
 function serviceTypeLabel(value) {
-    const map = {
-        ELECTRICAL: "ELECTRICAL",
-        PC_PROBLEM: "PC_PROBLEM",
-        PRINTER_PROBLEM: "PRINTER_PROBLEM",
-        SOFTWARE_BUG: "SOFTWARE_BUG",
-        INTERNET: "INTERNET",
-        SEAL_DAMAGE: "SEAL_DAMAGE",
-        AUDIO_VIDEO: "AUDIO_VIDEO",
-        OTHER: "OTHER",
-        HEATING: "HEATING",
-        PLUMBING: "PLUMBING"
-    };
-
-    return map[value] || value || "—";
+    const key = String(value || "").trim().toUpperCase();
+    return SERVICE_TYPE_LABELS[key] || value || "—";
 }
 
 async function ensurePeopleLoaded() {
@@ -158,7 +175,9 @@ async function ensurePeopleLoaded() {
         .map(specialist => ({
             id: specialist.id || specialist._id,
             fullName: specialist.fullName || specialist.full_name || specialist.login || "",
-            login: specialist.login || ""
+            login: specialist.login || "",
+            accountStatus: specialist.accountStatus || specialist.account_status || "",
+            roleInSystem: specialist.roleInSystem || specialist.role_in_system || ""
         }))
         .filter(x => x.id);
 
@@ -176,11 +195,34 @@ function createDetailsField(label, value, options = {}) {
     const safeValue = value === null || value === undefined || value === "" ? "—" : value;
 
     return `
-        <div class="details-field${fullClass}">
-            <div class="details-label">${escapeHtml(label)}</div>
-            <div class="details-value${valueClass}">${safeValue}</div>
+        <div class="order-detail-field${fullClass}">
+            <div class="order-detail-label">${escapeHtml(label)}</div>
+            <div class="order-detail-value${valueClass}">${safeValue}</div>
         </div>
     `;
+}
+
+function buildReportsHtml(reports) {
+    if (!Array.isArray(reports) || reports.length === 0) {
+        return "—";
+    }
+
+    return reports
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((report, index) => {
+            const reportText = escapeHtml(report.reportText || report.text || "—");
+            const createdAt = formatDate(report.createdAt);
+            return `
+                <div class="report-item">
+                    <div class="report-item-head">
+                        <span class="report-item-title">Звіт ${reports.length - index}</span>
+                        <span class="report-item-date">${escapeHtml(createdAt)}</span>
+                    </div>
+                    <div class="report-item-body">${reportText}</div>
+                </div>
+            `;
+        })
+        .join("");
 }
 
 function buildComplaintActionsHtml(order) {
@@ -192,14 +234,13 @@ function buildComplaintActionsHtml(order) {
         return "";
     }
 
-    // Кнопки должны быть, когда скарга подана и заявка завершена
     if (complaintStatus === "SUBMITTED" && orderStatus === "DONE") {
         return `
-            <div class="details-complaint-actions">
-                <div class="details-actions-title">Дії по скарзі</div>
-                <div class="details-actions-row">
-                    <button type="button" class="btn-warning js-complaint-rework">На переробку</button>
-                    <button type="button" class="btn-danger js-complaint-reject">Відхилити скаргу</button>
+            <div class="complaint-actions-block">
+                <div class="complaint-actions-title">Дії по скарзі</div>
+                <div class="complaint-actions-buttons">
+                    <button type="button" class="btn-main js-complaint-rework">На переробку</button>
+                    <button type="button" class="btn-secondary js-complaint-reject">Відхилити скаргу</button>
                 </div>
             </div>
         `;
@@ -207,33 +248,30 @@ function buildComplaintActionsHtml(order) {
 
     if (complaintStatus === "IN_REWORK" || orderStatus === "REWORK") {
         return `
-            <div class="details-complaint-actions">
-                <div class="details-actions-title">Дії по скарзі</div>
-                <div class="details-actions-row">
-                    <span class="status-badge status-REWORK">Заявка на переробці</span>
+            <div class="complaint-actions-block">
+                <div class="complaint-actions-title">Дії по скарзі</div>
+                <div class="complaint-actions-buttons">
+                    <button type="button" class="btn-main js-complaint-resolve">Закрити скаргу</button>
                 </div>
+                <div class="complaint-actions-note">Після завершення переробки начальник може закрити скаргу.</div>
             </div>
         `;
     }
 
     if (complaintStatus === "RESOLVED") {
         return `
-            <div class="details-complaint-actions">
-                <div class="details-actions-title">Дії по скарзі</div>
-                <div class="details-actions-row">
-                    <span class="status-badge status-DONE">Скаргу закрито</span>
-                </div>
+            <div class="complaint-actions-block">
+                <div class="complaint-actions-title">Дії по скарзі</div>
+                <div class="complaint-actions-note">Скаргу закрито.</div>
             </div>
         `;
     }
 
     if (complaintStatus === "REJECTED") {
         return `
-            <div class="details-complaint-actions">
-                <div class="details-actions-title">Дії по скарзі</div>
-                <div class="details-actions-row">
-                    <span class="status-badge status-CANCELED">Скаргу відхилено</span>
-                </div>
+            <div class="complaint-actions-block">
+                <div class="complaint-actions-title">Дії по скарзі</div>
+                <div class="complaint-actions-note">Скаргу відхилено.</div>
             </div>
         `;
     }
@@ -244,47 +282,40 @@ function buildComplaintActionsHtml(order) {
 function buildDetailsHtml(order) {
     const complaintSubmitted = getComplaintSubmitted(order);
     const complaintStatusLabel = getComplaintStatusLabel(order);
+    const reportsHtml = buildReportsHtml(order.reports);
 
     return `
-        <div class="details-panel">
-            <div class="details-grid">
+        <div class="order-details-grid">
+            ${createDetailsField("ID заявки", escapeHtml(order.id || "—"), { valueClass: "mono" })}
+            ${createDetailsField("Дата створення", formatDate(order.createdAt))}
+            ${createDetailsField("Статус", escapeHtml(localizeStatus(order.status || "—")))}
+            ${createDetailsField("Тип заявки", escapeHtml(serviceTypeLabel(order.serviceType)))}
 
-                ${createDetailsField("ID заявки", escapeHtml(order.id || "—"), { valueClass: "mono" })}
-                ${createDetailsField("Дата створення", formatDate(order.createdAt))}
+            ${createDetailsField("ПІБ працівника", escapeHtml(order.workerFullName || "—"))}
+            ${createDetailsField("Телефон працівника", escapeHtml(order.workerPhone || "—"))}
+            ${createDetailsField("Посада працівника", escapeHtml(order.workerPosition || "—"))}
 
-                ${createDetailsField("Статус", escapeHtml(order.status || "—"))}
-                ${createDetailsField("Тип заявки", escapeHtml(serviceTypeLabel(order.serviceType)))}
+            ${createDetailsField("ПІБ спеціаліста", escapeHtml(order.specialistFullName || "—"))}
+            ${createDetailsField("Телефон спеціаліста", escapeHtml(order.specialistPhone || "—"))}
+            ${createDetailsField("Посада спеціаліста", escapeHtml(order.specialistPosition || "—"))}
 
-                ${createDetailsField("ПІБ працівника", escapeHtml(order.workerFullName || "—"))}
-                ${createDetailsField("Телефон працівника", escapeHtml(order.workerPhone || "—"))}
+            ${createDetailsField("Цех", escapeHtml(order.productionWorkshopNumber ?? "—"))}
+            ${createDetailsField("Поверх", escapeHtml(order.floorNumber ?? "—"))}
+            ${createDetailsField("Кімната", escapeHtml(order.roomNumber ?? "—"))}
 
-                ${createDetailsField("Посада працівника", escapeHtml(order.workerPosition || "—"))}
-                ${createDetailsField("ПІБ спеціаліста", escapeHtml(order.specialistFullName || "—"))}
+            ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult || "—"), { full: true, valueClass: "long-text" })}
+            ${createDetailsField("Опис проблеми", escapeHtml(order.descriptionProblem || "—"), { full: true, valueClass: "long-text" })}
+            ${createDetailsField("Потреба в деталях", escapeHtml(order.detailNeeds || "—"), { full: true, valueClass: "long-text" })}
+            ${createDetailsField("Пояснення до деталей", escapeHtml(order.detailExplanation || "—"), { full: true, valueClass: "long-text" })}
 
-                ${createDetailsField("Телефон спеціаліста", escapeHtml(order.specialistPhone || "—"))}
-                ${createDetailsField("Посада спеціаліста", escapeHtml(order.specialistPosition || "—"))}
+            ${createDetailsField("Усі звіти", reportsHtml, { full: true, valueClass: "long-text" })}
 
-                ${createDetailsField("Цех", escapeHtml(order.productionWorkshopNumber ?? "—"))}
-                ${createDetailsField("Поверх", escapeHtml(order.floorNumber ?? "—"))}
-
-                ${createDetailsField("Кімната", escapeHtml(order.roomNumber ?? "—"))}
-                ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult || "—"), { full: true, valueClass: "long-text" })}
-
-                ${createDetailsField("Опис проблеми", escapeHtml(order.descriptionProblem || "—"), { full: true, valueClass: "long-text" })}
-                ${createDetailsField("Потреба в деталях", escapeHtml(order.detailNeeds || "—"), { full: true, valueClass: "long-text" })}
-
-                ${createDetailsField("Пояснення до деталей", escapeHtml(order.detailExplanation || "—"), { full: true, valueClass: "long-text" })}
-                ${createDetailsField("Звіт спеціаліста", escapeHtml(order.workReportText || "—"), { full: true, valueClass: "long-text" })}
-
-                ${createDetailsField("Скарга подана", complaintSubmitted ? "Так" : "Ні")}
-                ${createDetailsField("Статус скарги", escapeHtml(complaintStatusLabel || "—"))}
-
-                ${createDetailsField("ID скарги", escapeHtml(order.complaintId || "—"), { valueClass: "mono" })}
-                ${createDetailsField("Текст скарги", escapeHtml(order.complaintText || "—"), { full: true, valueClass: "long-text" })}
-            </div>
-
-            ${buildComplaintActionsHtml(order)}
+            ${createDetailsField("Скарга подана", complaintSubmitted ? "Так" : "Ні")}
+            ${createDetailsField("Статус скарги", escapeHtml(complaintStatusLabel || "—"))}
+            ${createDetailsField("Текст скарги", escapeHtml(order.complaintText || "—"), { full: true, valueClass: "long-text" })}
         </div>
+
+        ${buildComplaintActionsHtml(order)}
     `;
 }
 
@@ -341,7 +372,7 @@ function attachComplaintActionHandlers(order, detailsRow) {
             const restore = setPendingButton(resolveBtn, "Закриття...");
 
             try {
-                const result = await resolveComplaint(orderId, "Скаргу закрито після переробки");
+                const result = await resolveComplaint(orderId, "Скаргу закрито начальником після переробки");
                 setStatus(result?.message || "Скаргу закрито");
                 await refreshOrdersAfterAction();
             } catch (err) {
@@ -379,64 +410,72 @@ function createAssignControls(order) {
     wrap.className = "assign-wrap";
     wrap.addEventListener("click", stopRowToggle);
 
-    const orderStatus = (order.status || "").toUpperCase();
+    const orderStatus = String(order.status || "").trim().toUpperCase();
     const orderId = getOrderId(order);
 
-    if (orderStatus !== "DONE" && orderStatus !== "CANCELED") {
-        const select = document.createElement("select");
+    if (!orderId) {
+        const label = document.createElement("div");
+        label.className = "btn-disabled";
+        label.textContent = "Немає ID";
+        wrap.appendChild(label);
+        return wrap;
+    }
 
-        const emptyOption = document.createElement("option");
-        emptyOption.value = "";
-        emptyOption.textContent = "-- виберіть спеціаліста --";
-        select.appendChild(emptyOption);
-
-        const currentSpecialistId = getSpecialistId(order);
-
-        for (const specialist of bossSpecialists) {
-            const option = document.createElement("option");
-            option.value = specialist.id;
-            option.textContent = specialist.fullName || specialist.login || specialist.id;
-
-            if (currentSpecialistId && specialist.id === currentSpecialistId) {
-                option.selected = true;
-            }
-
-            select.appendChild(option);
-        }
-
-        const btn = document.createElement("button");
-        btn.className = "btn-main";
-        btn.textContent = currentSpecialistId ? "Оновити" : "Призначити";
-
-        btn.onclick = async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (!select.value) {
-                setStatus("Оберіть спеціаліста", true);
-                return;
-            }
-
-            const restore = setPendingButton(btn, "Збереження...");
-
-            try {
-                await assignSpecialist(orderId, select.value);
-                setStatus("Спеціаліста оновлено");
-                await refreshOrdersAfterAction();
-            } catch (err) {
-                setStatus(err.message || "Не вдалося оновити спеціаліста", true);
-                restore?.();
-            }
-        };
-
-        wrap.append(select, btn);
-    } else {
+    if (orderStatus === "DONE" || orderStatus === "CANCELED") {
         const label = document.createElement("div");
         label.className = "btn-disabled";
         label.textContent = orderStatus === "DONE" ? "Закрито" : "Заблоковано";
         wrap.appendChild(label);
+        return wrap;
     }
 
+    const select = document.createElement("select");
+
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.textContent = "-- виберіть спеціаліста --";
+    select.appendChild(emptyOption);
+
+    const currentSpecialistId = getSpecialistId(order);
+
+    for (const specialist of bossSpecialists) {
+        const option = document.createElement("option");
+        option.value = specialist.id;
+        option.textContent = specialist.fullName || specialist.login || specialist.id;
+
+        if (currentSpecialistId && specialist.id === currentSpecialistId) {
+            option.selected = true;
+        }
+
+        select.appendChild(option);
+    }
+
+    const btn = document.createElement("button");
+    btn.className = "btn-main";
+    btn.textContent = currentSpecialistId ? "Оновити" : "Призначити";
+
+    btn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!select.value) {
+            setStatus("Оберіть спеціаліста", true);
+            return;
+        }
+
+        const restore = setPendingButton(btn, "Збереження...");
+
+        try {
+            const result = await assignSpecialist(orderId, select.value);
+            setStatus(result?.message || "Спеціаліста оновлено");
+            await refreshOrdersAfterAction();
+        } catch (err) {
+            setStatus(err.message || "Не вдалося оновити спеціаліста", true);
+            restore?.();
+        }
+    };
+
+    wrap.append(select, btn);
     return wrap;
 }
 
@@ -485,7 +524,16 @@ async function fillDetailsRow(order, detailsRow) {
         let fullOrder = orderDetailsCache[orderId];
 
         if (!fullOrder) {
-            fullOrder = await fetchOrderDetails(orderId);
+            const [details, reports] = await Promise.all([
+                fetchOrderDetails(orderId),
+                fetchOrderReports(orderId)
+            ]);
+
+            fullOrder = {
+                ...details,
+                reports: reports || []
+            };
+
             orderDetailsCache[orderId] = fullOrder;
         }
 
@@ -507,6 +555,8 @@ async function fillDetailsRow(order, detailsRow) {
 
 function renderOrdersTable(orders) {
     const tbody = document.getElementById("orders");
+    if (!tbody) return;
+
     tbody.innerHTML = "";
 
     if (!orders.length) {
@@ -576,15 +626,19 @@ function renderOrdersTable(orders) {
 }
 
 async function loadOrders() {
-    if (activeTab !== "orders") return;
+    if (typeof activeTab !== "undefined" && activeTab !== "orders") return;
 
     const tbody = document.getElementById("orders");
+    if (!tbody) return;
+
     tbody.innerHTML = `<tr><td colspan="8"><div class="empty-box">Завантаження...</div></td></tr>`;
 
     try {
         await ensurePeopleLoaded();
 
-        const status = document.getElementById("statusFilter").value;
+        const statusFilter = document.getElementById("statusFilter");
+        const status = statusFilter ? statusFilter.value : "";
+
         const orders = await fetchOrders(status);
         const sorted = sortOrders(orders);
 

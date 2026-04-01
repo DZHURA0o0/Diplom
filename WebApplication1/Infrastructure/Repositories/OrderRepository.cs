@@ -55,10 +55,7 @@ public class OrderRepository
 
     public async Task UpdateAsync(Order order)
     {
-        await _orders.ReplaceOneAsync(
-            x => x.Id == order.Id,
-            order
-        );
+        await _orders.ReplaceOneAsync(x => x.Id == order.Id, order);
     }
 
     public Task<List<Order>> GetBySpecialistAsync(string specialistId, string? status)
@@ -67,6 +64,28 @@ public class OrderRepository
 
         if (!string.IsNullOrWhiteSpace(status))
             filter &= Builders<Order>.Filter.Eq(x => x.Status, status);
+
+        return _orders
+            .Find(filter)
+            .SortByDescending(x => x.CreatedAt)
+            .ToListAsync();
+    }
+
+    public Task<List<Order>> GetActiveBySpecialistAsync(string specialistId)
+    {
+        var activeStatuses = new[]
+        {
+            "ASSIGNED",
+            "IN_PROGRESS",
+            "INSPECTION",
+            "WAITING_DETAILS",
+            "EXECUTION",
+            "REWORK"
+        };
+
+        var filter =
+            Builders<Order>.Filter.Eq(x => x.SpecialistId, specialistId) &
+            Builders<Order>.Filter.In(x => x.Status, activeStatuses);
 
         return _orders
             .Find(filter)

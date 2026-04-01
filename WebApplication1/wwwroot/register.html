@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Реєстрація</title>
+
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/register.css">
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="site-header">
+      <div class="header-left">
+        <img src="img/logohader.png" alt="logo" class="logo-img">
+      </div>
+
+      <div class="header-center">
+        <div class="title-main">
+          Відділ системного адміністрування
+        </div>
+        <div class="title-sub">
+          Реєстрація користувача
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="register-card">
+        <h2>Створення акаунта</h2>
+
+        <form id="registerForm">
+          <div class="register-grid">
+
+            <div class="input-group">
+              <label for="fullName">ПІБ</label>
+              <input id="fullName" type="text" placeholder="Введіть ПІБ">
+            </div>
+
+            <div class="input-group">
+              <label for="login">Логін</label>
+              <input id="login" type="text" placeholder="Введіть логін">
+            </div>
+
+            <div class="input-group">
+              <label for="password">Пароль</label>
+              <input id="password" type="password" placeholder="Введіть пароль">
+            </div>
+
+            <div class="input-group">
+              <label for="confirmPassword">Підтвердження пароля</label>
+              <input id="confirmPassword" type="password" placeholder="Повторіть пароль">
+            </div>
+
+            <div class="input-group">
+              <label for="position">Посада</label>
+              <input id="position" type="text" placeholder="Введіть посаду">
+            </div>
+
+            <div class="input-group">
+              <label for="phone">Телефон</label>
+              <input id="phone" type="text" placeholder="+380...">
+            </div>
+
+            <div class="input-group full">
+              <label for="email">Email</label>
+              <input id="email" type="email" placeholder="Введіть email">
+            </div>
+
+            <div class="input-group">
+              <label for="passNumber">Табельний номер</label>
+              <input id="passNumber" type="number" placeholder="123456">
+            </div>
+
+            <div class="input-group">
+              <label for="workshopNumber">Цех</label>
+              <input id="workshopNumber" type="number" placeholder="Напр. 5">
+            </div>
+
+            <div class="input-group">
+              <label for="floorNumber">Поверх</label>
+              <input id="floorNumber" type="number" placeholder="Напр. 1">
+            </div>
+
+            <div class="input-group">
+              <label for="officeNumber">Кабінет</label>
+              <input id="officeNumber" type="number" placeholder="Напр. 23">
+            </div>
+
+          </div>
+
+          <button type="submit" id="btnRegister" class="btn-register">
+            Зареєструватися
+          </button>
+
+          <div class="form-footer">
+            <span>Є акаунт?</span>
+            <a href="index.html">Увійти</a>
+          </div>
+
+          <pre id="result"></pre>
+        </form>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+  </div>
+
+  <div id="successModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+
+    <div class="modal-dialog">
+      <div class="modal-icon">✓</div>
+      <div class="modal-title">Реєстрація успішна</div>
+      <div class="modal-text">
+        Акаунт створено. Зараз буде виконано перехід на сторінку входу.
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="modalOkBtn" class="btn-register">Добре</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/register.js"></script>
+</body>
+</html>

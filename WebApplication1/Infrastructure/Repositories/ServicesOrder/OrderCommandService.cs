@@ -6,10 +6,12 @@ namespace WebApplication1.Repositories;
 public class OrderCommandService
 {
     private readonly OrderRepository _repo;
+    private readonly UserRepository _users;
 
-    public OrderCommandService(OrderRepository repo)
+    public OrderCommandService(OrderRepository repo, UserRepository users)
     {
         _repo = repo;
+        _users = users;
     }
 
     public async Task<(bool ok, string? message, Order? order)> CreateAsync(
@@ -18,6 +20,9 @@ public class OrderCommandService
     {
         if (string.IsNullOrWhiteSpace(workerId))
             return (false, "Unauthorized", null);
+
+        if (req == null)
+            return (false, "Request body required", null);
 
         if (string.IsNullOrWhiteSpace(req.ServiceType))
             return (false, "ServiceType required", null);
@@ -34,20 +39,15 @@ public class OrderCommandService
             SpecialistId = null,
             DetailRequestId = null,
             LastWorkReportId = null,
-
             ServiceType = req.ServiceType.Trim().ToUpperInvariant(),
             DescriptionProblem = req.DescriptionProblem.Trim(),
-
             InspectionResult = null,
             InspectionAt = null,
-
             ProductionWorkshopNumber = req.WorkshopNumber,
             FloorNumber = req.FloorNumber,
             RoomNumber = req.RoomNumber,
-
             Status = "NEW",
             CreatedAt = DateTime.UtcNow,
-
             Complaint = new WebApplication1.Domain.ComplaintInfo
             {
                 IsSubmitted = false,
@@ -58,7 +58,6 @@ public class OrderCommandService
         };
 
         await _repo.CreateAsync(order);
-
         return (true, "Order created", order);
     }
 
@@ -73,7 +72,6 @@ public class OrderCommandService
             return (false, "Request body required", null);
 
         var order = await _repo.GetByIdAsync(orderId);
-
         if (order == null)
             return (false, "Order not found", null);
 
@@ -88,17 +86,29 @@ public class OrderCommandService
         if (string.IsNullOrWhiteSpace(req.SpecialistId))
         {
             order.SpecialistId = null;
+            order.LastWorkReportId = null;
             order.Status = "NEW";
 
             await _repo.UpdateAsync(order);
             return (true, "Specialist removed", order);
         }
 
-        order.SpecialistId = req.SpecialistId.Trim();
+        var specialistId = req.SpecialistId.Trim();
+        var specialist = await _users.FindByIdAsync(specialistId);
+
+        if (specialist == null)
+            return (false, "Specialist not found", null);
+
+        if (Normalize(specialist.RoleInSystem) != "SPECIALIST")
+            return (false, "Selected user is not a specialist", null);
+
+        if (Normalize(specialist.AccountStatus) != "ACTIVE")
+            return (false, "Specialist is inactive", null);
+
+        order.SpecialistId = specialistId;
         order.Status = "ASSIGNED";
 
         await _repo.UpdateAsync(order);
-
         return (true, "Specialist assigned", order);
     }
 
@@ -106,6 +116,9 @@ public class OrderCommandService
         string orderId,
         string bossLogin)
     {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required", null);
+
         var order = await _repo.GetByIdAsync(orderId);
         if (order == null)
             return (false, "Order not found", null);
@@ -132,6 +145,9 @@ public class OrderCommandService
         string bossLogin,
         string? comment)
     {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required", null);
+
         var order = await _repo.GetByIdAsync(orderId);
         if (order == null)
             return (false, "Order not found", null);
@@ -147,7 +163,6 @@ public class OrderCommandService
         if (!string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
             return (false, "Already resolved", null);
 
-        // ⚠️ тут просто підтвердження, реальне закриття буде через report
         order.Status = "DONE";
 
         await _repo.UpdateAsync(order);
@@ -159,6 +174,9 @@ public class OrderCommandService
         string bossLogin,
         string? comment)
     {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "OrderId required", null);
+
         var order = await _repo.GetByIdAsync(orderId);
         if (order == null)
             return (false, "Order not found", null);
@@ -175,7 +193,6 @@ public class OrderCommandService
         complaint.ResolvedByReportId = null;
 
         await _repo.UpdateAsync(order);
-
         return (true, "Complaint rejected", order);
     }
 

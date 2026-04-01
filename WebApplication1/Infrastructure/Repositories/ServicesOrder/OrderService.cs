@@ -9,17 +9,20 @@ public class OrderService
     private readonly OrderCommandService _commandService;
     private readonly SpecialistOrderWorkflowService _specialistWorkflowService;
     private readonly WorkReportRepository _workReportRepository;
+    private readonly OrderRepository _orderRepository;
 
     public OrderService(
         OrderQueryService queryService,
         OrderCommandService commandService,
         SpecialistOrderWorkflowService specialistWorkflowService,
-        WorkReportRepository workReportRepository)
+        WorkReportRepository workReportRepository,
+        OrderRepository orderRepository)
     {
         _queryService = queryService;
         _commandService = commandService;
         _specialistWorkflowService = specialistWorkflowService;
         _workReportRepository = workReportRepository;
+        _orderRepository = orderRepository;
     }
 
     public Task<List<OrderDto>> GetByWorkerAsync(string workerId, string? status)
@@ -58,7 +61,11 @@ public class OrderService
         string? specialistId,
         string? detailNeeds,
         string? explanation)
-        => _specialistWorkflowService.CreateDetailRequestAsync(orderId, specialistId, detailNeeds, explanation);
+        => _specialistWorkflowService.CreateDetailRequestAsync(
+            orderId,
+            specialistId,
+            detailNeeds,
+            explanation);
 
     public Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
         => _specialistWorkflowService.MoveToExecutionAsync(orderId, specialistId);
@@ -93,13 +100,36 @@ public class OrderService
     {
         var reports = await _workReportRepository.GetByOrderIdAsync(orderId);
 
-        return reports.Select(x => new WorkReportDto
+        return reports
+            .Select(x => new WorkReportDto
+            {
+                Id = x.Id,
+                OrderId = x.OrderId,
+                SpecialistId = x.SpecialistId,
+                ReportText = x.ReportText,
+                CreatedAt = x.CreatedAt
+            })
+            .ToList();
+    }
+
+    public async Task<int> HandleSpecialistDeactivationAsync(string specialistId)
+    {
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return 0;
+
+        var orders = await _orderRepository.GetActiveBySpecialistAsync(specialistId);
+        if (orders.Count == 0)
+            return 0;
+
+        foreach (var order in orders)
         {
-            Id = x.Id,
-            OrderId = x.OrderId,
-            SpecialistId = x.SpecialistId,
-            ReportText = x.ReportText,
-            CreatedAt = x.CreatedAt
-        }).ToList();
+            order.SpecialistId = null;
+            order.LastWorkReportId = null;
+            order.Status = "NEW";
+
+            await _orderRepository.UpdateAsync(order);
+        }
+
+        return orders.Count;
     }
 }

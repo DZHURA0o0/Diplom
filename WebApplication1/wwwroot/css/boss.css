@@ -216,11 +216,64 @@
 
 .btn-primary:disabled,
 .btn-secondary:disabled,
-.btn-danger-soft:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.btn-danger-soft:disabled,
+.assign-wrap button:disabled,
+.complaint-actions-buttons button:disabled {
+  opacity: 0.7;
+  cursor: wait;
   pointer-events: none;
   box-shadow: none;
+  transform: none;
+}
+
+/* ===================== CUSTOM BUTTON COLORS ===================== */
+
+.btn-main {
+  background: linear-gradient(
+    135deg,
+    rgba(43, 108, 255, 0.95),
+    rgba(35, 90, 220, 0.88)
+  ) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(90, 145, 255, 0.28) !important;
+}
+
+.btn-main:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(60, 121, 255, 1),
+    rgba(40, 98, 235, 0.94)
+  ) !important;
+}
+
+.btn-warning {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 156, 18, 0.95),
+    rgba(214, 137, 16, 0.9)
+  ) !important;
+  color: #111111 !important;
+  border: 1px solid rgba(255, 196, 94, 0.28) !important;
+}
+
+.btn-success {
+  background: linear-gradient(
+    135deg,
+    rgba(46, 204, 113, 0.95),
+    rgba(39, 174, 96, 0.9)
+  ) !important;
+  color: #111111 !important;
+  border: 1px solid rgba(126, 240, 174, 0.24) !important;
+}
+
+.btn-danger {
+  background: linear-gradient(
+    135deg,
+    rgba(231, 76, 60, 0.95),
+    rgba(192, 57, 43, 0.9)
+  ) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 142, 134, 0.24) !important;
 }
 
 /* ===================== FORM CONTROLS ===================== */
@@ -298,7 +351,7 @@
 }
 
 .boss-table tbody td {
-  padding: 14px 14px;
+  padding: 12px 14px;
   font-size: 13px;
   color: #ffffff;
   vertical-align: middle;
@@ -314,7 +367,8 @@
   cursor: pointer;
   transition:
     background 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
 .boss-table tbody tr.main-row:hover {
@@ -323,6 +377,7 @@
     rgba(30, 55, 85, 0.65),
     rgba(20, 45, 72, 0.75)
   );
+  transform: scale(1.002);
 }
 
 .boss-table tbody tr.main-row.is-open {
@@ -381,9 +436,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 100px;
-  height: 32px;
-  padding: 0 14px;
+  min-width: 92px;
+  height: 30px;
+  padding: 0 12px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
@@ -392,6 +447,7 @@
   letter-spacing: 0.02em;
   border: 1px solid transparent;
   box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .status-NEW,
@@ -487,49 +543,48 @@
 
 /* ===================== DETAILS PANEL ===================== */
 
-.details-panel {
-  padding: 14px;
-}
-
-.details-grid {
+.order-details-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 10px;
+  padding: 12px 14px 10px;
 }
 
-.details-field {
-  padding: 12px;
-  border-radius: 14px;
+.order-detail-field {
+  padding: 10px 12px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-sizing: border-box;
 }
 
-.details-field.full {
+.order-detail-field.full {
   grid-column: 1 / -1;
 }
 
-.details-label {
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 700;
+.order-detail-label {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  line-height: 1.2;
   color: rgba(255, 255, 255, 0.68);
 }
 
-.details-value {
+.order-detail-value {
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.35;
   color: #ffffff;
   word-break: break-word;
 }
 
-.details-value.long-text {
+.order-detail-value.long-text {
   white-space: pre-wrap;
+  line-height: 1.35;
 }
 
-.details-value.mono {
+.order-detail-value.mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   color: #d9e6f5;
@@ -540,17 +595,17 @@
 .assign-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 220px;
+  gap: 5px;
+  min-width: 200px;
   align-items: stretch;
 }
 
 .assign-wrap select {
   width: 100%;
   min-width: 0;
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 12px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: linear-gradient(
     135deg,
@@ -586,12 +641,12 @@
 
 .assign-wrap button {
   width: 100%;
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 12px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #ffffff;
   background: linear-gradient(
@@ -620,59 +675,6 @@
   transform: translateY(0);
 }
 
-.assign-wrap button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  pointer-events: none;
-  box-shadow: none;
-}
-
-/* ===================== CUSTOM BUTTON COLORS ===================== */
-
-.btn-main {
-  background: linear-gradient(
-    135deg,
-    rgba(43, 108, 255, 0.95),
-    rgba(35, 90, 220, 0.88)
-  ) !important;
-  color: #ffffff !important;
-}
-
-.btn-main:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(60, 121, 255, 1),
-    rgba(40, 98, 235, 0.94)
-  ) !important;
-}
-
-.btn-warning {
-  background: linear-gradient(
-    135deg,
-    rgba(243, 156, 18, 0.95),
-    rgba(214, 137, 16, 0.9)
-  ) !important;
-  color: #111111 !important;
-}
-
-.btn-success {
-  background: linear-gradient(
-    135deg,
-    rgba(46, 204, 113, 0.95),
-    rgba(39, 174, 96, 0.9)
-  ) !important;
-  color: #111111 !important;
-}
-
-.btn-danger {
-  background: linear-gradient(
-    135deg,
-    rgba(231, 76, 60, 0.95),
-    rgba(192, 57, 43, 0.9)
-  ) !important;
-  color: #ffffff !important;
-}
-
 .btn-disabled {
   min-width: 92px;
   height: 36px;
@@ -691,60 +693,57 @@
 
 /* ===================== COMPLAINT ACTIONS ===================== */
 
-.details-complaint-actions {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+.complaint-actions-block {
+  margin: 6px 14px 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 90, 90, 0.08);
+  border: 1px solid rgba(255, 90, 90, 0.18);
 }
 
-.details-actions-title {
+.complaint-actions-title {
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
-  margin-bottom: 10px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  color: #ffb3b3;
 }
 
-.details-actions-row {
+.complaint-actions-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.details-actions-row button {
-  min-width: 110px;
+.complaint-actions-buttons .btn-main,
+.complaint-actions-buttons .btn-secondary,
+.complaint-actions-buttons .btn-danger,
+.complaint-actions-buttons .btn-warning,
+.complaint-actions-buttons .btn-success {
   height: 36px;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 800;
-  border: none;
   cursor: pointer;
+  border: none;
   transition:
-    transform 0.2s ease,
+    transform 0.15s ease,
     box-shadow 0.2s ease,
     opacity 0.2s ease;
 }
 
-.details-actions-row button:hover {
+.complaint-actions-buttons button:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
-.details-actions-row .btn-warning {
-  background: linear-gradient(135deg, #f39c12, #d68910) !important;
-  color: #111 !important;
-}
-
-.details-actions-row .btn-success {
-  background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
-  color: #111 !important;
-}
-
-.details-actions-row .btn-danger {
-  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
-  color: #fff !important;
+.complaint-actions-note {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* ===================== EMPTY / ERROR ===================== */
@@ -784,7 +783,7 @@
     width: 100%;
   }
 
-  .details-grid {
+  .order-details-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -816,18 +815,60 @@
     min-width: 0;
   }
 
-  .details-actions-row {
+  .complaint-actions-buttons {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .details-actions-row button {
+  .complaint-actions-buttons button {
     width: 100%;
   }
+
+  .order-details-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 12px 8px;
+  }
+
+  .complaint-actions-block {
+    margin: 4px 12px 10px;
+    padding: 10px 12px;
+  }
 }
-.details-actions-row button:disabled,
-.assign-wrap button:disabled {
-  opacity: 0.7;
-  cursor: wait;
-  transform: none;
+.report-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.report-item + .report-item {
+  margin-top: 8px;
+}
+
+.report-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.report-item-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #dfeeff;
+}
+
+.report-item-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.report-item-body {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  color: #ffffff;
 }

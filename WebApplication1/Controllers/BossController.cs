@@ -50,23 +50,40 @@ public class BossController : ControllerBase
     [HttpGet("{id}/details")]
     public async Task<IActionResult> GetDetails(string id)
     {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest(new { message = "Order id is required" });
+
         var result = await _detailsService.GetDetailsAsync(id);
 
-        if (result is null)
+        if (result == null)
             return NotFound(new { message = "Order not found" });
 
         return Ok(result);
     }
 
     [HttpPatch("{orderId}/assign-specialist")]
-    public async Task<IActionResult> AssignSpecialist(string orderId, [FromBody] AssignSpecialistRequest req)
+    public async Task<IActionResult> AssignSpecialist(
+        string orderId,
+        [FromBody] AssignSpecialistRequest req)
     {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return BadRequest(new { message = "Order id is required" });
+
+        if (req == null)
+            return BadRequest(new { message = "Request body is required" });
+
         var (ok, message, order) = await _orderService.AssignSpecialistAsync(orderId, req);
 
         if (!ok || order == null)
             return BadRequest(new { message });
 
-        return Ok(new { message });
+        return Ok(new
+        {
+            message,
+            orderId = order.Id,
+            specialistId = order.SpecialistId,
+            status = order.Status
+        });
     }
 
     [HttpGet("workers")]
@@ -77,7 +94,8 @@ public class BossController : ControllerBase
         var result = workers.Select(x => new
         {
             id = x.Id,
-            fullName = x.FullName
+            fullName = x.FullName,
+            accountStatus = x.AccountStatus
         });
 
         return Ok(result);
@@ -92,7 +110,8 @@ public class BossController : ControllerBase
         {
             id = x.Id,
             fullName = x.FullName,
-            accountStatus = x.AccountStatus
+            accountStatus = x.AccountStatus,
+            roleInSystem = x.RoleInSystem
         });
 
         return Ok(result);

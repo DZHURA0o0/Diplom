@@ -3,8 +3,10 @@ using WebApplication1.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Controllers
 builder.Services.AddControllers();
 
+// CORS
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("dev", p => p
@@ -13,30 +15,27 @@ builder.Services.AddCors(opt =>
         .AllowAnyMethod());
 });
 
+// Infrastructure
 builder.Services.AddMongo(builder.Configuration);
 builder.Services.AddJwtAuth(builder.Configuration);
 
+// Repositories
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<DetailRequestRepository>();
 builder.Services.AddScoped<WorkReportRepository>();
-builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<OrderRepository>();
+
+// Services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<OrderQueryService>();
 builder.Services.AddScoped<OrderCommandService>();
 builder.Services.AddScoped<SpecialistOrderWorkflowService>();
-builder.Services.AddScoped<OrderService>();
-builder.Services.AddScoped<DetailRequestRepository>();
-builder.Services.AddScoped<WorkReportRepository>();
-builder.Services.AddScoped<BossOrderDetailsService>();
-builder.Services.AddScoped<DetailRequestRepository>();
-builder.Services.AddScoped<WorkReportRepository>();
-builder.Services.AddScoped<BossOrderDetailsService>();
-builder.Services.AddScoped<OrderRepository>();
-builder.Services.AddScoped<WorkReportRepository>();
 builder.Services.AddScoped<SpecialistWorkReportService>();
-builder.Services.AddScoped<OrderQueryService>();
+builder.Services.AddScoped<OrderService>();
+
+builder.Services.AddScoped<BossOrderDetailsService>();
 
 var app = builder.Build();
 

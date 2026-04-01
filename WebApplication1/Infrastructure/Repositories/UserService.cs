@@ -2,6 +2,9 @@ namespace WebApplication1.Repositories;
 
 public class UserService
 {
+    private static readonly string[] AllowedRoles = { "WORKER", "SPECIALIST", "BOSS" };
+    private static readonly string[] AllowedStatuses = { "ACTIVE", "INACTIVE" };
+
     private readonly UserRepository _repo;
     private readonly OrderService _orderService;
 
@@ -11,42 +14,38 @@ public class UserService
         _orderService = orderService;
     }
 
-    public async Task<List<User>> GetWorkersAsync()
+    public Task<List<User>> GetWorkersAsync()
     {
-        return await _repo.GetWorkersAsync();
+        return _repo.GetWorkersAsync();
     }
 
-    public async Task<List<User>> GetSpecialistsAsync()
+    public Task<List<User>> GetSpecialistsAsync()
     {
-        return await _repo.GetSpecialistsAsync();
+        return _repo.GetSpecialistsAsync();
     }
 
-    public async Task<List<User>> GetAllSpecialistsAsync()
+    public Task<List<User>> GetAllSpecialistsAsync()
     {
-        return await _repo.GetAllSpecialistsAsync();
+        return _repo.GetAllSpecialistsAsync();
     }
 
-    public async Task<User?> GetByIdAsync(string id)
+    public Task<User?> GetByIdAsync(string id)
     {
-        return await _repo.FindByIdAsync(id);
+        return _repo.FindByIdAsync(id);
     }
 
-    public async Task<List<User>> GetAllAsync(string? role, string? status)
+    public Task<List<User>> GetAllAsync(string? role, string? status)
     {
-        return await _repo.GetAllAsync(role, status);
+        var normalizedRole = NormalizeOrNull(role);
+        var normalizedStatus = NormalizeOrNull(status);
+
+        return _repo.GetAllAsync(normalizedRole, normalizedStatus);
     }
 
-    public async Task<(bool, string)> UpdateRoleAsync(string userId, string newRole, string? bossId)
+    public async Task<(bool ok, string message)> UpdateRoleAsync(string userId, string newRole, string? bossId)
     {
-        var allowed = new[] { "WORKER", "SPECIALIST", "BOSS" };
-
-        if (string.IsNullOrWhiteSpace(newRole))
-            return (false, "Role is required");
-
-        newRole = newRole.Trim().ToUpper();
-
-        if (!allowed.Contains(newRole))
-            return (false, "Invalid role");
+        if (string.IsNullOrWhiteSpace(userId))
+            return (false, "User id is required");
 
         if (string.IsNullOrWhiteSpace(bossId))
             return (false, "Boss id not found");
@@ -54,26 +53,30 @@ public class UserService
         if (userId == bossId)
             return (false, "You cannot change your own role");
 
+        if (string.IsNullOrWhiteSpace(newRole))
+            return (false, "Role is required");
+
+        newRole = Normalize(newRole);
+
+        if (!AllowedRoles.Contains(newRole))
+            return (false, "Invalid role");
+
         var user = await _repo.FindByIdAsync(userId);
         if (user == null)
             return (false, "User not found");
 
-        await _repo.UpdateRoleAsync(userId, newRole);
+        var currentRole = Normalize(user.RoleInSystem);
+        if (currentRole == newRole)
+            return (true, "Role unchanged");
 
+        await _repo.UpdateRoleAsync(userId, newRole);
         return (true, "Role updated");
     }
 
-    public async Task<(bool, string)> UpdateStatusAsync(string userId, string newStatus, string? bossId)
+    public async Task<(bool ok, string message)> UpdateStatusAsync(string userId, string newStatus, string? bossId)
     {
-        var allowed = new[] { "ACTIVE", "INACTIVE" };
-
-        if (string.IsNullOrWhiteSpace(newStatus))
-            return (false, "Account status is required");
-
-        newStatus = newStatus.Trim().ToUpper();
-
-        if (!allowed.Contains(newStatus))
-            return (false, "Invalid status");
+        if (string.IsNullOrWhiteSpace(userId))
+            return (false, "User id is required");
 
         if (string.IsNullOrWhiteSpace(bossId))
             return (false, "Boss id not found");
@@ -81,18 +84,42 @@ public class UserService
         if (userId == bossId)
             return (false, "You cannot deactivate yourself");
 
+        if (string.IsNullOrWhiteSpace(newStatus))
+            return (false, "Account status is required");
+
+        newStatus = Normalize(newStatus);
+
+        if (!AllowedStatuses.Contains(newStatus))
+            return (false, "Invalid status");
+
         var user = await _repo.FindByIdAsync(userId);
         if (user == null)
             return (false, "User not found");
 
-        if (newStatus == "INACTIVE" && user.RoleInSystem == "SPECIALIST")
-        {
-            // здесь следующим шагом добавим обработку заявок специалиста
-            // await _orderService.HandleSpecialistDeactivationAsync(userId);
-        }
+        var currentStatus = Normalize(user.AccountStatus);
+        if (currentStatus == newStatus)
+            return (true, "Status unchanged");
+
+        var currentRole = Normalize(user.RoleInSystem);
+
+        if (newStatus == "INACTIVE" && currentRole == "SPECIALIST")
+{
+    await _orderService.HandleSpecialistDeactivationAsync(userId);
+}
 
         await _repo.UpdateAccountStatusAsync(userId, newStatus);
-
         return (true, "Status updated");
+    }
+
+    private static string Normalize(string value)
+    {
+        return value.Trim().ToUpperInvariant();
+    }
+
+    private static string? NormalizeOrNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim().ToUpperInvariant();
     }
 }

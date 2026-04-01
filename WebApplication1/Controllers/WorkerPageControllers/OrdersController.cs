@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Repositories;
@@ -20,33 +21,34 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetById(string id)
     {
         var order = await _orderService.GetByIdAsync(id);
-
         if (order == null)
             return NotFound(new { message = "Order not found" });
 
-        return Ok(new
-        {
-            id = order.Id,
-            workerId = order.WorkerId,
-            specialistId = order.SpecialistId,
-            detailRequestId = order.DetailRequestId,
-            lastWorkReportId = order.LastWorkReportId,
-            status = order.Status,
-            serviceType = order.ServiceType,
-            descriptionProblem = order.DescriptionProblem,
-            inspectionResult = order.InspectionResult,
-            inspectionAt = order.InspectionAt,
-            productionWorkshopNumber = order.ProductionWorkshopNumber,
-            floorNumber = order.FloorNumber,
-            roomNumber = order.RoomNumber,
-            createdAt = order.CreatedAt,
-            complaint = order.Complaint == null ? null : new
-            {
-                isSubmitted = order.Complaint.IsSubmitted,
-                text = order.Complaint.Text,
-                createdAt = order.Complaint.CreatedAt,
-                resolvedByReportId = order.Complaint.ResolvedByReportId
-            }
-        });
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            return Unauthorized(new { message = "User id not found in token" });
+
+        var canView =
+            currentUserRole == "BOSS" ||
+            order.WorkerId == currentUserId ||
+            (!string.IsNullOrWhiteSpace(order.SpecialistId) && order.SpecialistId == currentUserId);
+
+        if (!canView)
+            return Forbid();
+
+        return Ok(order);
+    }
+
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    private string? GetCurrentUserRole()
+    {
+        return User.FindFirstValue(ClaimTypes.Role)?.Trim().ToUpperInvariant();
     }
 }

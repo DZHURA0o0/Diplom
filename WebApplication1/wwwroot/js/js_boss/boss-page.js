@@ -1,49 +1,5 @@
 let activeTab = "orders";
 
-window.addEventListener("load", initBossPage);
-
-async function initBossPage() {
-    bindEvents();
-    showTab("orders");
-}
-
-function bindEvents() {
-    const statusFilter = document.getElementById("statusFilter");
-    if (statusFilter) {
-        statusFilter.addEventListener("change", loadOrders);
-    }
-
-    const roleFilter = document.getElementById("roleFilter");
-    if (roleFilter) {
-        roleFilter.addEventListener("change", loadUsers);
-    }
-
-    const accountStatusFilter = document.getElementById("accountStatusFilter");
-    if (accountStatusFilter) {
-        accountStatusFilter.addEventListener("change", loadUsers);
-    }
-}
-
-function showTab(tabName) {
-    activeTab = tabName;
-
-    const ordersTab = document.getElementById("ordersTab");
-    const usersTab = document.getElementById("usersTab");
-
-    if (ordersTab) ordersTab.hidden = tabName !== "orders";
-    if (usersTab) usersTab.hidden = tabName !== "users";
-
-    setStatus("");
-
-    if (tabName === "orders") {
-        loadOrders();
-    }
-
-    if (tabName === "users") {
-        loadUsers();
-    }
-}
-
 function logout() {
     localStorage.removeItem("token");
     window.location.href = "/";
@@ -53,12 +9,68 @@ function setStatus(text, isError = false) {
     const el = document.getElementById("status");
     if (!el) return;
 
-    el.innerText = text ?? "";
-    el.style.color = isError ? "red" : "black";
+    el.textContent = text || "";
+    el.className = isError ? "status-text error" : "status-text";
 }
 
-function createCell(text) {
-    const td = document.createElement("td");
-    td.innerText = text ?? "";
-    return td;
+function showTab(tabName) {
+    activeTab = tabName;
+
+    const ordersTab = document.getElementById("ordersTab");
+    const usersTab = document.getElementById("usersTab");
+    const tabOrdersBtn = document.getElementById("tabOrdersBtn");
+    const tabUsersBtn = document.getElementById("tabUsersBtn");
+
+    if (tabName === "orders") {
+        ordersTab?.classList.remove("hidden");
+        usersTab?.classList.add("hidden");
+        tabOrdersBtn?.classList.add("active");
+        tabUsersBtn?.classList.remove("active");
+        loadOrders();
+    } else {
+        usersTab?.classList.remove("hidden");
+        ordersTab?.classList.add("hidden");
+        tabUsersBtn?.classList.add("active");
+        tabOrdersBtn?.classList.remove("active");
+        loadUsers();
+    }
 }
+
+async function loadHeaderUser() {
+    try {
+        const me = await fetchMe();
+
+        const roleEl = document.getElementById("headerUserRole");
+        const nameEl = document.getElementById("headerUserName");
+
+        const role = me.role || me.roleInSystem || "BOSS";
+        const fullName = me.fullName || me.full_name || me.name || me.login || "Начальник";
+        const login = me.login || "";
+
+        if (roleEl) {
+            roleEl.textContent = role === "BOSS"
+                ? "Начальник відділу"
+                : role;
+        }
+
+        if (nameEl) {
+            nameEl.textContent = fullName !== "Начальник"
+                ? fullName
+                : (login || "Начальник");
+        }
+    }
+    catch (e) {
+        console.error(e);
+
+        const roleEl = document.getElementById("headerUserRole");
+        const nameEl = document.getElementById("headerUserName");
+
+        if (roleEl) roleEl.textContent = "Начальник відділу";
+        if (nameEl) nameEl.textContent = "—";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+    await loadHeaderUser();
+    showTab("orders");
+});

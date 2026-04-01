@@ -23,14 +23,17 @@ public class BossOrderDetailsService
 
     public async Task<BossOrderDetailsDto?> GetDetailsAsync(string id)
     {
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
         var order = await _orders.GetByIdAsync(id);
         if (order == null)
             return null;
 
-        var worker = await _users.GetByIdAsync(order.WorkerId);
+        var worker = await _users.FindByIdAsync(order.WorkerId);
 
         var specialist = !string.IsNullOrWhiteSpace(order.SpecialistId)
-            ? await _users.GetByIdAsync(order.SpecialistId)
+            ? await _users.FindByIdAsync(order.SpecialistId)
             : null;
 
         var detailRequest = !string.IsNullOrWhiteSpace(order.DetailRequestId)
@@ -41,16 +44,15 @@ public class BossOrderDetailsService
             ? await _workReports.GetByIdAsync(order.LastWorkReportId)
             : null;
 
-        bool complaintSubmitted = order.Complaint?.IsSubmitted ?? false;
-        string? complaintId = null;
-        string? complaintText = order.Complaint?.Text;
+        var complaintSubmitted = order.Complaint?.IsSubmitted ?? false;
+        var complaintText = order.Complaint?.Text;
         string? complaintStatus = null;
 
-        if (order.Complaint != null && order.Complaint.IsSubmitted)
+        if (complaintSubmitted)
         {
-            if (!string.IsNullOrWhiteSpace(order.Complaint.ResolvedByReportId))
+            if (!string.IsNullOrWhiteSpace(order.Complaint?.ResolvedByReportId))
                 complaintStatus = "RESOLVED";
-            else if (order.Status == "REWORK")
+            else if (Normalize(order.Status) == "REWORK")
                 complaintStatus = "IN_REWORK";
             else
                 complaintStatus = "SUBMITTED";
@@ -82,9 +84,14 @@ public class BossOrderDetailsService
             WorkReportText = workReport?.ReportText,
 
             ComplaintSubmitted = complaintSubmitted,
-            ComplaintId = complaintId,
+            ComplaintId = null,
             ComplaintText = complaintText,
             ComplaintStatus = complaintStatus
         };
+    }
+
+    private static string Normalize(string? value)
+    {
+        return (value ?? "").Trim().ToUpperInvariant();
     }
 }

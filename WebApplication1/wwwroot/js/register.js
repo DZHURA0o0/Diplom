@@ -1,133 +1,187 @@
-let isRegistering = false;
-
-const msg = document.getElementById("msg");
+const form = document.getElementById("registerForm");
 const btn = document.getElementById("btnRegister");
+const out = document.getElementById("result");
 
-const inputs = [
-"fullName",
-"passNumber",
-"login",
-"password",
-"position",
-"phone",
-"email",
-"floorNumber",
-"officeNumber",
-"workshopNumber"
-];
+const fullNameInput = document.getElementById("fullName");
+const loginInput = document.getElementById("login");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+const positionInput = document.getElementById("position");
+const phoneInput = document.getElementById("phone");
+const emailInput = document.getElementById("email");
 
-function getFields(){
+const passNumberInput = document.getElementById("passNumber");
+const workshopInput = document.getElementById("workshopNumber");
+const floorInput = document.getElementById("floorNumber");
+const officeInput = document.getElementById("officeNumber");
 
-return {
-fullName: document.getElementById("fullName").value.trim(),
-passNumber: parseInt(document.getElementById("passNumber").value),
-login: document.getElementById("login").value.trim(),
-password: document.getElementById("password").value,
-position: document.getElementById("position").value.trim(),
-phone: document.getElementById("phone").value.trim(),
-email: document.getElementById("email").value.trim(),
-floorNumber: parseInt(document.getElementById("floorNumber").value),
-officeNumber: parseInt(document.getElementById("officeNumber").value),
-workshopNumber: parseInt(document.getElementById("workshopNumber").value)
-};
+const successModal = document.getElementById("successModal");
+const modalOkBtn = document.getElementById("modalOkBtn");
 
-}
+form.addEventListener("submit", doRegister);
 
-function validate(){
+[
+  fullNameInput,
+  loginInput,
+  passwordInput,
+  confirmPasswordInput,
+  positionInput,
+  phoneInput,
+  emailInput,
+  passNumberInput,
+  workshopInput,
+  floorInput,
+  officeInput
+].forEach(x => x?.addEventListener("input", checkFields));
 
-const f = getFields();
-
-const rules = [
-[() => !f.fullName, "Введите Full Name"],
-[() => !f.login || f.login.length < 3, "Login минимум 3 символа"],
-[() => !f.password || f.password.length < 6, "Password минимум 6 символов"],
-[() => Number.isNaN(f.passNumber) || f.passNumber <= 0, "Некорректный PassNumber"],
-[() => !f.email.includes("@"), "Некорректный Email"],
-[() => Number.isNaN(f.floorNumber), "Некорректный FloorNumber"],
-[() => Number.isNaN(f.officeNumber), "Некорректный OfficeNumber"],
-[() => Number.isNaN(f.workshopNumber), "Некорректный WorkshopNumber"]
-];
-
-const error = rules.find(r => r[0]());
-
-if(error){
-msg.textContent = error[1];
-btn.disabled = true;
-return false;
-}
-
-msg.textContent = "";
-btn.disabled = false;
-return true;
-
-}
-
-inputs.forEach(id=>{
-document.getElementById(id).addEventListener("input",validate);
+modalOkBtn?.addEventListener("click", () => {
+  window.location.href = "/index.html";
 });
 
-async function register(){
-
-if(isRegistering) return;
-
-if(!validate()) return;
-
-const fields = getFields();
-
-const data = {
-...fields,
-roleInSystem:"WORKER"
-};
-
-try{
-
-isRegistering = true;
-
 btn.disabled = true;
-msg.textContent = "Регистрация...";
 
-const res = await fetch("/api/auth/register",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify(data)
-});
+function checkFields() {
+  const fullName = fullNameInput.value.trim();
+  const login = loginInput.value.trim();
+  const password = passwordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
+  const position = positionInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const email = emailInput.value.trim();
 
-let text = await res.text();
+  const passNumber = passNumberInput.value.trim();
+  const workshopNumber = workshopInput.value.trim();
+  const floorNumber = floorInput.value.trim();
+  const officeNumber = officeInput.value.trim();
 
-try{
-const json = JSON.parse(text);
-text = json.message ?? text;
-}catch{}
-
-if(!res.ok){
-
-msg.textContent = text || ("Error "+res.status);
-
-btn.disabled = false;
-isRegistering = false;
-
-return;
-
+  btn.disabled = !(
+    fullName &&
+    login &&
+    password &&
+    confirmPassword &&
+    position &&
+    phone &&
+    email &&
+    passNumber &&
+    workshopNumber &&
+    floorNumber &&
+    officeNumber
+  );
 }
 
-msg.textContent = "Регистрация успешна";
+function showSuccessModal() {
+  successModal?.classList.remove("hidden");
 
-btn.style.display = "none";
-
-setTimeout(()=>{
-window.location.href="/";
-},1500);
-
-}
-catch(e){
-
-msg.textContent = "Ошибка сети";
-
-btn.disabled = false;
-isRegistering = false;
-
+  setTimeout(() => {
+    window.location.href = "/index.html";
+  }, 1500);
 }
 
+async function doRegister(e) {
+  e.preventDefault();
+
+  const fullName = fullNameInput.value.trim();
+  const login = loginInput.value.trim();
+  const password = passwordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
+  const position = positionInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const email = emailInput.value.trim();
+
+  const passNumber = Number(passNumberInput.value);
+  const workshopNumber = Number(workshopInput.value);
+  const floorNumber = Number(floorInput.value);
+  const officeNumber = Number(officeInput.value);
+
+  if (
+    !fullName ||
+    !login ||
+    !password ||
+    !confirmPassword ||
+    !position ||
+    !phone ||
+    !email ||
+    !passNumberInput.value.trim() ||
+    !workshopInput.value.trim() ||
+    !floorInput.value.trim() ||
+    !officeInput.value.trim()
+  ) {
+    out.textContent = "Заповніть усі поля";
+    return;
+  }
+
+  if (password.length < 4) {
+    out.textContent = "Пароль занадто короткий";
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    out.textContent = "Паролі не співпадають";
+    return;
+  }
+
+  if (
+    Number.isNaN(passNumber) ||
+    Number.isNaN(workshopNumber) ||
+    Number.isNaN(floorNumber) ||
+    Number.isNaN(officeNumber)
+  ) {
+    out.textContent = "Числові поля заповнені некоректно";
+    return;
+  }
+
+  out.textContent = "Реєстрація...";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        FullName: fullName,
+        PassNumber: passNumber,
+        RoleInSystem: "WORKER",
+        Login: login,
+        Password: password,
+        Position: position,
+        Phone: phone,
+        Email: email,
+        FloorNumber: floorNumber,
+        OfficeNumber: officeNumber,
+        WorkshopNumber: workshopNumber
+      })
+    });
+
+    const text = await res.text();
+    let data = null;
+
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+
+    if (res.status === 409) {
+      out.textContent = "Користувач з таким логіном вже існує";
+      btn.disabled = false;
+      return;
+    }
+
+    if (!res.ok) {
+      out.textContent =
+        (typeof data === "string" && data) ||
+        data?.message ||
+        "Помилка реєстрації";
+      btn.disabled = false;
+      return;
+    }
+
+    out.textContent = "";
+    showSuccessModal();
+  } catch (e) {
+    out.textContent = "Сервер недоступний";
+    btn.disabled = false;
+  }
 }

@@ -260,7 +260,48 @@ async function updateUserAccountStatus(userId, accountStatus) {
 
   return data;
 }
+/* ===========================
+   CURRENT USER
+=========================== */
 
+async function fetchMe() {
+  const response = await fetch(`${API}/api/auth/me`, {
+    method: "GET",
+    headers: authHeaders()
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    const message = typeof data === "string"
+      ? data
+      : data?.message ?? "Failed to load current user";
+    throw new Error(message);
+  }
+
+  return data;
+}
+async function fetchOrderReports(orderId) {
+  const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
+    method: "GET",
+    headers: authHeaders()
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    const message = typeof data === "string"
+      ? data
+      : data?.message ?? `Reports load error: ${response.status}`;
+    throw new Error(message);
+  }
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data;
+}
 /* ===========================
    АЛІАСИ ДЛЯ СУМІСНОСТІ
 =========================== */

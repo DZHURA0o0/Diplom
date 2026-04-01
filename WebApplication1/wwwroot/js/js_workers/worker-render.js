@@ -7,6 +7,7 @@ const STATUS_LABELS = {
   INSPECTION: "На перевірці",
   WAITING_DETAILS: "Очікує деталей",
   EXECUTION: "Виконується",
+  REWORK: "На переробці",
   DONE: "Виконана",
   CANCELED: "Скасована"
 };
@@ -32,6 +33,13 @@ function formatServiceType(value) {
   return SERVICE_TYPE_LABELS[key] ?? (value ?? "—");
 }
 
+function normalizeStatusClass(status) {
+  return String(status ?? "")
+    .trim()
+    .toUpperCase()
+    .replaceAll(" ", "_");
+}
+
 function renderOrders(data) {
   const container = document.getElementById("orders");
 
@@ -50,7 +58,7 @@ function renderOrders(data) {
 
     const statusRaw = String(o.status ?? "—");
     const statusText = escapeHtml(formatStatus(statusRaw));
-    const statusClass = normalizeStatusClass(statusRaw);
+    const statusClass = "status-" + normalizeStatusClass(statusRaw);
 
     const serviceType = escapeHtml(formatServiceType(o.serviceType));
     const descriptionProblem = escapeHtml(o.descriptionProblem ?? "—");
@@ -110,6 +118,7 @@ function toggleDetails(id) {
   openedOrderId = openedOrderId === id ? null : id;
   loadOrders();
 }
+
 function isDoneStatus(status) {
   return String(status ?? "").trim().toUpperCase() === "DONE";
 }
@@ -233,18 +242,12 @@ function renderOrderDetails(o, container) {
     </div>
   `;
 }
+
 function goToComplaintPage(orderId, status) {
   if (!orderId) return;
   if (!isDoneStatus(status)) return;
 
   window.location.href = `/create-complaint.html?orderId=${encodeURIComponent(orderId)}`;
-}
-
-function normalizeStatusClass(status) {
-  return String(status ?? "")
-    .trim()
-    .toUpperCase()
-    .replaceAll(" ", "_");
 }
 
 function escapeJs(value) {
