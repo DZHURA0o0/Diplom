@@ -4,22 +4,31 @@
   <meta charset="utf-8">
   <title>Worker</title>
   <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/worker.css">
 </head>
 
 <body onload="loadOrders()">
   <div class="page">
 
-    <header class="site-header">
-      <div class="header-left">
-        <img src="/img/logohader.png" alt="logo" class="logo-img">
-      </div>
+ <header class="app-header">
+  <div class="app-header-left">
+    <img src="/img/logohader.png" alt="logo" class="app-logo">
+  </div>
 
-      <div class="header-center">
-        <div class="title-main">Відділ системного адміністрування</div>
-        <div class="title-sub">Панель працівника</div>
-      </div>
-    </header>
+  <div class="app-header-center">
+    <div class="app-title-main">Відділ системного адміністрування</div>
+    <div class="app-title-sub">Сторінка подачи та перегляду власних заявок</div>
+  </div>
+
+  <div class="app-header-right">
+    <div class="app-user-box">
+      <div class="app-user-role" id="headerUserRole"></div>
+      <div class="app-user-name" id="headerUserName"></div>
+
+    </div>
+  </div>
+</header>
 
     <main class="main worker-main">
       <div class="worker-card">
@@ -49,7 +58,7 @@
             <option value="CANCELED">Скасована</option>
           </select>
 
-          <button type="button" class="btn-secondary" onclick="loadOrders()">Оновити</button>
+          <button type="button" class="btn-primary-2" onclick="loadOrders()">Оновити</button>
         </div>
 
         <div class="orders-wrapper">
@@ -75,7 +84,7 @@
     </footer>
   </div>
 
-  <script src="/js/js_workers/guard.js"></script>
+  <script src="/js/guard.js"></script>
   <script src="/js/js_workers/worker-utils.js"></script>
   <script src="/js/js_workers/worker-api.js"></script>
   <script src="/js/js_workers/worker-render.js"></script>

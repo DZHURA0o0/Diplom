@@ -116,5 +116,14 @@ public async Task<List<User>> GetAllSpecialistsAsync()
         .SortBy(x => x.FullName)
         .ToListAsync();
 }
+public async Task<User?> GetByIdAsync(string id)
+{
+    if (string.IsNullOrWhiteSpace(id))
+        return null;
+
+    return await _users
+        .Find(x => x.Id == id)
+        .FirstOrDefaultAsync();
+}
 
 }

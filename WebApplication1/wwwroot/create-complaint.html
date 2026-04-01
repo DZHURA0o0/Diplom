@@ -6,7 +6,6 @@
   <link rel="stylesheet" href="/css/login.css">
   <link rel="stylesheet" href="/css/create-complaint.css">
 </head>
-
 <body>
   <div class="page">
 
@@ -26,43 +25,43 @@
 
         <div class="complaint-top">
           <h2>Скарга по заявці</h2>
-          <p>Заповніть форму для подання скарги</p>
+          <p>Заповніть форму нижче для подання скарги по виконаній заявці.</p>
         </div>
 
         <div class="complaint-form">
+
           <div class="input-group">
-            <label for="orderId">Номер заявки</label>
-            <input id="orderId" type="text" readonly>
+            <label for="orderId">ID заявки</label>
+            <input type="text" id="orderId" readonly>
           </div>
 
           <div class="input-group">
             <label for="complaintText">Текст скарги</label>
             <textarea
               id="complaintText"
-              placeholder="Опишіть причину скарги..."
-              rows="10"
+              rows="7"
+              placeholder="Опишіть причину подання скарги..."
             ></textarea>
           </div>
 
           <div id="msg" class="form-msg"></div>
 
           <div class="form-actions">
-            <a href="/workerPage.html" class="btn-back">Назад</a>
-            <button type="button" class="btn-submit" onclick="submitComplaint()">
-              Подати скаргу
-            </button>
+            <a href="/workerPage.html" class="back-link">Назад</a>
+            <button type="button" class="btn-submit" onclick="submitComplaint()">Подати скаргу</button>
           </div>
-        </div>
 
+        </div>
       </div>
     </main>
 
     <footer class="site-footer">
       © 2026 Support System
     </footer>
-
   </div>
 
-  <script src="js\js_workers\create-complaint.js"></script>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/js/js_workers/create-complaint.js"></script>
 </body>
 </html>

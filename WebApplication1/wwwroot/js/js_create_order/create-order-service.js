@@ -52,13 +52,19 @@ const createOrderService = (() => {
     }
 
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/worker/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + token
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify({
+          serviceType: orderData.serviceType,
+          descriptionProblem: orderData.descriptionProblem,
+          workshopNumber: Number(orderData.workshopNumber),
+          floorNumber: Number(orderData.floorNumber),
+          roomNumber: Number(orderData.roomNumber)
+        })
       });
 
       let text = await res.text();

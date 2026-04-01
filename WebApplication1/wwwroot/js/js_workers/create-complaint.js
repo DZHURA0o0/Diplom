@@ -1,29 +1,66 @@
 const query = new URLSearchParams(window.location.search);
 const orderId = query.get("orderId") || "";
 
+let toastTimer = null;
+
 window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("orderId").value = orderId;
+  const orderIdInput = document.getElementById("orderId");
+  if (orderIdInput) {
+    orderIdInput.value = orderId;
+  }
+
+  // 🔥 ВСЕГДА РАЗБЛОКИРОВАНО
+  setFormEnabled(true);
 });
 
 function setMessage(text, isSuccess = false) {
   const msg = document.getElementById("msg");
+  if (!msg) return;
+
   msg.textContent = text;
   msg.className = isSuccess ? "form-msg success" : "form-msg";
 }
 
-async function submitComplaint() {
-  const text = document.getElementById("complaintText").value.trim();
+function showToast(message, type = "success") {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  toast.classList.remove("hidden");
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 2600);
+}
+
+function setFormEnabled(enabled) {
+  const textArea = document.getElementById("complaintText");
   const btn = document.querySelector(".btn-submit");
+
+  if (textArea) textArea.disabled = !enabled;
+  if (btn) btn.disabled = !enabled;
+}
+
+async function submitComplaint() {
+  const textArea = document.getElementById("complaintText");
+  const btn = document.querySelector(".btn-submit");
+
+  if (!textArea || !btn) return;
+
+  const text = textArea.value.trim();
 
   setMessage("");
 
   if (!orderId) {
-    setMessage("Не вдалося визначити ID заявки.");
+    showToast("Немає ID заявки", "error");
     return;
   }
 
-  if (text.length < 5) {
-    setMessage("Текст скарги занадто короткий.");
+  if (text.length < 3) {
+    showToast("Введи текст", "error");
     return;
   }
 
@@ -35,33 +72,31 @@ async function submitComplaint() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + localStorage.getItem("token")
+        Authorization: "Bearer " + (localStorage.getItem("token") || "")
       },
       body: JSON.stringify({ text })
     });
 
+    const raw = await res.text();
     let data = null;
-    let rawText = "";
 
     try {
-      rawText = await res.text();
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch {
-      data = null;
-    }
+      data = raw ? JSON.parse(raw) : null;
+    } catch {}
 
     if (!res.ok) {
-      setMessage(data?.message || rawText || "Не вдалося подати скаргу.");
+      showToast(data?.message || raw || "Помилка", "error");
       return;
     }
 
-    setMessage(data?.message || "Скаргу успішно подано.", true);
+    showToast("Скаргу відправлено", "success");
 
     setTimeout(() => {
       window.location.href = "/workerPage.html";
-    }, 900);
+    }, 1200);
+
   } catch {
-    setMessage("Помилка з'єднання з сервером.");
+    showToast("Сервер не відповідає", "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "Подати скаргу";

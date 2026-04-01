@@ -36,6 +36,10 @@ function validate(showMessage = true) {
   return true;
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+  loadHeaderUser();
+});
+
 async function handleLoadCurrentUser() {
   const result = await createOrderService.loadCurrentUser();
 
@@ -89,6 +93,38 @@ function initCreateOrderPage() {
 
   validate(false);
   handleLoadCurrentUser();
+}
+async function loadHeaderUser() {
+  const nameEl = document.getElementById("headerUserName");
+  const roleEl = document.getElementById("headerUserRole");
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No token");
+
+    const res = await fetch("/api/auth/me", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to load /api/auth/me: " + res.status);
+    }
+
+    const data = await res.json();
+
+    nameEl.textContent = data.fullName || data.login || "Користувач";
+
+    if (data.role === "WORKER") roleEl.textContent = "Працівник";
+    else if (data.role === "SPECIALIST") roleEl.textContent = "Спеціаліст";
+    else if (data.role === "BOSS") roleEl.textContent = "Начальник";
+    else roleEl.textContent = "";
+  } catch (e) {
+    console.error("loadHeaderUser error:", e);
+    nameEl.textContent = "Користувач";
+    roleEl.textContent = "";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initCreateOrderPage);

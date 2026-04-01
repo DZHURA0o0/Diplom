@@ -22,7 +22,21 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<OrderRepository>();
 builder.Services.AddScoped<AuthService>();
+
+builder.Services.AddScoped<OrderQueryService>();
+builder.Services.AddScoped<OrderCommandService>();
+builder.Services.AddScoped<SpecialistOrderWorkflowService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<DetailRequestRepository>();
+builder.Services.AddScoped<WorkReportRepository>();
+builder.Services.AddScoped<BossOrderDetailsService>();
+builder.Services.AddScoped<DetailRequestRepository>();
+builder.Services.AddScoped<WorkReportRepository>();
+builder.Services.AddScoped<BossOrderDetailsService>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<WorkReportRepository>();
+builder.Services.AddScoped<SpecialistWorkReportService>();
+builder.Services.AddScoped<OrderQueryService>();
 
 var app = builder.Build();
 

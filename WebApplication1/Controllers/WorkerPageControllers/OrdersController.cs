@@ -1,68 +1,51 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using WebApplication1.Domain;
-using WebApplication1.Models;
 using WebApplication1.Repositories;
 
-
-namespace WebApplication1.Controllers;
+namespace WebApplication1.Controllers.WorkerPageControllers;
 
 [ApiController]
 [Route("api/orders")]
+[Authorize]
 public class OrdersController : ControllerBase
 {
-    private readonly OrderService _service;
-    private readonly UserService _userService;
+    private readonly OrderService _orderService;
 
-    public OrdersController(OrderService service, UserService userService)
+    public OrdersController(OrderService orderService)
     {
-        _service = service;
-        _userService = userService;
+        _orderService = orderService;
     }
 
-    [Authorize(Roles = "WORKER")]
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateOrderRequest req)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
     {
-        var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var order = await _orderService.GetByIdAsync(id);
 
-        if (string.IsNullOrWhiteSpace(workerId))
-            return Unauthorized();
-
-        var (ok, message, order) = await _service.CreateAsync(workerId, req);
-
-        if (!ok || order is null)
-            return BadRequest(new { message });
-
-        var worker = await _userService.GetByIdAsync(order.WorkerId);
+        if (order == null)
+            return NotFound(new { message = "Order not found" });
 
         return Ok(new
         {
-            message,
-            order = new
+            id = order.Id,
+            workerId = order.WorkerId,
+            specialistId = order.SpecialistId,
+            detailRequestId = order.DetailRequestId,
+            lastWorkReportId = order.LastWorkReportId,
+            status = order.Status,
+            serviceType = order.ServiceType,
+            descriptionProblem = order.DescriptionProblem,
+            inspectionResult = order.InspectionResult,
+            inspectionAt = order.InspectionAt,
+            productionWorkshopNumber = order.ProductionWorkshopNumber,
+            floorNumber = order.FloorNumber,
+            roomNumber = order.RoomNumber,
+            createdAt = order.CreatedAt,
+            complaint = order.Complaint == null ? null : new
             {
-                id = order.Id,
-                workerId = order.WorkerId,
-                workerName = worker != null ? worker.FullName : null,
-                specialistId = order.SpecialistId,
-                specialistName = (string?)null,
-                detailRequestId = order.DetailRequestId,
-                workReportId = order.WorkReportId,
-                status = order.Status,
-                serviceType = order.ServiceType,
-                descriptionProblem = order.DescriptionProblem,
-                inspectionResult = order.InspectionResult,
-                inspectionAt = order.InspectionAt,
-                productionWorkshopNumber = order.ProductionWorkshopNumber,
-                floorNumber = order.FloorNumber,
-                roomNumber = order.RoomNumber,
-                createdAt = order.CreatedAt,
-                complaint = new
-                {
-                    isSubmitted = false,
-                    complaintId = (string?)null
-                }
+                isSubmitted = order.Complaint.IsSubmitted,
+                text = order.Complaint.Text,
+                createdAt = order.Complaint.CreatedAt,
+                resolvedByReportId = order.Complaint.ResolvedByReportId
             }
         });
     }

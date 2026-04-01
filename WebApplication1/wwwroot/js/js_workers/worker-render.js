@@ -110,14 +110,44 @@ function toggleDetails(id) {
   openedOrderId = openedOrderId === id ? null : id;
   loadOrders();
 }
+function isDoneStatus(status) {
+  return String(status ?? "").trim().toUpperCase() === "DONE";
+}
 
 function renderOrderDetails(o, container) {
   const hasComplaint = !!o.complaint?.isSubmitted;
+  const isDone = isDoneStatus(o.status);
+
   const complaintStatusText = hasComplaint ? "Подана" : "Відсутня";
   const complaintBody = o.complaint?.text ?? "";
   const complaintCreatedAt = o.complaint?.createdAt
     ? formatDate(o.complaint.createdAt)
     : "—";
+
+  let complaintActionHtml = "";
+
+  if (hasComplaint) {
+    complaintActionHtml = `<div class="complaint-exists">Подана</div>`;
+  } else if (isDone) {
+    complaintActionHtml = `
+      <button
+        type="button"
+        class="btn-complaint"
+        onclick="goToComplaintPage('${escapeJs(o.id ?? "")}', '${escapeJs(o.status ?? "")}')">
+        Створити
+      </button>
+    `;
+  } else {
+    complaintActionHtml = `
+      <button
+        type="button"
+        class="btn-complaint btn-complaint-disabled"
+        disabled
+        title="Доступно тільки після виконання заявки">
+        Створити
+      </button>
+    `;
+  }
 
   container.innerHTML = `
     <div class="details-card">
@@ -179,11 +209,7 @@ function renderOrderDetails(o, container) {
           </div>
 
           <div class="complaint-right">
-            ${
-              hasComplaint
-                ? `<div class="complaint-exists">Подана</div>`
-                : `<button type="button" class="btn-complaint" onclick="goToComplaintPage('${escapeJs(o.id ?? "")}')">Створити</button>`
-            }
+            ${complaintActionHtml}
           </div>
         </div>
 
@@ -207,9 +233,10 @@ function renderOrderDetails(o, container) {
     </div>
   `;
 }
-
-function goToComplaintPage(orderId) {
+function goToComplaintPage(orderId, status) {
   if (!orderId) return;
+  if (!isDoneStatus(status)) return;
+
   window.location.href = `/create-complaint.html?orderId=${encodeURIComponent(orderId)}`;
 }
 

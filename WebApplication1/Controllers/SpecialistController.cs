@@ -41,16 +41,23 @@ public class SpecialistController : ControllerBase
                 id = o.Id,
                 workerId = o.WorkerId,
                 workerName = worker?.FullName,
-                detailRequestId = o.DetailRequestId,
-                workReportId = o.WorkReportId,
+
                 status = o.Status,
                 serviceType = o.ServiceType,
                 descriptionProblem = o.DescriptionProblem,
+
                 productionWorkshopNumber = o.ProductionWorkshopNumber,
                 floorNumber = o.FloorNumber,
                 roomNumber = o.RoomNumber,
+
                 inspectionResult = o.InspectionResult,
                 inspectionAt = o.InspectionAt,
+
+                workReportText = o.WorkReportText,
+                detailNeeds = o.DetailNeeds,
+                detailExplanation = o.DetailExplanation,
+
+                complaint = o.Complaint,
                 createdAt = o.CreatedAt
             });
         }

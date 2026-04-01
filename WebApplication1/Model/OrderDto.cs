@@ -1,4 +1,4 @@
-using MongoDB.Bson;
+namespace WebApplication1.Models;
 
 public class OrderDto
 {
@@ -6,7 +6,12 @@ public class OrderDto
     public string WorkerId { get; set; } = null!;
     public string? SpecialistId { get; set; }
 
+    public string? DetailRequestId { get; set; }
+    public string? LastWorkReportId { get; set; }
+
     public string? WorkReportText { get; set; }
+    public string? DetailNeeds { get; set; }
+    public string? DetailExplanation { get; set; }
 
     public string ServiceType { get; set; } = null!;
     public string DescriptionProblem { get; set; } = null!;
@@ -21,5 +26,5 @@ public class OrderDto
     public string Status { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
 
-    public BsonDocument Complaint { get; set; } = new();
+    public ComplaintDto? Complaint { get; set; }
 }

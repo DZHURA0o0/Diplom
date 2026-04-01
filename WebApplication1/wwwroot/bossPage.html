@@ -1,110 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <title>Boss Panel</title>
-<script>
-    requireRole(["BOSS"]);
-</script>
-<script src="/js/guard.js"></script>
-<script src="/js/boss-data.js" defer></script>
-<script src="/js/boss-orders.js" defer></script>
-<script src="/js/boss-users.js" defer></script>
-<script src="/js/boss-page.js" defer></script>
-    
+  <meta charset="UTF-8">
+  <title>Boss Panel</title>
+
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/boss.css">
+
+  <script src="/js/guard.js"></script>
+  <script>requireRole(["BOSS"]);</script>
+<script src="/js/js_boss/boss-data.js" defer></script>
+  <script src="/js/js_boss/boss-orders.js" defer></script>
+  <script src="/js/js_boss/boss-users.js" defer></script>
+  <script src="/js/js_boss/boss-page.js" defer></script>
 </head>
 <body>
+  <div class="page">
 
-<h1>Boss Panel</h1>
+    <header class="app-header">
+      <div class="app-header-left">
+        <img src="/img/logohader.png" alt="logo" class="app-logo">
+      </div>
 
-<button type="button" onclick="logout()">Logout</button>
+      <div class="app-header-center">
+        <div class="app-title-main">Відділ системного адміністрування</div>
+        <div class="app-title-sub">Панель начальника відділу</div>
+      </div>
 
-<br><br>
+      <div class="app-header-right">
+        <div class="app-user-box">
+          <div class="app-user-role" id="headerUserRole"></div>
+          <div class="app-user-name" id="headerUserName"></div>
+        </div>
+      </div>
+    </header>
 
-<button type="button" onclick="showTab('orders')">Orders</button>
-<button type="button" onclick="showTab('users')">Users</button>
+    <main class="main boss-main">
+      <div class="boss-card">
 
-<br><br>
+        <div class="boss-top">
+          <div class="boss-title-wrap">
+            <div class="boss-title">Керування заявками та користувачами</div>
+            <div class="boss-subtitle">
+              Перегляд, фільтрація, призначення спеціалістів та керування обліковими записами
+            </div>
+          </div>
 
-<div id="status"></div>
+          <div class="top-actions">
+            <button type="button" class="btn-secondary" onclick="logout()">Вийти</button>
+          </div>
+        </div>
 
-<br>
+        <div class="boss-tabs">
+          <button
+            type="button"
+            id="tabOrdersBtn"
+            class="tab-btn active"
+            onclick="showTab('orders')"
+          >
+            Заявки
+          </button>
 
-<div id="ordersTab">
-    <h2>Orders</h2>
+          <button
+            type="button"
+            id="tabUsersBtn"
+            class="tab-btn"
+            onclick="showTab('users')"
+          >
+            Користувачі
+          </button>
+        </div>
 
-    Status filter:
-    <select id="statusFilter">
-        <option value="">ALL</option>
-        <option value="NEW">NEW</option>
-        <option value="ASSIGNED">ASSIGNED</option>
-        <option value="IN_PROGRESS">IN_PROGRESS</option>
-        <option value="INSPECTION">INSPECTION</option>
-        <option value="WAITING_DETAILS">WAITING_DETAILS</option>
-        <option value="EXECUTION">EXECUTION</option>
-        <option value="DONE">DONE</option>
-        <option value="CANCELED">CANCELED</option>
-    </select>
+        <div id="status" class="status-text"></div>
 
-    <button type="button" onclick="loadOrders()">Reload</button>
+        <div id="ordersTab">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-label">Фільтр статусу:</span>
 
-    <br><br>
+              <select id="statusFilter" class="boss-select">
+                <option value="">Усі статуси</option>
+                <option value="NEW">NEW</option>
+                <option value="ASSIGNED">ASSIGNED</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="INSPECTION">INSPECTION</option>
+                <option value="WAITING_DETAILS">WAITING_DETAILS</option>
+                <option value="EXECUTION">EXECUTION</option>
+                <option value="DONE">DONE</option>
+                <option value="CANCELED">CANCELED</option>
+              </select>
+            </div>
 
-    <table cellspacing="0" cellpadding="6">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Worker</th>
-                <th>Specialist</th>
-                <th>Status</th>
-                <th>Service</th>
-                <th>Description</th>
-                <th>Location</th>
-                <th>Assign specialist</th>
-            </tr>
-        </thead>
-        <tbody id="orders"></tbody>
-    </table>
-</div>
+            <div class="toolbar-right">
+              <button type="button" class="btn-primary" onclick="loadOrders()">
+                Оновити
+              </button>
+            </div>
+          </div>
 
-<div id="usersTab" hidden>
-    <h2>Users</h2>
+          <div class="table-card">
+            <div class="table-scroll">
+              <table class="boss-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Працівник</th>
+                    <th>Спеціаліст</th>
+                    <th>Статус</th>
+                    <th>Тип</th>
+                    <th>Опис</th>
+                    <th>Локація</th>
+                    <th>Призначення</th>
+                  </tr>
+                </thead>
+                <tbody id="orders"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-    Role filter:
-    <select id="roleFilter">
-        <option value="">ALL</option>
-        <option value="WORKER">WORKER</option>
-        <option value="SPECIALIST">SPECIALIST</option>
-        <option value="BOSS">BOSS</option>
-    </select>
+        <div id="usersTab" class="hidden">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-label">Фільтр ролі:</span>
 
-    Account status filter:
-    <select id="accountStatusFilter">
-        <option value="">ALL</option>
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="INACTIVE">INACTIVE</option>
-    </select>
+              <select id="roleFilter" class="boss-select">
+                <option value="">Усі ролі</option>
+                <option value="WORKER">WORKER</option>
+                <option value="SPECIALIST">SPECIALIST</option>
+                <option value="BOSS">BOSS</option>
+              </select>
 
-    <button type="button" onclick="loadUsers()">Reload</button>
+              <span class="toolbar-label">Фільтр статусу акаунта:</span>
 
-    <br><br>
+              <select id="accountStatusFilter" class="boss-select">
+                <option value="">Усі</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
 
-    <table cellspacing="0" cellpadding="6">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Full name</th>
-                <th>Login</th>
-                <th>Role</th>
-                <th>Position</th>
-                <th>Account status</th>
-                <th>Change role</th>
-                <th>Change account status</th>
-            </tr>
-        </thead>
-        <tbody id="users"></tbody>
-    </table>
-</div>
+            <div class="toolbar-right">
+              <button type="button" class="btn-primary" onclick="loadUsers()">
+                Оновити
+              </button>
+            </div>
+          </div>
 
+          <div class="table-card users-wrap">
+            <div class="table-scroll">
+              <table class="boss-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>ПІБ</th>
+                    <th>Логін</th>
+                    <th>Роль</th>
+                    <th>Посада</th>
+                    <th>Статус акаунта</th>
+                    <th>Зміна ролі</th>
+                    <th>Зміна статусу</th>
+                  </tr>
+                </thead>
+                <tbody id="users"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+  </div>
 </body>
 </html>

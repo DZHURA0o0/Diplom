@@ -22,9 +22,9 @@ public class Order
     [BsonRepresentation(BsonType.ObjectId)]
     public string? DetailRequestId { get; set; }
 
-    [BsonElement("work_report_id")]
+    [BsonElement("last_work_report_id")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? WorkReportId { get; set; }
+    public string? LastWorkReportId { get; set; }
 
     [BsonElement("service_type")]
     public string ServiceType { get; set; } = null!;
@@ -54,5 +54,5 @@ public class Order
     public DateTime CreatedAt { get; set; }
 
     [BsonElement("complaint")]
-    public BsonDocument Complaint { get; set; } = new();
+    public ComplaintInfo Complaint { get; set; } = new();
 }

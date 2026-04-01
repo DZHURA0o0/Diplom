@@ -4,7 +4,6 @@ using System.Security.Claims;
 using WebApplication1.Domain;
 using WebApplication1.Models;
 using WebApplication1.Repositories;
-using MongoDB.Bson;
 
 namespace WebApplication1.Controllers;
 
@@ -22,8 +21,6 @@ public class WorkerOrdersController : ControllerBase
         _userService = userService;
     }
 
-    // ========================= GET LIST =========================
-
     [HttpGet]
     public async Task<IActionResult> My([FromQuery] string? status)
     {
@@ -37,13 +34,11 @@ public class WorkerOrdersController : ControllerBase
 
         foreach (var o in orders)
         {
-            result.Add(await BuildOrderResponseAsync(o));
+            result.Add(await BuildOrderResponseFromDtoAsync(o));
         }
 
         return Ok(result);
     }
-
-    // ========================= GET BY ID =========================
 
     [HttpGet("{id}")]
     public async Task<IActionResult> MyById(string id)
@@ -61,13 +56,11 @@ public class WorkerOrdersController : ControllerBase
         if (!string.Equals(order.WorkerId, workerId, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
-        var result = await BuildOrderResponseAsync(order);
+        var result = await BuildOrderResponseFromOrderAsync(order);
         return Ok(result);
     }
 
-    // ========================= BUILD RESPONSE (DTO) =========================
-
-    private async Task<object> BuildOrderResponseAsync(OrderDto o)
+    private async Task<object> BuildOrderResponseFromDtoAsync(OrderDto o)
     {
         string? workerName = null;
         string? specialistName = null;
@@ -101,38 +94,17 @@ public class WorkerOrdersController : ControllerBase
             createdAt = o.CreatedAt,
             workReportText = o.WorkReportText,
 
-            complaint = new
+            complaint = o.Complaint == null ? null : new
             {
-                isSubmitted = o.Complaint != null &&
-                              o.Complaint.Contains("is_submitted") &&
-                              o.Complaint["is_submitted"].IsBoolean
-                    ? o.Complaint["is_submitted"].AsBoolean
-                    : false,
-
-                complaintId = o.Complaint != null &&
-                              o.Complaint.Contains("complaint_id") &&
-                              o.Complaint["complaint_id"].IsObjectId
-                    ? o.Complaint["complaint_id"].AsObjectId.ToString()
-                    : null,
-
-                text = o.Complaint != null &&
-                       o.Complaint.Contains("text") &&
-                       o.Complaint["text"].IsString
-                    ? o.Complaint["text"].AsString
-                    : null,
-
-                createdAt = o.Complaint != null &&
-                            o.Complaint.Contains("created_at") &&
-                            o.Complaint["created_at"].IsValidDateTime
-                    ? o.Complaint["created_at"].ToUniversalTime()
-                    : (DateTime?)null
+                isSubmitted = o.Complaint.IsSubmitted,
+                text = o.Complaint.Text,
+                createdAt = o.Complaint.CreatedAt,
+                resolvedByReportId = o.Complaint.ResolvedByReportId
             }
         };
     }
 
-    // ========================= BUILD RESPONSE (DOMAIN) =========================
-
-    private async Task<object> BuildOrderResponseAsync(Order o)
+    private async Task<object> BuildOrderResponseFromOrderAsync(Order o)
     {
         string? workerName = null;
         string? specialistName = null;
@@ -156,7 +128,7 @@ public class WorkerOrdersController : ControllerBase
             specialistId = o.SpecialistId,
             specialistName,
             detailRequestId = o.DetailRequestId,
-            workReportId = o.WorkReportId,
+            lastWorkReportId = o.LastWorkReportId,
             status = o.Status,
             serviceType = o.ServiceType,
             descriptionProblem = o.DescriptionProblem,
@@ -167,36 +139,15 @@ public class WorkerOrdersController : ControllerBase
             roomNumber = o.RoomNumber,
             createdAt = o.CreatedAt,
 
-            complaint = new
+            complaint = o.Complaint == null ? null : new
             {
-                isSubmitted = o.Complaint != null &&
-                              o.Complaint.Contains("is_submitted") &&
-                              o.Complaint["is_submitted"].IsBoolean
-                    ? o.Complaint["is_submitted"].AsBoolean
-                    : false,
-
-                complaintId = o.Complaint != null &&
-                              o.Complaint.Contains("complaint_id") &&
-                              o.Complaint["complaint_id"].IsObjectId
-                    ? o.Complaint["complaint_id"].AsObjectId.ToString()
-                    : null,
-
-                text = o.Complaint != null &&
-                       o.Complaint.Contains("text") &&
-                       o.Complaint["text"].IsString
-                    ? o.Complaint["text"].AsString
-                    : null,
-
-                createdAt = o.Complaint != null &&
-                            o.Complaint.Contains("created_at") &&
-                            o.Complaint["created_at"].IsValidDateTime
-                    ? o.Complaint["created_at"].ToUniversalTime()
-                    : (DateTime?)null
+                isSubmitted = o.Complaint.IsSubmitted,
+                text = o.Complaint.Text,
+                createdAt = o.Complaint.CreatedAt,
+                resolvedByReportId = o.Complaint.ResolvedByReportId
             }
         };
     }
-
-    // ========================= CREATE COMPLAINT =========================
 
     [HttpPost("{id}/complaint")]
     public async Task<IActionResult> CreateComplaint(string id, [FromBody] CreateComplaintRequest req)
@@ -220,25 +171,46 @@ public class WorkerOrdersController : ControllerBase
         if (!string.Equals(order.WorkerId, workerId, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
-        var alreadySubmitted =
-            order.Complaint != null &&
-            order.Complaint.Contains("is_submitted") &&
-            order.Complaint["is_submitted"].IsBoolean &&
-            order.Complaint["is_submitted"].AsBoolean;
+        if (!string.Equals(order.Status, "DONE", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Скаргу можна подати тільки після завершення заявки." });
 
-        if (alreadySubmitted)
+        if (order.Complaint != null && order.Complaint.IsSubmitted)
             return BadRequest(new { message = "Скарга вже подана." });
 
-        order.Complaint = new BsonDocument
+        order.Complaint = new WebApplication1.Domain.ComplaintInfo
         {
-            { "is_submitted", true },
-            { "complaint_id", ObjectId.GenerateNewId() },
-            { "text", req.Text.Trim() },
-            { "created_at", DateTime.UtcNow }
+            IsSubmitted = true,
+            Text = req.Text.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            ResolvedByReportId = null
         };
 
         await _service.UpdateAsync(order);
 
         return Ok(new { message = "Скаргу успішно подано." });
     }
+    [HttpPost]
+public async Task<IActionResult> Create([FromBody] CreateOrderRequest req)
+{
+    var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    if (string.IsNullOrWhiteSpace(workerId))
+        return Unauthorized(new { message = "Не вдалося визначити працівника." });
+
+    if (req == null)
+        return BadRequest(new { message = "Невірні дані." });
+
+    var (ok, message, order) = await _service.CreateAsync(workerId, req);
+
+    if (!ok || order == null)
+        return BadRequest(new { message });
+
+    return Ok(new
+    {
+        message,
+        orderId = order.Id,
+        status = order.Status
+    });
+}
+
 }

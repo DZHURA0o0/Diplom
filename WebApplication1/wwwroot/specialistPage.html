@@ -1,103 +1,89 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <title>Specialist Orders</title>
-
-    <script src="/js/guard.js"></script>
-    <script>
-        requireRole(["SPECIALIST"]);
-    </script>
-
-    <script src="/js/specialist-data.js" defer></script>
-    <script src="/js/specialist-page.js" defer></script>
+  <meta charset="utf-8">
+  <title>Specialist</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/specialist.css">
 </head>
-<body>
 
-    <h1>Orders (Specialist)</h1>
+<body onload="loadOrders()">
+  <div class="page">
 
-    <button onclick="logout()">Logout</button>
+<header class="app-header">
+  <div class="app-header-left">
+    <img src="/img/logohader.png" alt="logo" class="app-logo">
+  </div>
 
-    <br><br>
+  <div class="app-header-center">
+    <div class="app-title-main">Відділ системного адміністрування</div>
+    <div class="app-title-sub">Панель спеціаліста</div>
+  </div>
 
-    Status filter:
-    <select id="statusFilter">
-        <option value="">ALL</option>
-        <option value="ASSIGNED">ASSIGNED</option>
-        <option value="IN_PROGRESS">IN_PROGRESS</option>
-        <option value="INSPECTION">INSPECTION</option>
-        <option value="WAITING_DETAILS">WAITING_DETAILS</option>
-        <option value="EXECUTION">EXECUTION</option>
-        <option value="DONE">DONE</option>
-        <option value="CANCELED">CANCELED</option>
-    </select>
-
-    <button onclick="loadOrders()">Reload</button>
-
-    <br><br>
-
-    <div id="status"></div>
-
-    <br>
-
-    <table cellspacing="0" cellpadding="6">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Worker</th>
-                <th>Status</th>
-                <th>Service</th>
-                <th>Description</th>
-                <th>Location</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="orders"></tbody>
-    </table>
-
-    <br><br>
-
-    <div id="actionPanel" style="display:none; border:1px solid #999; padding:12px;">
-        <h3 id="panelTitle">Action</h3>
-
-        <input type="hidden" id="panelOrderId">
-
-        <!-- Осмотр -->
-        <div id="inspectionBlock" style="display:none;">
-            <label for="inspectionResult">Inspection result:</label>
-            <br>
-            <textarea id="inspectionResult" rows="5" cols="80" placeholder="Введіть результат огляду"></textarea>
-            <br><br>
-            <button id="btnSaveInspection" type="button">Save inspection</button>
-        </div>
-
-        <!-- Запрос деталей -->
-        <div id="detailRequestBlock" style="display:none;">
-            <label for="detailNeeds">Detail needs:</label>
-            <br>
-            <input id="detailNeeds" type="text" placeholder="Що саме потрібно">
-            <br><br>
-
-            <label for="explanation">Explanation:</label>
-            <br>
-            <textarea id="explanation" rows="4" cols="80" placeholder="Пояснення до запиту"></textarea>
-            <br><br>
-
-            <button id="btnSendDetailRequest" type="button">Send detail request</button>
-        </div>
-
-        <!-- Финальный отчёт -->
-        <div id="workReportBlock" style="display:none;">
-            <label for="workReport">Work report:</label>
-            <br>
-            <textarea id="workReport" rows="5" cols="80" placeholder="Введіть звіт про виконану роботу"></textarea>
-            <br><br>
-            <button id="btnFinishOrder" type="button">Finish order</button>
-        </div>
-
-        <br>
-        <button id="btnClosePanel" type="button">Close</button>
+  <div class="app-header-right">
+    <div class="app-user-box">
+      <div class="app-user-name" id="headerUserName"></div>
+      <div class="app-user-role"></div>
     </div>
+  </div>
+</header>
 
+    <main class="main specialist-main">
+      <div class="specialist-card">
+
+        <div class="specialist-top">
+          <div id="hello" class="hello-text">Заявки спеціаліста</div>
+
+          <div class="top-actions">
+            <button type="button" class="btn-outline" onclick="loadOrders()">Оновити</button>
+            <button type="button" class="btn-danger-soft" onclick="logout()">Вийти</button>
+          </div>
+        </div>
+
+        <div class="specialist-filter">
+          <select id="statusFilter">
+            <option value="">Усі статуси</option>
+            <option value="ASSIGNED">Призначена</option>
+            <option value="IN_PROGRESS">У роботі</option>
+            <option value="INSPECTION">На перевірці</option>
+            <option value="WAITING_DETAILS">Очікує деталей</option>
+            <option value="EXECUTION">На виконанні</option>
+            <option value="DONE">Виконана</option>
+            <option value="CANCELED">Скасована</option>
+          </select>
+        </div>
+
+        <div id="pageStatus" class="status-text">Завантаження...</div>
+
+        <div class="orders-wrapper">
+          <div class="orders-header">
+            <div>Статус</div>
+            <div>Працівник</div>
+            <div>Тип заявки</div>
+            <div>Опис проблеми</div>
+            <div>Локація</div>
+            <div>Дата</div>
+          </div>
+
+          <div id="orders">
+            <div class="empty">Завантаження...</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      © 2026 Support System
+    </footer>
+  </div>
+
+  <script src="/js/guard.js"></script>
+  <script src="/js/js_specialist/specialist-api.js"></script>
+  <script src="/js/js_specialist/specialist-utils.js"></script>
+  <script src="/js/js_specialist/specialist-actions.js"></script>
+  <script src="/js/js_specialist/specialist-render.js"></script>
+  <script src="/js/js_specialist/specialist-page.js"></script>
 </body>
 </html>

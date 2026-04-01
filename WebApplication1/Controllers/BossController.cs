@@ -12,11 +12,16 @@ public class BossController : ControllerBase
 {
     private readonly OrderService _orderService;
     private readonly UserService _userService;
+    private readonly BossOrderDetailsService _detailsService;
 
-    public BossController(OrderService orderService, UserService userService)
+    public BossController(
+        OrderService orderService,
+        UserService userService,
+        BossOrderDetailsService detailsService)
     {
         _orderService = orderService;
         _userService = userService;
+        _detailsService = detailsService;
     }
 
     [HttpGet]
@@ -38,6 +43,17 @@ public class BossController : ControllerBase
             roomNumber = o.RoomNumber,
             createdAt = o.CreatedAt
         });
+
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/details")]
+    public async Task<IActionResult> GetDetails(string id)
+    {
+        var result = await _detailsService.GetDetailsAsync(id);
+
+        if (result is null)
+            return NotFound(new { message = "Order not found" });
 
         return Ok(result);
     }
@@ -67,18 +83,18 @@ public class BossController : ControllerBase
         return Ok(result);
     }
 
-  [HttpGet("specialists")]
-public async Task<IActionResult> GetSpecialists()
-{
-    var specialists = await _userService.GetAllSpecialistsAsync();
-
-    var result = specialists.Select(x => new
+    [HttpGet("specialists")]
+    public async Task<IActionResult> GetSpecialists()
     {
-        id = x.Id,
-        fullName = x.FullName,
-        accountStatus = x.AccountStatus
-    });
+        var specialists = await _userService.GetAllSpecialistsAsync();
 
-    return Ok(result);
-}
+        var result = specialists.Select(x => new
+        {
+            id = x.Id,
+            fullName = x.FullName,
+            accountStatus = x.AccountStatus
+        });
+
+        return Ok(result);
+    }
 }
