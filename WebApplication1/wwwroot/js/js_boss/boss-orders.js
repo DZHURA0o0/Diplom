@@ -33,6 +33,7 @@ const SERVICE_TYPE_LABELS = {
 
 function escapeHtml(value) {
     if (value === null || value === undefined) return "";
+
     return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -125,12 +126,14 @@ function getComplaintStatusLabel(order) {
 function getWorkerName(order) {
     const workerId = getWorkerId(order);
     if (!workerId) return "—";
+
     return bossWorkersMap[workerId] || workerId;
 }
 
 function getSpecialistName(order) {
     const specialistId = getSpecialistId(order);
     if (!specialistId) return "—";
+
     return bossSpecialistsMap[specialistId] || specialistId;
 }
 
@@ -141,18 +144,22 @@ function localizeStatus(status) {
 
 function getStatusBadge(order) {
     const status = String(order.status || "UNKNOWN").trim().toUpperCase();
+
     return `<span class="status-badge status-${escapeHtml(status)}">${escapeHtml(localizeStatus(status))}</span>`;
 }
 
 function shortText(value, max = 60) {
     if (!value) return "—";
+
     const text = String(value);
     if (text.length <= max) return text;
+
     return text.slice(0, max).trim() + "…";
 }
 
 function serviceTypeLabel(value) {
     const key = String(value || "").trim().toUpperCase();
+
     return SERVICE_TYPE_LABELS[key] || value || "—";
 }
 
@@ -165,9 +172,11 @@ async function ensurePeopleLoaded() {
     ]);
 
     bossWorkersMap = {};
+
     for (const worker of workers) {
         const id = worker.id || worker._id;
         if (!id) continue;
+
         bossWorkersMap[id] = worker.fullName || worker.full_name || worker.login || id;
     }
 
@@ -182,6 +191,7 @@ async function ensurePeopleLoaded() {
         .filter(x => x.id);
 
     bossSpecialistsMap = {};
+
     for (const specialist of bossSpecialists) {
         bossSpecialistsMap[specialist.id] = specialist.fullName || specialist.login || specialist.id;
     }
@@ -212,6 +222,7 @@ function buildReportsHtml(reports) {
         .map((report, index) => {
             const reportText = escapeHtml(report.reportText || report.text || "—");
             const createdAt = formatDate(report.createdAt);
+
             return `
                 <div class="report-item">
                     <div class="report-item-head">
@@ -239,21 +250,41 @@ function buildComplaintActionsHtml(order) {
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
                 <div class="complaint-actions-buttons">
-                    <button type="button" class="btn-main js-complaint-rework">На переробку</button>
-                    <button type="button" class="btn-secondary js-complaint-reject">Відхилити скаргу</button>
+                    <button type="button" class="btn-main js-complaint-rework">
+                        На переробку
+                    </button>
+                    <button type="button" class="btn-secondary js-complaint-reject">
+                        Відхилити скаргу
+                    </button>
                 </div>
             </div>
         `;
     }
 
     if (complaintStatus === "IN_REWORK" || orderStatus === "REWORK") {
+        const canCloseComplaint = orderStatus === "DONE";
+
         return `
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
+
                 <div class="complaint-actions-buttons">
-                    <button type="button" class="btn-main js-complaint-resolve">Закрити скаргу</button>
+                    <button
+                        type="button"
+                        class="btn-main js-complaint-resolve"
+                        ${canCloseComplaint ? "" : "disabled"}
+                    >
+                        Закрити скаргу
+                    </button>
                 </div>
-                <div class="complaint-actions-note">Після завершення переробки начальник може закрити скаргу.</div>
+
+                <div class="complaint-actions-note">
+                    ${
+                        canCloseComplaint
+                            ? "Переробку завершено. Начальник може закрити скаргу."
+                            : "Скарга знаходиться на переробці. Закрити її можна тільки після завершення роботи спеціалістом."
+                    }
+                </div>
             </div>
         `;
     }
@@ -323,6 +354,7 @@ function setPendingButton(button, pendingText) {
     if (!button) return null;
 
     const original = button.textContent;
+
     button.disabled = true;
     button.dataset.originalText = original;
     button.textContent = pendingText;
@@ -335,7 +367,16 @@ function setPendingButton(button, pendingText) {
 
 async function refreshOrdersAfterAction() {
     orderDetailsCache = {};
-    await loadOrders();
+
+    if (typeof updateComplaintsBadge === "function") {
+        await updateComplaintsBadge();
+    }
+
+    if (typeof activeTab !== "undefined" && activeTab === "complaints") {
+        await loadComplaintsOrders();
+    } else {
+        await loadOrders();
+    }
 }
 
 function attachComplaintActionHandlers(order, detailsRow) {
@@ -368,6 +409,10 @@ function attachComplaintActionHandlers(order, detailsRow) {
         resolveBtn.addEventListener("click", async (e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            if (resolveBtn.disabled) {
+                return;
+            }
 
             const restore = setPendingButton(resolveBtn, "Закриття...");
 
@@ -476,29 +521,16 @@ function createAssignControls(order) {
     };
 
     wrap.append(select, btn);
+
     return wrap;
 }
 
 function sortOrders(orders) {
-    const statusOrder = {
-        NEW: 1,
-        ASSIGNED: 2,
-        IN_PROGRESS: 3,
-        INSPECTION: 4,
-        WAITING_DETAILS: 5,
-        EXECUTION: 6,
-        REWORK: 7,
-        DONE: 8,
-        CANCELED: 9
-    };
-
     return [...orders].sort((a, b) => {
-        const sa = statusOrder[a.status] ?? 999;
-        const sb = statusOrder[b.status] ?? 999;
+        const dateA = new Date(a.createdAt || a.created_at || 0);
+        const dateB = new Date(b.createdAt || b.created_at || 0);
 
-        if (sa !== sb) return sa - sb;
-
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return dateB - dateA;
     });
 }
 
@@ -553,39 +585,66 @@ async function fillDetailsRow(order, detailsRow) {
     }
 }
 
-function renderOrdersTable(orders) {
-    const tbody = document.getElementById("orders");
+function getComplaintMarkHtml(order) {
+    const complaintStatus = getComplaintStatus(order);
+    const orderStatus = String(order.status || "").trim().toUpperCase();
+
+    if (!getComplaintSubmitted(order)) {
+        return "";
+    }
+
+    if (complaintStatus === "SUBMITTED") {
+        return `<span class="complaint-row-mark complaint-row-mark-red" title="Нова скарга">!</span>`;
+    }
+
+    if (complaintStatus === "IN_REWORK" || orderStatus === "REWORK") {
+        return `<span class="complaint-row-mark complaint-row-mark-yellow" title="Скарга на переробці">!</span>`;
+    }
+
+    return "";
+}
+
+function renderOrdersTable(orders, tbodyId = "orders") {
+    const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
 
     tbody.innerHTML = "";
 
     if (!orders.length) {
+        const message = tbodyId === "complaintsOrders"
+            ? "Немає заявок зі скаргами"
+            : "Немає заявок";
+
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="8"><div class="empty-box">Немає заявок</div></td>`;
+        tr.innerHTML = `<td colspan="8"><div class="empty-box">${message}</div></td>`;
         tbody.appendChild(tr);
         return;
     }
 
     for (const order of orders) {
         const orderId = getOrderId(order);
+        const rowStateKey = `${tbodyId}_${orderId}`;
 
         const mainRow = document.createElement("tr");
         mainRow.className = "main-row";
 
-        if (ordersExpandedState[orderId]) {
+        if (ordersExpandedState[rowStateKey]) {
             mainRow.classList.add("is-open");
         }
 
         const detailsRow = document.createElement("tr");
         detailsRow.className = "details-row";
 
-        if (!ordersExpandedState[orderId]) {
+        if (!ordersExpandedState[rowStateKey]) {
             detailsRow.classList.add("hidden");
         }
+
+        const complaintMark = getComplaintMarkHtml(order);
 
         mainRow.innerHTML = `
             <td class="cell-mono">
                 ${escapeHtml(orderId || "—")}
+                ${complaintMark}
                 <span class="expand-mark">⌄</span>
             </td>
             <td>${escapeHtml(getWorkerName(order))}</td>
@@ -602,7 +661,7 @@ function renderOrdersTable(orders) {
         const assignCell = mainRow.lastElementChild;
         assignCell.appendChild(createAssignControls(order));
 
-        if (ordersExpandedState[orderId]) {
+        if (ordersExpandedState[rowStateKey]) {
             fillDetailsRow(order, detailsRow);
         }
 
@@ -612,12 +671,12 @@ function renderOrdersTable(orders) {
             if (willOpen) {
                 detailsRow.classList.remove("hidden");
                 mainRow.classList.add("is-open");
-                ordersExpandedState[orderId] = true;
+                ordersExpandedState[rowStateKey] = true;
                 await fillDetailsRow(order, detailsRow);
             } else {
                 detailsRow.classList.add("hidden");
                 mainRow.classList.remove("is-open");
-                delete ordersExpandedState[orderId];
+                delete ordersExpandedState[rowStateKey];
             }
         });
 
@@ -642,10 +701,116 @@ async function loadOrders() {
         const orders = await fetchOrders(status);
         const sorted = sortOrders(orders);
 
-        renderOrdersTable(sorted);
+        renderOrdersTable(sorted, "orders");
         setStatus(`Завантажено ${sorted.length} заявок`);
+
+        if (typeof updateComplaintsBadge === "function") {
+            await updateComplaintsBadge();
+        }
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="8"><div class="error-box">${escapeHtml(err.message || "Load orders error")}</div></td></tr>`;
         setStatus(err.message || "Load orders error", true);
+    }
+}
+
+function isComplaintOrder(order) {
+    return getComplaintSubmitted(order);
+}
+
+function isActiveComplaintOrder(order) {
+    const complaintStatus = getComplaintStatus(order);
+    const orderStatus = String(order.status || "").trim().toUpperCase();
+
+    if (!getComplaintSubmitted(order)) return false;
+
+    return complaintStatus === "SUBMITTED"
+        || complaintStatus === "IN_REWORK"
+        || orderStatus === "REWORK";
+}
+
+async function getOrdersWithDetailsForComplaints() {
+    const orders = await fetchOrders("");
+
+    const detailedOrders = await Promise.all(
+        orders.map(async (order) => {
+            const orderId = getOrderId(order);
+
+            if (!orderId) {
+                return order;
+            }
+
+            try {
+                let details = orderDetailsCache[orderId];
+
+                if (!details) {
+                    details = await fetchOrderDetails(orderId);
+                    orderDetailsCache[orderId] = details;
+                }
+
+                return {
+                    ...order,
+                    ...details
+                };
+            } catch (err) {
+                console.warn("Complaint details load failed:", orderId, err);
+                return order;
+            }
+        })
+    );
+
+    return detailedOrders;
+}
+
+async function loadComplaintsOrders() {
+    if (typeof activeTab !== "undefined" && activeTab !== "complaints") return;
+
+    const tbody = document.getElementById("complaintsOrders");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-box">Завантаження скарг...</div></td></tr>`;
+
+    try {
+        await ensurePeopleLoaded();
+
+        const detailedOrders = await getOrdersWithDetailsForComplaints();
+        const complaintOrders = sortOrders(detailedOrders.filter(isComplaintOrder));
+
+        renderOrdersTable(complaintOrders, "complaintsOrders");
+        setStatus(`Завантажено ${complaintOrders.length} заявок зі скаргами`);
+
+        await updateComplaintsBadge(detailedOrders);
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="error-box">${escapeHtml(err.message || "Complaints load error")}</div></td></tr>`;
+        setStatus(err.message || "Complaints load error", true);
+    }
+}
+
+async function updateComplaintsBadge(prefetchedOrders = null) {
+    const badge = document.getElementById("complaintsBadge");
+    const tabComplaintsBtn = document.getElementById("tabComplaintsBtn");
+
+    if (!badge) return;
+
+    try {
+        const orders = Array.isArray(prefetchedOrders)
+            ? prefetchedOrders
+            : await getOrdersWithDetailsForComplaints();
+
+        const activeComplaintsCount = orders.filter(isActiveComplaintOrder).length;
+
+        if (activeComplaintsCount <= 0) {
+            badge.textContent = "0";
+            badge.classList.add("hidden");
+            tabComplaintsBtn?.classList.remove("has-complaints");
+            badge.title = "";
+            return;
+        }
+
+        badge.textContent = String(activeComplaintsCount);
+        badge.classList.remove("hidden");
+        tabComplaintsBtn?.classList.add("has-complaints");
+        badge.title = `Активних скарг: ${activeComplaintsCount}`;
+    } catch (err) {
+        console.error("Complaints badge update error:", err);
     }
 }

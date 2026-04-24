@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Application.Services.Order;
 using WebApplication1.Contracts;
-using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
 
@@ -11,15 +11,15 @@ namespace WebApplication1.Controllers;
 [Authorize(Roles = "SPECIALIST")]
 public class SpecialistReportsController : ControllerBase
 {
-    private readonly SpecialistWorkReportService _service;
+    private readonly OrderService _orderService;
 
-    public SpecialistReportsController(SpecialistWorkReportService service)
+    public SpecialistReportsController(OrderService orderService)
     {
-        _service = service;
+        _orderService = orderService;
     }
 
     [HttpPost("{id}/report")]
-    public async Task<IActionResult> AddReport(string id, [FromBody] AddWorkReportRequest req)
+    public async Task<ActionResult> AddReport(string id, [FromBody] AddWorkReportRequest req)
     {
         var specialistId =
             User.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -28,15 +28,14 @@ public class SpecialistReportsController : ControllerBase
         if (string.IsNullOrWhiteSpace(specialistId))
             return Unauthorized(new { message = "Не вдалося визначити спеціаліста з токена." });
 
-        var result = await _service.AddReportAsync(
+        var (ok, message) = await _orderService.FinishOrderAsync(
             id,
             specialistId,
-            req.ReportText,
-            req.IsRework
+            req.ReportText
         );
 
-        if (!result.ok)
-            return BadRequest(new { message = result.error });
+        if (!ok)
+            return BadRequest(new { message });
 
         return Ok(new { message = "Звіт успішно додано." });
     }

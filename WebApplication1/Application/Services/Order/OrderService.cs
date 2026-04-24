@@ -1,28 +1,30 @@
-using WebApplication1.Domain;
+using WebApplication1.Application.Services.Complaints;
 using WebApplication1.Models;
+using WebApplication1.Repositories;
+using DomainOrder = WebApplication1.Domain.Order;
 
-namespace WebApplication1.Repositories;
+namespace WebApplication1.Application.Services.Order;
 
 public class OrderService
 {
     private readonly OrderQueryService _queryService;
     private readonly OrderCommandService _commandService;
-    private readonly SpecialistOrderWorkflowService _specialistWorkflowService;
+    private readonly OrderWorkflowService _workflowService;
+    private readonly ComplaintService _complaintService;
     private readonly WorkReportRepository _workReportRepository;
-    private readonly OrderRepository _orderRepository;
 
     public OrderService(
         OrderQueryService queryService,
         OrderCommandService commandService,
-        SpecialistOrderWorkflowService specialistWorkflowService,
-        WorkReportRepository workReportRepository,
-        OrderRepository orderRepository)
+        OrderWorkflowService workflowService,
+        ComplaintService complaintService,
+        WorkReportRepository workReportRepository)
     {
         _queryService = queryService;
         _commandService = commandService;
-        _specialistWorkflowService = specialistWorkflowService;
+        _workflowService = workflowService;
+        _complaintService = complaintService;
         _workReportRepository = workReportRepository;
-        _orderRepository = orderRepository;
     }
 
     public Task<List<OrderDto>> GetByWorkerAsync(string workerId, string? status)
@@ -34,67 +36,69 @@ public class OrderService
     public Task<List<OrderDto>> GetAllAsync(string? status)
         => _queryService.GetAllAsync(status);
 
-    public Task<Order?> GetByIdAsync(string orderId)
+    public Task<DomainOrder?> GetByIdAsync(string orderId)
         => _queryService.GetByIdAsync(orderId);
 
-    public Task<(bool ok, string? message, Order? order)> CreateAsync(
+    public Task<(bool ok, string? message, DomainOrder? order)> CreateAsync(
         string workerId,
         CreateOrderRequest req)
         => _commandService.CreateAsync(workerId, req);
 
-    public Task<(bool ok, string? message, Order? order)> AssignSpecialistAsync(
+    public Task<(bool ok, string? message, DomainOrder? order)> AssignSpecialistAsync(
         string orderId,
         AssignSpecialistRequest req)
         => _commandService.AssignSpecialistAsync(orderId, req);
 
     public Task<(bool ok, string? message)> StartWorkAsync(string orderId, string? specialistId)
-        => _specialistWorkflowService.StartWorkAsync(orderId, specialistId);
+        => _workflowService.StartWorkAsync(orderId, specialistId);
 
     public Task<(bool ok, string? message)> SaveInspectionAsync(
         string orderId,
         string? specialistId,
         string? inspectionResult)
-        => _specialistWorkflowService.SaveInspectionAsync(orderId, specialistId, inspectionResult);
+        => _workflowService.SaveInspectionAsync(orderId, specialistId, inspectionResult);
 
     public Task<(bool ok, string? message)> CreateDetailRequestAsync(
         string orderId,
         string? specialistId,
         string? detailNeeds,
         string? explanation)
-        => _specialistWorkflowService.CreateDetailRequestAsync(
-            orderId,
-            specialistId,
-            detailNeeds,
-            explanation);
+        => _workflowService.CreateDetailRequestAsync(orderId, specialistId, detailNeeds, explanation);
 
     public Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
-        => _specialistWorkflowService.MoveToExecutionAsync(orderId, specialistId);
+        => _workflowService.MoveToExecutionAsync(orderId, specialistId);
 
     public Task<(bool ok, string? message)> FinishOrderAsync(
         string orderId,
         string? specialistId,
         string? workReportText)
-        => _specialistWorkflowService.FinishOrderAsync(orderId, specialistId, workReportText);
+        => _workflowService.FinishOrderAsync(orderId, specialistId, workReportText);
 
-    public Task UpdateAsync(Order order)
+    public Task UpdateAsync(DomainOrder order)
         => _commandService.UpdateAsync(order);
 
-    public Task<(bool ok, string? message, Order? order)> MoveComplaintToReworkAsync(
+    public Task<(bool ok, string? message, DomainOrder? order)> SubmitComplaintByWorkerAsync(
         string orderId,
-        string bossLogin)
-        => _commandService.MoveComplaintToReworkAsync(orderId, bossLogin);
+        string workerId,
+        string? text)
+        => _complaintService.SubmitByWorkerAsync(orderId, workerId, text);
 
-    public Task<(bool ok, string? message, Order? order)> ResolveComplaintAsync(
+    public Task<(bool ok, string? message, DomainOrder? order)> MoveComplaintToReworkAsync(
         string orderId,
-        string bossLogin,
-        string? comment)
-        => _commandService.ResolveComplaintAsync(orderId, bossLogin, comment);
+        string bossId)
+        => _complaintService.MoveToReworkAsync(orderId, bossId);
 
-    public Task<(bool ok, string? message, Order? order)> RejectComplaintAsync(
+    public Task<(bool ok, string? message, DomainOrder? order)> ResolveComplaintAsync(
         string orderId,
-        string bossLogin,
+        string bossId,
         string? comment)
-        => _commandService.RejectComplaintAsync(orderId, bossLogin, comment);
+        => _complaintService.ResolveAsync(orderId, bossId, comment);
+
+    public Task<(bool ok, string? message, DomainOrder? order)> RejectComplaintAsync(
+        string orderId,
+        string bossId,
+        string? comment)
+        => _complaintService.RejectAsync(orderId, bossId, comment);
 
     public async Task<List<WorkReportDto>> GetReportsByOrderIdAsync(string orderId)
     {
@@ -110,26 +114,5 @@ public class OrderService
                 CreatedAt = x.CreatedAt
             })
             .ToList();
-    }
-
-    public async Task<int> HandleSpecialistDeactivationAsync(string specialistId)
-    {
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return 0;
-
-        var orders = await _orderRepository.GetActiveBySpecialistAsync(specialistId);
-        if (orders.Count == 0)
-            return 0;
-
-        foreach (var order in orders)
-        {
-            order.SpecialistId = null;
-            order.LastWorkReportId = null;
-            order.Status = "NEW";
-
-            await _orderRepository.UpdateAsync(order);
-        }
-
-        return orders.Count;
     }
 }

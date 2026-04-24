@@ -1,6 +1,7 @@
 using WebApplication1.Models;
+using WebApplication1.Repositories;
 
-namespace WebApplication1.Repositories;
+namespace WebApplication1.Application.Services.Boss;
 
 public class BossOrderDetailsService
 {

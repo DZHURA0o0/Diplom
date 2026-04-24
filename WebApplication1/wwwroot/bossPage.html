@@ -10,11 +10,13 @@
 
   <script src="/js/guard.js"></script>
   <script>requireRole(["BOSS"]);</script>
-<script src="/js/js_boss/boss-data.js" defer></script>
+
+  <script src="/js/js_boss/boss-data.js" defer></script>
   <script src="/js/js_boss/boss-orders.js" defer></script>
   <script src="/js/js_boss/boss-users.js" defer></script>
   <script src="/js/js_boss/boss-page.js" defer></script>
 </head>
+
 <body>
   <div class="page">
 
@@ -64,6 +66,16 @@
 
           <button
             type="button"
+            id="tabComplaintsBtn"
+            class="tab-btn"
+            onclick="showTab('complaints')"
+          >
+            Скарги
+            <span id="complaintsBadge" class="complaints-badge hidden">0</span>
+          </button>
+
+          <button
+            type="button"
             id="tabUsersBtn"
             class="tab-btn"
             onclick="showTab('users')"
@@ -81,14 +93,15 @@
 
               <select id="statusFilter" class="boss-select">
                 <option value="">Усі статуси</option>
-                <option value="NEW">NEW</option>
-                <option value="ASSIGNED">ASSIGNED</option>
-                <option value="IN_PROGRESS">IN_PROGRESS</option>
-                <option value="INSPECTION">INSPECTION</option>
-                <option value="WAITING_DETAILS">WAITING_DETAILS</option>
-                <option value="EXECUTION">EXECUTION</option>
-                <option value="DONE">DONE</option>
-                <option value="CANCELED">CANCELED</option>
+                <option value="NEW">Нова</option>
+                <option value="ASSIGNED">Призначена</option>
+                <option value="IN_PROGRESS">У роботі</option>
+                <option value="INSPECTION">На огляді</option>
+                <option value="WAITING_DETAILS">Очікує деталей</option>
+                <option value="EXECUTION">На виконанні</option>
+                <option value="REWORK">На переробці</option>
+                <option value="DONE">Виконана</option>
+                <option value="CANCELED">Скасована</option>
               </select>
             </div>
 
@@ -115,6 +128,41 @@
                   </tr>
                 </thead>
                 <tbody id="orders"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="complaintsTab" class="hidden">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-label">Скарги на заявки:</span>
+              <span class="toolbar-hint">Відображаються тільки заявки, на які працівники подали скаргу</span>
+            </div>
+
+            <div class="toolbar-right">
+              <button type="button" class="btn-primary" onclick="loadComplaintsOrders()">
+                Оновити
+              </button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-scroll">
+              <table class="boss-table">
+                <thead>
+                  <tr>
+                    <th>ID (клік для деталей)</th>
+                    <th>Працівник</th>
+                    <th>Спеціаліст</th>
+                    <th>Статус</th>
+                    <th>Тип</th>
+                    <th>Опис</th>
+                    <th>Локація</th>
+                    <th>Призначення</th>
+                  </tr>
+                </thead>
+                <tbody id="complaintsOrders"></tbody>
               </table>
             </div>
           </div>

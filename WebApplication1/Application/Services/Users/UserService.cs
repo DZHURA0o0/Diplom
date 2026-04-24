@@ -1,45 +1,41 @@
-namespace WebApplication1.Repositories;
+using WebApplication1.Application.Services.Order;
+using WebApplication1.Models;
+using WebApplication1.Repositories;
+
+namespace WebApplication1.Application.Services.Users;
 
 public class UserService
 {
     private static readonly string[] AllowedRoles = { "WORKER", "SPECIALIST", "BOSS" };
     private static readonly string[] AllowedStatuses = { "ACTIVE", "INACTIVE" };
 
-    private readonly UserRepository _repo;
-    private readonly OrderService _orderService;
+    private readonly UserRepository _users;
+    private readonly OrderCommandService _orderCommandService;
 
-    public UserService(UserRepository repo, OrderService orderService)
+    public UserService(UserRepository users, OrderCommandService orderCommandService)
     {
-        _repo = repo;
-        _orderService = orderService;
+        _users = users;
+        _orderCommandService = orderCommandService;
     }
 
     public Task<List<User>> GetWorkersAsync()
-    {
-        return _repo.GetWorkersAsync();
-    }
+        => _users.GetWorkersAsync();
 
     public Task<List<User>> GetSpecialistsAsync()
-    {
-        return _repo.GetSpecialistsAsync();
-    }
+        => _users.GetSpecialistsAsync();
 
     public Task<List<User>> GetAllSpecialistsAsync()
-    {
-        return _repo.GetAllSpecialistsAsync();
-    }
+        => _users.GetAllSpecialistsAsync();
 
     public Task<User?> GetByIdAsync(string id)
-    {
-        return _repo.FindByIdAsync(id);
-    }
+        => _users.FindByIdAsync(id);
 
     public Task<List<User>> GetAllAsync(string? role, string? status)
     {
         var normalizedRole = NormalizeOrNull(role);
         var normalizedStatus = NormalizeOrNull(status);
 
-        return _repo.GetAllAsync(normalizedRole, normalizedStatus);
+        return _users.GetAllAsync(normalizedRole, normalizedStatus);
     }
 
     public async Task<(bool ok, string message)> UpdateRoleAsync(string userId, string newRole, string? bossId)
@@ -61,7 +57,7 @@ public class UserService
         if (!AllowedRoles.Contains(newRole))
             return (false, "Invalid role");
 
-        var user = await _repo.FindByIdAsync(userId);
+        var user = await _users.FindByIdAsync(userId);
         if (user == null)
             return (false, "User not found");
 
@@ -69,7 +65,7 @@ public class UserService
         if (currentRole == newRole)
             return (true, "Role unchanged");
 
-        await _repo.UpdateRoleAsync(userId, newRole);
+        await _users.UpdateRoleAsync(userId, newRole);
         return (true, "Role updated");
     }
 
@@ -92,7 +88,7 @@ public class UserService
         if (!AllowedStatuses.Contains(newStatus))
             return (false, "Invalid status");
 
-        var user = await _repo.FindByIdAsync(userId);
+        var user = await _users.FindByIdAsync(userId);
         if (user == null)
             return (false, "User not found");
 
@@ -103,11 +99,9 @@ public class UserService
         var currentRole = Normalize(user.RoleInSystem);
 
         if (newStatus == "INACTIVE" && currentRole == "SPECIALIST")
-{
-    await _orderService.HandleSpecialistDeactivationAsync(userId);
-}
+            await _orderCommandService.HandleSpecialistDeactivationAsync(userId);
 
-        await _repo.UpdateAccountStatusAsync(userId, newStatus);
+        await _users.UpdateAccountStatusAsync(userId, newStatus);
         return (true, "Status updated");
     }
 

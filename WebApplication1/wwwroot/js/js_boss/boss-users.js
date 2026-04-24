@@ -84,23 +84,30 @@ function buildUserRoleControl(user) {
         e.preventDefault();
         e.stopPropagation();
 
-        try {
-            const newRole = select.value;
+        const newRole = select.value;
 
-            if (newRole === user.role) {
-                setStatus("Роль не змінена");
-                return;
+        if (newRole === user.role) {
+            setStatus("Роль не змінена");
+            return;
+        }
+
+        const restore = setPendingButton(button, "Збереження...");
+
+        try {
+            await updateUserRole(user.id, newRole);
+
+            if (typeof resetBossPeopleCache === "function") {
+                resetBossPeopleCache();
             }
 
-            const restore = setPendingButton(button, "Збереження...");
-            await updateUserRole(user.id, newRole);
             await loadUsers();
+
             setStatus("Роль оновлено");
-            restore?.();
         }
         catch (e) {
             console.error(e);
             setStatus("Помилка зміни ролі: " + e.message, true);
+            restore?.();
         }
     });
 
@@ -122,20 +129,26 @@ function buildUserStatusControl(user) {
         e.preventDefault();
         e.stopPropagation();
 
-        try {
-            const restore = setPendingButton(
-                button,
-                nextStatus === "ACTIVE" ? "Активація..." : "Деактивація..."
-            );
+        const restore = setPendingButton(
+            button,
+            nextStatus === "ACTIVE" ? "Активація..." : "Деактивація..."
+        );
 
+        try {
             await updateUserAccountStatus(user.id, nextStatus);
+
+            if (typeof resetBossPeopleCache === "function") {
+                resetBossPeopleCache();
+            }
+
             await loadUsers();
+
             setStatus("Статус оновлено");
-            restore?.();
         }
         catch (e) {
             console.error(e);
             setStatus("Помилка зміни статусу: " + e.message, true);
+            restore?.();
         }
     });
 

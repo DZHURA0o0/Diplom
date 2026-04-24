@@ -16,7 +16,7 @@ public class DbStatusController : ControllerBase
     }
 
     [HttpGet("enable")]
-    public async Task<IActionResult> DbEnable()
+    public async Task<ActionResult> DbEnable()
     {
         try
         {
@@ -28,4 +28,4 @@ public class DbStatusController : ControllerBase
             return StatusCode(503, new { db = "offline" });
         }
     }
-}   
+}

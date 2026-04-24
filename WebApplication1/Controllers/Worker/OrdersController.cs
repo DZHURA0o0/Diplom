@@ -1,26 +1,26 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Repositories;
+using WebApplication1.Application.Services.Order;
 
 namespace WebApplication1.Controllers.WorkerPageControllers;
 
 [ApiController]
-[Route("api/orders/{orderId}/reports")]
+[Route("api/orders")]
 [Authorize]
-public class OrderReportsController : ControllerBase
+public class OrdersController : ControllerBase
 {
     private readonly OrderService _orderService;
 
-    public OrderReportsController(OrderService orderService)
+    public OrdersController(OrderService orderService)
     {
         _orderService = orderService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetReports(string orderId)
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetById(string id)
     {
-        var order = await _orderService.GetByIdAsync(orderId);
+        var order = await _orderService.GetByIdAsync(id);
         if (order == null)
             return NotFound(new { message = "Order not found" });
 
@@ -38,8 +38,7 @@ public class OrderReportsController : ControllerBase
         if (!canView)
             return Forbid();
 
-        var reports = await _orderService.GetReportsByOrderIdAsync(orderId);
-        return Ok(reports);
+        return Ok(order);
     }
 
     private string? GetCurrentUserId()

@@ -872,3 +872,78 @@
   white-space: pre-wrap;
   color: #ffffff;
 }
+.complaints-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 193, 7, 0.18);
+    color: #ffe28a;
+    border: 1px solid rgba(255, 193, 7, 0.45);
+}
+
+.complaints-badge.hidden {
+    display: none;
+}
+
+.tab-btn.has-complaints {
+    border-color: rgba(255, 193, 7, 0.7);
+    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.25), 0 0 20px rgba(255, 193, 7, 0.12);
+}
+
+.complaint-row-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffe28a;
+    border: 1px solid rgba(255, 193, 7, 0.45);
+}
+
+.toolbar-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.62);
+}
+.complaint-row-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.complaint-row-mark-red {
+    background: rgba(255, 77, 77, 0.22);
+    color: #ffb3b3;
+    border: 1px solid rgba(255, 77, 77, 0.65);
+    box-shadow: 0 0 14px rgba(255, 77, 77, 0.22);
+}
+
+.complaint-row-mark-yellow {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffe28a;
+    border: 1px solid rgba(255, 193, 7, 0.45);
+    box-shadow: 0 0 14px rgba(255, 193, 7, 0.16);
+}
+.complaint-actions-buttons button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+    box-shadow: none;
+}

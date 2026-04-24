@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Application.Services.Boss;
+using WebApplication1.Application.Services.Order;
+using WebApplication1.Application.Services.Users;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
 
@@ -25,7 +27,7 @@ public class BossController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status)
+    public async Task<ActionResult> GetAll([FromQuery] string? status)
     {
         var orders = await _orderService.GetAllAsync(status);
 
@@ -48,7 +50,7 @@ public class BossController : ControllerBase
     }
 
     [HttpGet("{id}/details")]
-    public async Task<IActionResult> GetDetails(string id)
+    public async Task<ActionResult> GetDetails(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return BadRequest(new { message = "Order id is required" });
@@ -62,16 +64,10 @@ public class BossController : ControllerBase
     }
 
     [HttpPatch("{orderId}/assign-specialist")]
-    public async Task<IActionResult> AssignSpecialist(
+    public async Task<ActionResult> AssignSpecialist(
         string orderId,
         [FromBody] AssignSpecialistRequest req)
     {
-        if (string.IsNullOrWhiteSpace(orderId))
-            return BadRequest(new { message = "Order id is required" });
-
-        if (req == null)
-            return BadRequest(new { message = "Request body is required" });
-
         var (ok, message, order) = await _orderService.AssignSpecialistAsync(orderId, req);
 
         if (!ok || order == null)
@@ -87,7 +83,7 @@ public class BossController : ControllerBase
     }
 
     [HttpGet("workers")]
-    public async Task<IActionResult> GetWorkers()
+    public async Task<ActionResult> GetWorkers()
     {
         var workers = await _userService.GetWorkersAsync();
 
@@ -102,7 +98,7 @@ public class BossController : ControllerBase
     }
 
     [HttpGet("specialists")]
-    public async Task<IActionResult> GetSpecialists()
+    public async Task<ActionResult> GetSpecialists()
     {
         var specialists = await _userService.GetAllSpecialistsAsync();
 

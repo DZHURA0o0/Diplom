@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using WebApplication1.Application.Services.Users;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
 
@@ -19,7 +19,7 @@ public class BossUsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? role, [FromQuery] string? status)
+    public async Task<ActionResult> GetAll([FromQuery] string? role, [FromQuery] string? status)
     {
         var users = await _service.GetAllAsync(role, status);
 
@@ -37,25 +37,27 @@ public class BossUsersController : ControllerBase
     }
 
     [HttpPut("{id}/role")]
-    public async Task<IActionResult> UpdateRole(string id, [FromBody] UpdateUserRoleRequest req)
+    public async Task<ActionResult> UpdateRole(string id, [FromBody] UpdateUserRoleRequest req)
     {
         var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var (ok, msg) = await _service.UpdateRoleAsync(id, req.Role, bossId);
 
-        if (!ok) return BadRequest(new { message = msg });
+        if (!ok)
+            return BadRequest(new { message = msg });
 
         return Ok(new { message = msg });
     }
 
     [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateUserStatusRequest req)
+    public async Task<ActionResult> UpdateStatus(string id, [FromBody] UpdateUserStatusRequest req)
     {
         var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var (ok, msg) = await _service.UpdateStatusAsync(id, req.AccountStatus, bossId);
 
-        if (!ok) return BadRequest(new { message = msg });
+        if (!ok)
+            return BadRequest(new { message = msg });
 
         return Ok(new { message = msg });
     }

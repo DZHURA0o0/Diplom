@@ -1,15 +1,16 @@
 using MongoDB.Bson;
 using WebApplication1.Domain;
+using WebApplication1.Repositories;
 
-namespace WebApplication1.Repositories;
+namespace WebApplication1.Application.Services.Order;
 
-public class SpecialistOrderWorkflowService
+public class OrderWorkflowService
 {
     private readonly OrderRepository _orders;
     private readonly DetailRequestRepository _detailRequests;
     private readonly WorkReportRepository _workReports;
 
-    public SpecialistOrderWorkflowService(
+    public OrderWorkflowService(
         OrderRepository orders,
         DetailRequestRepository detailRequests,
         WorkReportRepository workReports)
@@ -21,17 +22,13 @@ public class SpecialistOrderWorkflowService
 
     public async Task<(bool ok, string? message)> StartWorkAsync(string orderId, string? specialistId)
     {
-        var order = await _orders.GetByIdAsync(orderId);
-        if (order == null)
-            return (false, "Заявку не знайдено.");
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
 
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return (false, "Не визначено спеціаліста.");
+        var order = result.order!;
 
-        if (!string.Equals(order.SpecialistId, specialistId, StringComparison.OrdinalIgnoreCase))
-            return (false, "Заявка не призначена цьому спеціалісту.");
-
-        if (!string.Equals(order.Status, "ASSIGNED", StringComparison.OrdinalIgnoreCase))
+        if (!IsStatus(order, "ASSIGNED"))
             return (false, "Почати роботу можна тільки для заявки у статусі ASSIGNED.");
 
         order.Status = "IN_PROGRESS";
@@ -45,29 +42,20 @@ public class SpecialistOrderWorkflowService
         string? specialistId,
         string? inspectionResult)
     {
-        var order = await _orders.GetByIdAsync(orderId);
-        if (order == null)
-            return (false, "Заявку не знайдено.");
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
 
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return (false, "Не визначено спеціаліста.");
-
-        if (!string.Equals(order.SpecialistId, specialistId, StringComparison.OrdinalIgnoreCase))
-            return (false, "Заявка не призначена цьому спеціалісту.");
+        var order = result.order!;
 
         if (string.IsNullOrWhiteSpace(inspectionResult))
             return (false, "Результат огляду порожній.");
 
-        if (!string.Equals(order.Status, "IN_PROGRESS", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "ASSIGNED", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
+        if (!IsAnyStatus(order, "IN_PROGRESS", "ASSIGNED", "REWORK"))
             return (false, "Огляд можна зберігати тільки для заявки у роботі.");
 
         order.InspectionResult = inspectionResult.Trim();
         order.InspectionAt = DateTime.UtcNow;
-
-        // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
-        // после сохранения огляду переводим заявку на этап принятия решения
         order.Status = "INSPECTION";
 
         await _orders.UpdateAsync(order);
@@ -81,27 +69,23 @@ public class SpecialistOrderWorkflowService
         string? detailNeeds,
         string? explanation)
     {
-        var order = await _orders.GetByIdAsync(orderId);
-        if (order == null)
-            return (false, "Заявку не знайдено.");
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
 
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return (false, "Не визначено спеціаліста.");
-
-        if (!string.Equals(order.SpecialistId, specialistId, StringComparison.OrdinalIgnoreCase))
-            return (false, "Заявка не призначена цьому спеціалісту.");
+        var order = result.order!;
 
         if (string.IsNullOrWhiteSpace(detailNeeds))
             return (false, "Не вказано потрібні деталі.");
 
-        if (!string.Equals(order.Status, "INSPECTION", StringComparison.OrdinalIgnoreCase))
+        if (!IsStatus(order, "INSPECTION"))
             return (false, "Запит на деталі можна створити тільки після огляду.");
 
         var request = new DetailRequest
         {
             Id = ObjectId.GenerateNewId().ToString(),
             OrderId = order.Id,
-            SpecialistId = specialistId,
+            SpecialistId = specialistId!.Trim(),
             DetailNeeds = detailNeeds.Trim(),
             Explanation = string.IsNullOrWhiteSpace(explanation) ? null : explanation.Trim(),
             CreatedAt = DateTime.UtcNow
@@ -119,19 +103,13 @@ public class SpecialistOrderWorkflowService
 
     public async Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
     {
-        var order = await _orders.GetByIdAsync(orderId);
-        if (order == null)
-            return (false, "Заявку не знайдено.");
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
 
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return (false, "Не визначено спеціаліста.");
+        var order = result.order!;
 
-        if (!string.Equals(order.SpecialistId, specialistId, StringComparison.OrdinalIgnoreCase))
-            return (false, "Заявка не призначена цьому спеціалісту.");
-
-        if (!string.Equals(order.Status, "WAITING_DETAILS", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "INSPECTION", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
+        if (!IsAnyStatus(order, "WAITING_DETAILS", "INSPECTION", "REWORK"))
             return (false, "Перевести до виконання не можна для цього статусу.");
 
         order.Status = "EXECUTION";
@@ -145,29 +123,23 @@ public class SpecialistOrderWorkflowService
         string? specialistId,
         string? workReportText)
     {
-        var order = await _orders.GetByIdAsync(orderId);
-        if (order == null)
-            return (false, "Заявку не знайдено.");
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
 
-        if (string.IsNullOrWhiteSpace(specialistId))
-            return (false, "Не визначено спеціаліста.");
-
-        if (!string.Equals(order.SpecialistId, specialistId, StringComparison.OrdinalIgnoreCase))
-            return (false, "Заявка не призначена цьому спеціалісту.");
+        var order = result.order!;
 
         if (string.IsNullOrWhiteSpace(workReportText))
             return (false, "Текст звіту порожній.");
 
-        if (!string.Equals(order.Status, "EXECUTION", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "IN_PROGRESS", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
+        if (!IsAnyStatus(order, "EXECUTION", "IN_PROGRESS", "REWORK"))
             return (false, "Завершити можна тільки заявку у виконанні.");
 
         var report = new WorkReport
         {
             Id = ObjectId.GenerateNewId().ToString(),
             OrderId = order.Id,
-            SpecialistId = specialistId,
+            SpecialistId = specialistId!.Trim(),
             ReportText = workReportText.Trim(),
             CreatedAt = DateTime.UtcNow
         };
@@ -183,5 +155,35 @@ public class SpecialistOrderWorkflowService
         await _orders.UpdateAsync(order);
 
         return (true, "Заявку завершено.");
+    }
+
+    private async Task<(bool ok, string? message, WebApplication1.Domain.Order? order)> GetAssignedOrderAsync(
+        string orderId,
+        string? specialistId)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return (false, "Не вказано id заявки.", null);
+
+        if (string.IsNullOrWhiteSpace(specialistId))
+            return (false, "Не визначено спеціаліста.", null);
+
+        var order = await _orders.GetByIdAsync(orderId);
+        if (order == null)
+            return (false, "Заявку не знайдено.", null);
+
+        if (!string.Equals(order.SpecialistId, specialistId.Trim(), StringComparison.OrdinalIgnoreCase))
+            return (false, "Заявка не призначена цьому спеціалісту.", null);
+
+        return (true, null, order);
+    }
+
+    private static bool IsStatus(WebApplication1.Domain.Order order, string status)
+    {
+        return string.Equals(order.Status, status, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsAnyStatus(WebApplication1.Domain.Order order, params string[] statuses)
+    {
+        return statuses.Any(status => IsStatus(order, status));
     }
 }

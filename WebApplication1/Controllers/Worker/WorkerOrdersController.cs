@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApplication1.Domain;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
+using WebApplication1.Application.Services.Order;
+using WebApplication1.Application.Services.Users;
 
 namespace WebApplication1.Controllers;
 
@@ -22,7 +23,7 @@ public class WorkerOrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> My([FromQuery] string? status)
+    public async Task<ActionResult> My([FromQuery] string? status)
     {
         var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -33,15 +34,13 @@ public class WorkerOrdersController : ControllerBase
         var result = new List<object>();
 
         foreach (var o in orders)
-        {
             result.Add(await BuildOrderResponseFromDtoAsync(o));
-        }
 
         return Ok(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> MyById(string id)
+    public async Task<ActionResult> MyById(string id)
     {
         var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -149,68 +148,50 @@ public class WorkerOrdersController : ControllerBase
         };
     }
 
+    // 🔥 ВАЖНО — теперь без бизнес-логики
     [HttpPost("{id}/complaint")]
-    public async Task<IActionResult> CreateComplaint(string id, [FromBody] CreateComplaintRequest req)
+    public async Task<ActionResult> CreateComplaint(string id, [FromBody] CreateComplaintRequest req)
     {
         var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(workerId))
             return Unauthorized();
 
-        if (req == null || string.IsNullOrWhiteSpace(req.Text))
-            return BadRequest(new { message = "Текст скарги обов'язковий." });
+        var (ok, message, order) =
+            await _service.SubmitComplaintByWorkerAsync(id, workerId, req?.Text);
 
-        if (req.Text.Trim().Length < 5)
-            return BadRequest(new { message = "Текст скарги занадто короткий." });
-
-        var order = await _service.GetByIdAsync(id);
-
-        if (order is null)
-            return NotFound(new { message = "Заявку не знайдено." });
-
-        if (!string.Equals(order.WorkerId, workerId, StringComparison.OrdinalIgnoreCase))
-            return Forbid();
-
-        if (!string.Equals(order.Status, "DONE", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { message = "Скаргу можна подати тільки після завершення заявки." });
-
-        if (order.Complaint != null && order.Complaint.IsSubmitted)
-            return BadRequest(new { message = "Скарга вже подана." });
-
-        order.Complaint = new WebApplication1.Domain.ComplaintInfo
+        if (!ok)
         {
-            IsSubmitted = true,
-            Text = req.Text.Trim(),
-            CreatedAt = DateTime.UtcNow,
-            ResolvedByReportId = null
-        };
+            if (message == "FORBIDDEN")
+                return Forbid();
 
-        await _service.UpdateAsync(order);
+            if (message == "Заявку не знайдено.")
+                return NotFound(new { message });
 
-        return Ok(new { message = "Скаргу успішно подано." });
+            return BadRequest(new { message });
+        }
+
+        return Ok(new { message });
     }
+
     [HttpPost]
-public async Task<IActionResult> Create([FromBody] CreateOrderRequest req)
-{
-    var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    if (string.IsNullOrWhiteSpace(workerId))
-        return Unauthorized(new { message = "Не вдалося визначити працівника." });
-
-    if (req == null)
-        return BadRequest(new { message = "Невірні дані." });
-
-    var (ok, message, order) = await _service.CreateAsync(workerId, req);
-
-    if (!ok || order == null)
-        return BadRequest(new { message });
-
-    return Ok(new
+    public async Task<ActionResult> Create([FromBody] CreateOrderRequest req)
     {
-        message,
-        orderId = order.Id,
-        status = order.Status
-    });
-}
+        var workerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        if (string.IsNullOrWhiteSpace(workerId))
+            return Unauthorized(new { message = "Не вдалося визначити працівника." });
+
+        var (ok, message, order) = await _service.CreateAsync(workerId, req);
+
+        if (!ok || order == null)
+            return BadRequest(new { message });
+
+        return Ok(new
+        {
+            message,
+            orderId = order.Id,
+            status = order.Status
+        });
+    }
 }

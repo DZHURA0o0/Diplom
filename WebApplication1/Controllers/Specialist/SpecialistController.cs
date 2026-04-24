@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using WebApplication1.Application.Services.Order;
+using WebApplication1.Application.Services.Users;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
 
 namespace WebApplication1.Controllers;
 
@@ -21,7 +22,7 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMy([FromQuery] string? status)
+    public async Task<ActionResult> GetMy([FromQuery] string? status)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -66,7 +67,7 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpGet("{orderId}")]
-    public async Task<IActionResult> GetOne(string orderId)
+    public async Task<ActionResult> GetOne(string orderId)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -82,7 +83,7 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpPatch("{orderId}/start")]
-    public async Task<IActionResult> Start(string orderId)
+    public async Task<ActionResult> Start(string orderId)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -95,14 +96,14 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpPatch("{orderId}/inspection")]
-    public async Task<IActionResult> Inspection(string orderId, [FromBody] InspectionRequest req)
+    public async Task<ActionResult> Inspection(string orderId, [FromBody] InspectionRequest req)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var (ok, message) = await _service.SaveInspectionAsync(
             orderId,
             specialistId,
-            req.InspectionResult
+            req?.InspectionResult
         );
 
         if (!ok)
@@ -112,15 +113,15 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpPost("{orderId}/detail-request")]
-    public async Task<IActionResult> DetailRequest(string orderId, [FromBody] DetailRequestCreateRequest req)
+    public async Task<ActionResult> DetailRequest(string orderId, [FromBody] DetailRequestCreateRequest req)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var (ok, message) = await _service.CreateDetailRequestAsync(
             orderId,
             specialistId,
-            req.DetailNeeds,
-            req.Explanation
+            req?.DetailNeeds,
+            req?.Explanation
         );
 
         if (!ok)
@@ -130,7 +131,7 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpPatch("{orderId}/execution")]
-    public async Task<IActionResult> Execution(string orderId)
+    public async Task<ActionResult> Execution(string orderId)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -143,14 +144,14 @@ public class SpecialistController : ControllerBase
     }
 
     [HttpPatch("{orderId}/finish")]
-    public async Task<IActionResult> Finish(string orderId, [FromBody] FinishOrderRequest req)
+    public async Task<ActionResult> Finish(string orderId, [FromBody] FinishOrderRequest req)
     {
         var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var (ok, message) = await _service.FinishOrderAsync(
             orderId,
             specialistId,
-            req.WorkReport
+            req?.WorkReport
         );
 
         if (!ok)
