@@ -198,8 +198,8 @@ C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compr
 C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zrd2kf6j2u-{0}-u6vx5xdzpa-u6vx5xdzpa.gz
 C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\x8llxo5xoj-{0}-pqlt0x10q3-pqlt0x10q3.gz
 C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-5ilrtp3inz-5ilrtp3inz.gz
-C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\3eifqrg5dj-{0}-oh8mcxzniq-oh8mcxzniq.gz
-C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\sm9b745sgc-{0}-pk0hv20v1n-pk0hv20v1n.gz
-C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2vla5gdojf-{0}-boh9ok2z86-boh9ok2z86.gz
 C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\tr0lrx5ftn-{0}-1pzrhvor4s-1pzrhvor4s.gz
 C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\d1tk2c55hk-{0}-4kbk3ceu51-4kbk3ceu51.gz
+C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\3eifqrg5dj-{0}-fddf7cxgve-fddf7cxgve.gz
+C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\sm9b745sgc-{0}-ciuuw4qd9w-ciuuw4qd9w.gz
+C:\Users\malts\Documents\DiplomV2\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2vla5gdojf-{0}-8xxhdroo8u-8xxhdroo8u.gz
