@@ -13,7 +13,6 @@ function authHeaders(extra = {}) {
 
 async function readResponse(response) {
   const text = await response.text();
-  console.log("RAW RESPONSE:", text);
 
   if (!text) return null;
 
@@ -24,241 +23,114 @@ async function readResponse(response) {
   }
 }
 
-async function fetchSpecialistOrders(status = "") {
-  const url = status
-    ? `${API}/api/specialist/orders?status=${encodeURIComponent(status)}`
-    : `${API}/api/specialist/orders`;
+function getApiErrorMessage(data, fallback) {
+  if (typeof data === "string") return data;
+  return data?.message ?? data?.error ?? fallback;
+}
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: authHeaders()
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    headers: authHeaders(options.headers || {})
   });
 
   const data = await readResponse(response);
-  console.log("GET /api/specialist/orders parsed:", data);
 
   if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Load error: ${response.status}`;
-
-    console.error("GET /api/specialist/orders failed:", {
-      status: response.status,
-      data
-    });
-
-    throw new Error(message);
+    throw new Error(getApiErrorMessage(data, `Помилка запиту: ${response.status}`));
   }
 
+  return data;
+}
+
+async function fetchSpecialistOrders(status = "") {
+  const url = status
+    ? `/api/specialist/orders?status=${encodeURIComponent(status)}`
+    : `/api/specialist/orders`;
+
+  const data = await apiRequest(url, {
+    method: "GET"
+  });
+
   if (!Array.isArray(data)) {
-    console.error("GET /api/specialist/orders wrong format:", data);
-    throw new Error("Wrong response format");
+    throw new Error("Неправильний формат відповіді при завантаженні заявок.");
   }
 
   return data;
 }
 
 async function fetchSpecialistOrderById(orderId) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}`, {
-    method: "GET",
-    headers: authHeaders()
+  return await apiRequest(`/api/specialist/orders/${orderId}`, {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-  console.log(`GET /api/specialist/orders/${orderId} parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Load error: ${response.status}`;
-
-    console.error(`GET /api/specialist/orders/${orderId} failed:`, {
-      status: response.status,
-      data
-    });
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function startSpecialistOrder(orderId) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/start`, {
-    method: "PATCH",
-    headers: authHeaders()
+  return await apiRequest(`/api/specialist/orders/${orderId}/start`, {
+    method: "PATCH"
   });
-
-  const data = await readResponse(response);
-  console.log(`PATCH /api/specialist/orders/${orderId}/start parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Start error";
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function saveInspection(orderId, inspectionResult) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/inspection`, {
+  return await apiRequest(`/api/specialist/orders/${orderId}/inspection`, {
     method: "PATCH",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
-    body: JSON.stringify({ inspectionResult })
+    },
+    body: JSON.stringify({
+      inspectionResult
+    })
   });
-
-  const data = await readResponse(response);
-  console.log(`PATCH /api/specialist/orders/${orderId}/inspection parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Inspection save error";
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function sendDetailRequest(orderId, detailNeeds, explanation) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/detail-request`, {
+  return await apiRequest(`/api/specialist/orders/${orderId}/detail-request`, {
     method: "POST",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({
       detailNeeds,
       explanation
     })
   });
-
-  const data = await readResponse(response);
-  console.log(`POST /api/specialist/orders/${orderId}/detail-request parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Detail request error";
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function moveToExecution(orderId) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/execution`, {
-    method: "PATCH",
-    headers: authHeaders()
+  return await apiRequest(`/api/specialist/orders/${orderId}/execution`, {
+    method: "PATCH"
   });
-
-  const data = await readResponse(response);
-  console.log(`PATCH /api/specialist/orders/${orderId}/execution parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Execution transition error";
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function finishSpecialistOrder(orderId, workReport) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/finish`, {
+  return await apiRequest(`/api/specialist/orders/${orderId}/finish`, {
     method: "PATCH",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
-    body: JSON.stringify({ workReport })
+    },
+    body: JSON.stringify({
+      workReport
+    })
   });
-
-  const data = await readResponse(response);
-  console.log(`PATCH /api/specialist/orders/${orderId}/finish parsed:`, data);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Finish error";
-    throw new Error(message);
-  }
-
-  return data;
 }
+
 async function sendReworkReport(orderId, reportText) {
-  const response = await fetch(`${API}/api/specialist/orders/${orderId}/report`, {
+  return await apiRequest(`/api/specialist/orders/${orderId}/report`, {
     method: "POST",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({
       reportText,
       isRework: true
     })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Rework error";
-    throw new Error(message);
-  }
-
-  return data;
 }
+
 async function fetchOrderReports(orderId) {
-  const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest(`/api/orders/${orderId}/reports`, {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Reports load error";
-    throw new Error(message);
-  }
-
-  return Array.isArray(data) ? data : [];
-}
-async function fetchOrderReports(orderId) {
-  const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
-    method: "GET",
-    headers: authHeaders()
-  });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Reports load error";
-    throw new Error(message);
-  }
-
-  return Array.isArray(data) ? data : [];
-}async function fetchOrderReports(orderId) {
-  const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
-    method: "GET",
-    headers: authHeaders()
-  });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Reports load error";
-    throw new Error(message);
-  }
 
   return Array.isArray(data) ? data : [];
 }

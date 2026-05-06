@@ -5,6 +5,7 @@ using WebApplication1.Application.Services.Order;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Infrastructure.Extensions;
 using WebApplication1.Repositories;
+using WebApplication1.Application.Services.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,15 @@ builder.Services.AddScoped<OrderWorkflowService>();
 
 builder.Services.AddScoped<ComplaintService>();
 builder.Services.AddScoped<BossOrderDetailsService>();
+
+// Email notifications
+builder.Services.AddSingleton<EmailNotificationService>();
+
+// MongoDB watcher
+builder.Services.AddHostedService<OrderStatusWatcherService>();
+
+// Test email on application startup
+builder.Services.AddHostedService<StartupEmailTestService>();
 
 var app = builder.Build();
 

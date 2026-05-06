@@ -1,18 +1,36 @@
 function renderOrders(data) {
   const container = document.getElementById("orders");
+  if (!container) return;
 
-  if (!Array.isArray(data) || data.length === 0) {
-    container.innerHTML = `<div class="empty">Заявок не знайдено.</div>`;
-    openedOrderId = null;
+  updateWorkspaceChrome();
+
+  const isFocusMode = Boolean(focusedOrderId);
+
+  let visibleData = Array.isArray(data) ? data : [];
+
+  if (isFocusMode) {
+    const focusedOrder = visibleData.find(o => getOrderId(o) === String(focusedOrderId));
+    visibleData = focusedOrder ? [focusedOrder] : [];
+  }
+
+  if (!Array.isArray(visibleData) || visibleData.length === 0) {
+    if (isFocusMode) {
+      container.innerHTML = `<div class="empty">Заявку не знайдено.</div>`;
+    } else {
+      container.innerHTML = `<div class="empty">Заявок не знайдено.</div>`;
+      openedOrderId = null;
+    }
+
     return;
   }
 
   let html = "";
 
-  for (const o of data) {
+  for (const o of visibleData) {
     const rawId = getOrderId(o);
     const safeId = escapeAttr(rawId);
-    const isOpen = openedOrderId === rawId;
+
+    const isOpen = isFocusMode || openedOrderId === rawId;
 
     const statusRaw = String(o.status ?? "—");
     const statusText = escapeHtml(formatStatus(statusRaw));
@@ -24,9 +42,13 @@ function renderOrders(data) {
     const createdAt = formatDate(o.createdAt);
     const locationText = formatLocation(o);
 
+    const rowClick = isFocusMode
+      ? ""
+      : `onclick="toggleDetails('${escapeJs(rawId)}')"`;
+
     html += `
-      <div class="order-item">
-        <div class="order-row ${isOpen ? "expanded" : ""}" onclick="toggleDetails('${escapeJs(rawId)}')">
+      <div class="order-item ${isFocusMode ? "focused-order-item" : ""}">
+        <div class="order-row ${isOpen ? "expanded" : ""}" ${rowClick}>
           <div class="col">
             <span class="status ${statusClass}">${statusText}</span>
           </div>
@@ -51,7 +73,7 @@ function renderOrders(data) {
 
           <div class="col col-date">
             <div class="value">${createdAt}</div>
-            <div class="arrow">${isOpen ? "▲" : "▼"}</div>
+            <div class="arrow">${isFocusMode ? "" : (isOpen ? "▲" : "▼")}</div>
           </div>
         </div>
 
@@ -62,9 +84,10 @@ function renderOrders(data) {
 
   container.innerHTML = html;
 
-  for (const o of data) {
+  for (const o of visibleData) {
     const rawId = getOrderId(o);
     const el = document.getElementById(`details-${rawId}`);
+
     if (el) {
       renderOrderDetails(o, el);
     }
@@ -149,8 +172,55 @@ function renderOrderDetails(o, container) {
   loadReportsHistory(rawId);
 }
 
+function renderInactiveActionBlock(orderId, status) {
+  let text = "Щоб виконувати дії із заявкою, відкрий її в окремому режимі обробки.";
+
+  if (status === "IN_PROGRESS") {
+    text = "Щоб написати результат огляду, відкрий заявку в режимі обробки.";
+  }
+
+  if (status === "INSPECTION") {
+    text = "Щоб надіслати запит на деталі або перейти до виконання, відкрий заявку в режимі обробки.";
+  }
+
+  if (status === "EXECUTION") {
+    text = "Щоб написати фінальний звіт, відкрий заявку в режимі обробки.";
+  }
+
+  if (status === "REWORK") {
+    text = "Щоб виконати переробку, відкрий заявку в режимі обробки.";
+  }
+
+  return `
+    <div class="action-block inactive-action-block">
+      <div class="inactive-title">Дії недоступні у списку</div>
+      <div class="inactive-text">${escapeHtml(text)}</div>
+
+      <div class="action-row">
+        <button type="button" class="btn-action secondary" onclick="openOrderWorkspace('${escapeJs(orderId)}')">
+          Відкрити обробку заявки
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderActionBlock(order, orderId) {
-  if (order.status === "ASSIGNED") {
+  const status = String(order.status ?? "").trim().toUpperCase();
+  const isFocused = focusedOrderId && String(focusedOrderId) === String(orderId);
+
+  const needsFocusedWorkspace = [
+    "IN_PROGRESS",
+    "INSPECTION",
+    "EXECUTION",
+    "REWORK"
+  ].includes(status);
+
+  if (!isFocused && needsFocusedWorkspace) {
+    return renderInactiveActionBlock(orderId, status);
+  }
+
+  if (status === "ASSIGNED") {
     return `
       <div class="action-block">
         <div class="action-row">
@@ -162,7 +232,7 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (order.status === "IN_PROGRESS") {
+  if (status === "IN_PROGRESS") {
     return `
       <div class="action-block">
         <textarea
@@ -180,7 +250,7 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (order.status === "INSPECTION") {
+  if (status === "INSPECTION") {
     return `
       <div class="action-block">
         <input
@@ -188,6 +258,7 @@ function renderActionBlock(order, orderId) {
           class="action-input"
           type="text"
           placeholder="Які деталі потрібні">
+
         <textarea
           id="detail-explanation-${escapeAttr(orderId)}"
           class="action-textarea"
@@ -206,19 +277,20 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (order.status === "WAITING_DETAILS") {
+  if (status === "WAITING_DETAILS") {
     return `
-      <div class="action-block">
-        <div class="action-row">
-          <button type="button" class="btn-action" onclick="handleMoveToExecution('${escapeJs(orderId)}')">
-            Перевести до виконання
-          </button>
+      <div class="action-block locked-action-block">
+        <div class="locked-title">Очікування деталей</div>
+
+        <div class="locked-text">
+          Запит на деталі вже відправлено. Подальша взаємодія із заявкою заблокована:
+          неможливо перейти до виконання або написати звіт, поки статус заявки не буде змінено після отримання деталей.
         </div>
       </div>
     `;
   }
 
-  if (order.status === "EXECUTION") {
+  if (status === "EXECUTION") {
     return `
       <div class="action-block">
         <textarea
@@ -235,7 +307,7 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (order.status === "REWORK") {
+  if (status === "REWORK") {
     return `
       <div class="action-block">
         <div class="action-row">
@@ -257,11 +329,11 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (order.status === "DONE") {
+  if (status === "DONE") {
     return `<span class="state-badge">Завершено</span>`;
   }
 
-  if (order.status === "CANCELED") {
+  if (status === "CANCELED") {
     return `<span class="state-badge">Скасовано</span>`;
   }
 
@@ -281,6 +353,7 @@ function renderReportsHistory(reports) {
             <strong>Звіт ${index + 1}</strong>
             <span>${escapeHtml(formatDate(report.createdAt))}</span>
           </div>
+
           <div class="report-history-body">
             ${escapeHtml(report.reportText ?? "—")}
           </div>
