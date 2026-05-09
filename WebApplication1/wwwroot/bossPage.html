@@ -14,6 +14,7 @@
   <script src="/js/js_boss/boss-data.js" defer></script>
   <script src="/js/js_boss/boss-orders.js" defer></script>
   <script src="/js/js_boss/boss-users.js" defer></script>
+  <script src="/js/js_boss/boss-analytics.js" defer></script>
   <script src="/js/js_boss/boss-page.js" defer></script>
 </head>
 
@@ -45,7 +46,7 @@
           <div class="boss-title-wrap">
             <div class="boss-title">Керування заявками та користувачами</div>
             <div class="boss-subtitle">
-              Перегляд, фільтрація, призначення спеціалістів та керування обліковими записами
+              Перегляд, фільтрація, призначення спеціалістів, керування обліковими записами та перегляд аналітики
             </div>
           </div>
 
@@ -55,32 +56,21 @@
         </div>
 
         <div class="boss-tabs">
-          <button
-            type="button"
-            id="tabOrdersBtn"
-            class="tab-btn active"
-            onclick="showTab('orders')"
-          >
+          <button type="button" id="tabOrdersBtn" class="tab-btn active" onclick="showTab('orders')">
             Заявки
           </button>
 
-          <button
-            type="button"
-            id="tabComplaintsBtn"
-            class="tab-btn"
-            onclick="showTab('complaints')"
-          >
+          <button type="button" id="tabComplaintsBtn" class="tab-btn" onclick="showTab('complaints')">
             Скарги
             <span id="complaintsBadge" class="complaints-badge hidden">0</span>
           </button>
 
-          <button
-            type="button"
-            id="tabUsersBtn"
-            class="tab-btn"
-            onclick="showTab('users')"
-          >
+          <button type="button" id="tabUsersBtn" class="tab-btn" onclick="showTab('users')">
             Користувачі
+          </button>
+
+          <button type="button" id="tabAnalyticsBtn" class="tab-btn" onclick="showTab('analytics')">
+            Аналітика
           </button>
         </div>
 
@@ -106,9 +96,7 @@
             </div>
 
             <div class="toolbar-right">
-              <button type="button" class="btn-primary" onclick="loadOrders()">
-                Оновити
-              </button>
+              <button type="button" class="btn-primary" onclick="loadOrders()">Оновити</button>
             </div>
           </div>
 
@@ -141,9 +129,7 @@
             </div>
 
             <div class="toolbar-right">
-              <button type="button" class="btn-primary" onclick="loadComplaintsOrders()">
-                Оновити
-              </button>
+              <button type="button" class="btn-primary" onclick="loadComplaintsOrders()">Оновити</button>
             </div>
           </div>
 
@@ -190,9 +176,7 @@
             </div>
 
             <div class="toolbar-right">
-              <button type="button" class="btn-primary" onclick="loadUsers()">
-                Оновити
-              </button>
+              <button type="button" class="btn-primary" onclick="loadUsers()">Оновити</button>
             </div>
           </div>
 
@@ -213,6 +197,260 @@
                 </thead>
                 <tbody id="users"></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="analyticsTab" class="hidden">
+          <div class="toolbar analytics-toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-label">Період з:</span>
+              <input type="date" id="analyticsFrom" class="boss-input">
+
+              <span class="toolbar-label">по:</span>
+              <input type="date" id="analyticsTo" class="boss-input">
+
+              <span class="toolbar-label">Спеціаліст:</span>
+              <select id="analyticsSpecialistFilter" class="boss-select">
+                <option value="">Усі спеціалісти</option>
+              </select>
+            </div>
+
+            <div class="toolbar-right">
+              <button type="button" class="btn-secondary" onclick="resetAnalyticsFilters()">Скинути</button>
+              <button type="button" class="btn-primary" onclick="loadAnalytics()">Показати</button>
+            </div>
+          </div>
+
+          <div class="analytics-cards" id="analyticsSummary">
+            <div class="analytics-card">
+              <div class="analytics-card-label">Усього заявок</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-card-label">Виконано</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-card-label">Активні</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-card-label">Скарги</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-card-label">Переробки</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-card-label">Найбільша частка</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+          </div>
+
+          <div class="analytics-section">
+            <div class="analytics-section-head">
+              <div>
+                <div class="analytics-section-title">Графічне представлення аналітики</div>
+                <div class="analytics-section-subtitle">
+                  Візуалізація основних показників для швидкого аналізу стану заявок
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-charts-grid">
+              <div class="analytics-chart-card">
+                <div class="analytics-chart-title">Стан заявок</div>
+                <div class="analytics-chart-subtitle">Розподіл заявок за основними показниками</div>
+                <div id="chartOrdersStatus" class="analytics-chart-bars"></div>
+              </div>
+
+              <div class="analytics-chart-card">
+                <div class="analytics-chart-title">Частка спеціалістів</div>
+                <div class="analytics-chart-subtitle">Внесок спеціалістів у виконані заявки</div>
+                <div id="chartSpecialistShare" class="analytics-chart-bars"></div>
+              </div>
+
+              <div class="analytics-chart-card">
+                <div class="analytics-chart-title">Типи звернень</div>
+                <div class="analytics-chart-subtitle">Найпопулярніші категорії заявок</div>
+                <div id="chartServiceTypes" class="analytics-chart-bars"></div>
+              </div>
+
+              <div class="analytics-chart-card">
+                <div class="analytics-chart-title">Проблемні локації</div>
+                <div class="analytics-chart-subtitle">Де найчастіше створюються заявки</div>
+                <div id="chartLocations" class="analytics-chart-bars"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-section">
+            <div class="analytics-section-head">
+              <div>
+                <div class="analytics-section-title">Рекомендація на премію</div>
+                <div class="analytics-section-subtitle">
+                  Система пропонує кандидата на основі частки виконаних заявок, відсотка виконання та рівня скарг
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div id="analyticsBonusRecommendation" class="bonus-recommendation">
+                <div class="empty-box">Немає даних для формування рекомендації</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-section">
+            <div class="analytics-section-head">
+              <div>
+                <div class="analytics-section-title">Ефективність спеціалістів</div>
+                <div class="analytics-section-subtitle">
+                  Частка показує, який відсоток від усіх виконаних заявок за період виконав конкретний спеціаліст
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-scroll">
+                <table class="boss-table analytics-table">
+                  <thead>
+                    <tr>
+                      <th>Спеціаліст</th>
+                      <th>Призначено</th>
+                      <th>Виконано</th>
+                      <th>Активні</th>
+                      <th>Скарги</th>
+                      <th>Переробки</th>
+                      <th>% виконання</th>
+                      <th>% скарг</th>
+                      <th>Частка</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analyticsSpecialists"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="analytics-section">
+              <div class="analytics-section-head">
+                <div>
+                  <div class="analytics-section-title">Хто найчастіше подає скарги</div>
+                  <div class="analytics-section-subtitle">
+                    Показує частоту скарг працівника відносно його заявок та його частку серед усіх скарг за період
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-card">
+                <div class="table-scroll">
+                  <table class="boss-table analytics-small-table">
+                    <thead>
+                      <tr>
+                        <th>Працівник</th>
+                        <th>Заявки</th>
+                        <th>Скарги</th>
+                        <th>% від своїх заявок</th>
+                        <th>Частка від усіх скарг</th>
+                      </tr>
+                    </thead>
+                    <tbody id="analyticsComplainers"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-section">
+              <div class="analytics-section-head">
+                <div>
+                  <div class="analytics-section-title">Типи звернень</div>
+                  <div class="analytics-section-subtitle">
+                    Які послуги найчастіше замовляють працівники
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-card">
+                <div class="table-scroll">
+                  <table class="boss-table analytics-small-table">
+                    <thead>
+                      <tr>
+                        <th>Тип послуги</th>
+                        <th>Кількість</th>
+                        <th>Виконано</th>
+                        <th>Скарги</th>
+                      </tr>
+                    </thead>
+                    <tbody id="analyticsServiceTypes"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="analytics-section">
+              <div class="analytics-section-head">
+                <div>
+                  <div class="analytics-section-title">Хто найчастіше подає заявки</div>
+                  <div class="analytics-section-subtitle">
+                    Частка показує, який відсоток від усіх заявок за період створив конкретний працівник
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-card">
+                <div class="table-scroll">
+                  <table class="boss-table analytics-small-table">
+                    <thead>
+                      <tr>
+                        <th>Працівник</th>
+                        <th>Заявки</th>
+                        <th>Виконано</th>
+                        <th>Активні</th>
+                        <th>Скарги</th>
+                        <th>Частка</th>
+                      </tr>
+                    </thead>
+                    <tbody id="analyticsRequesters"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-section">
+              <div class="analytics-section-head">
+                <div>
+                  <div class="analytics-section-title">Де найчастіше трапляються поломки</div>
+                  <div class="analytics-section-subtitle">
+                    Частка показує, який відсоток від усіх заявок припадає на конкретну локацію
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-card">
+                <div class="table-scroll">
+                  <table class="boss-table analytics-small-table">
+                    <thead>
+                      <tr>
+                        <th>Локація</th>
+                        <th>К-ть заявок</th>
+                        <th>Частка</th>
+                      </tr>
+                    </thead>
+                    <tbody id="analyticsLocations"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>

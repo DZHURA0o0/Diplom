@@ -29,6 +29,10 @@ function resetBossPeopleCache() {
     if (typeof bossSpecialistsMap !== "undefined") {
         bossSpecialistsMap = {};
     }
+
+    if (typeof analyticsSpecialistsLoaded !== "undefined") {
+        analyticsSpecialistsLoaded = false;
+    }
 }
 
 function resetOrdersCache() {
@@ -74,26 +78,56 @@ function initBossFilters() {
             await loadUsers();
         });
     }
+
+    if (typeof initBossAnalyticsFilters === "function") {
+        initBossAnalyticsFilters();
+    }
 }
 
 function setVisibleTab(tabName) {
     const ordersTab = document.getElementById("ordersTab");
     const complaintsTab = document.getElementById("complaintsTab");
     const usersTab = document.getElementById("usersTab");
+    const analyticsTab = document.getElementById("analyticsTab");
 
-    ordersTab?.classList.toggle("hidden", tabName !== "orders");
-    complaintsTab?.classList.toggle("hidden", tabName !== "complaints");
-    usersTab?.classList.toggle("hidden", tabName !== "users");
+    if (ordersTab) {
+        ordersTab.classList.toggle("hidden", tabName !== "orders");
+    }
+
+    if (complaintsTab) {
+        complaintsTab.classList.toggle("hidden", tabName !== "complaints");
+    }
+
+    if (usersTab) {
+        usersTab.classList.toggle("hidden", tabName !== "users");
+    }
+
+    if (analyticsTab) {
+        analyticsTab.classList.toggle("hidden", tabName !== "analytics");
+    }
 }
 
 function setActiveTabButton(tabName) {
     const tabOrdersBtn = document.getElementById("tabOrdersBtn");
     const tabComplaintsBtn = document.getElementById("tabComplaintsBtn");
     const tabUsersBtn = document.getElementById("tabUsersBtn");
+    const tabAnalyticsBtn = document.getElementById("tabAnalyticsBtn");
 
-    tabOrdersBtn?.classList.toggle("active", tabName === "orders");
-    tabComplaintsBtn?.classList.toggle("active", tabName === "complaints");
-    tabUsersBtn?.classList.toggle("active", tabName === "users");
+    if (tabOrdersBtn) {
+        tabOrdersBtn.classList.toggle("active", tabName === "orders");
+    }
+
+    if (tabComplaintsBtn) {
+        tabComplaintsBtn.classList.toggle("active", tabName === "complaints");
+    }
+
+    if (tabUsersBtn) {
+        tabUsersBtn.classList.toggle("active", tabName === "users");
+    }
+
+    if (tabAnalyticsBtn) {
+        tabAnalyticsBtn.classList.toggle("active", tabName === "analytics");
+    }
 }
 
 function showTab(tabName) {
@@ -129,6 +163,18 @@ function showTab(tabName) {
     if (tabName === "users") {
         if (typeof loadUsers === "function") {
             loadUsers();
+        }
+
+        if (typeof updateComplaintsBadge === "function") {
+            updateComplaintsBadge();
+        }
+
+        return;
+    }
+
+    if (tabName === "analytics") {
+        if (typeof loadAnalytics === "function") {
+            loadAnalytics();
         }
 
         if (typeof updateComplaintsBadge === "function") {
@@ -173,6 +219,7 @@ async function loadHeaderUser() {
 
 window.addEventListener("DOMContentLoaded", async () => {
     initBossFilters();
+
     await loadHeaderUser();
 
     if (typeof updateComplaintsBadge === "function") {

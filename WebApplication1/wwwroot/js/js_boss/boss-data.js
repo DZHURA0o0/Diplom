@@ -22,6 +22,10 @@ async function readResponse(response) {
   }
 }
 
+/* ===========================
+   ORDERS DATA
+=========================== */
+
 async function fetchWorkers() {
   const response = await fetch(`${API}/api/boss/orders/workers`, {
     method: "GET",
@@ -68,6 +72,7 @@ async function fetchOrders(status = "") {
     const message = typeof data === "string"
       ? data
       : data?.message ?? `Load error: ${response.status}`;
+
     throw new Error(message);
   }
 
@@ -90,6 +95,7 @@ async function fetchOrderDetails(orderId) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? `Order details load error: ${response.status}`;
+
     throw new Error(message);
   }
 
@@ -113,6 +119,7 @@ async function assignSpecialist(orderId, specialistId) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Assign error";
+
     throw new Error(message);
   }
 
@@ -135,6 +142,7 @@ async function moveComplaintToRework(orderId) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "To rework error";
+
     throw new Error(message);
   }
 
@@ -156,6 +164,7 @@ async function resolveComplaint(orderId, comment = "") {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Resolve complaint error";
+
     throw new Error(message);
   }
 
@@ -177,6 +186,7 @@ async function rejectComplaint(orderId, comment = "") {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Reject complaint error";
+
     throw new Error(message);
   }
 
@@ -209,6 +219,7 @@ async function fetchUsers(role = "", status = "") {
     const message = typeof data === "string"
       ? data
       : data?.message ?? `Users load error: ${response.status}`;
+
     throw new Error(message);
   }
 
@@ -234,6 +245,7 @@ async function updateUserRole(userId, role) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Role update error";
+
     throw new Error(message);
   }
 
@@ -255,11 +267,13 @@ async function updateUserAccountStatus(userId, accountStatus) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Status update error";
+
     throw new Error(message);
   }
 
   return data;
 }
+
 /* ===========================
    CURRENT USER
 =========================== */
@@ -276,11 +290,17 @@ async function fetchMe() {
     const message = typeof data === "string"
       ? data
       : data?.message ?? "Failed to load current user";
+
     throw new Error(message);
   }
 
   return data;
 }
+
+/* ===========================
+   REPORTS
+=========================== */
+
 async function fetchOrderReports(orderId) {
   const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
     method: "GET",
@@ -293,6 +313,7 @@ async function fetchOrderReports(orderId) {
     const message = typeof data === "string"
       ? data
       : data?.message ?? `Reports load error: ${response.status}`;
+
     throw new Error(message);
   }
 
@@ -302,6 +323,41 @@ async function fetchOrderReports(orderId) {
 
   return data;
 }
+
+/* ===========================
+   ANALYTICS
+=========================== */
+
+async function fetchBossAnalytics(from = "", to = "", specialistId = "") {
+  const params = new URLSearchParams();
+
+  if (from) params.append("from", from);
+  if (to) params.append("to", to);
+  if (specialistId) params.append("specialistId", specialistId);
+
+  const query = params.toString();
+  const url = query
+    ? `${API}/api/boss/analytics?${query}`
+    : `${API}/api/boss/analytics`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: authHeaders()
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    const message = typeof data === "string"
+      ? data
+      : data?.message ?? `Analytics load error: ${response.status}`;
+
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 /* ===========================
    АЛІАСИ ДЛЯ СУМІСНОСТІ
 =========================== */
