@@ -96,6 +96,7 @@ async function sendDetailRequest(orderId, detailNeeds, explanation) {
   });
 }
 
+
 async function moveToExecution(orderId) {
   return await apiRequest(`/api/specialist/orders/${orderId}/execution`, {
     method: "PATCH"

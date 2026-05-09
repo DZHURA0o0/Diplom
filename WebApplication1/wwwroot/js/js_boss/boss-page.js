@@ -50,6 +50,10 @@ function initBossFilters() {
 
             resetOrdersCache();
             await loadOrders();
+
+            if (typeof updateComplaintsBadge === "function") {
+                await updateComplaintsBadge();
+            }
         });
     }
 
@@ -102,6 +106,11 @@ function showTab(tabName) {
         if (typeof loadOrders === "function") {
             loadOrders();
         }
+
+        if (typeof updateComplaintsBadge === "function") {
+            updateComplaintsBadge();
+        }
+
         return;
     }
 
@@ -109,12 +118,21 @@ function showTab(tabName) {
         if (typeof loadComplaintsOrders === "function") {
             loadComplaintsOrders();
         }
+
+        if (typeof updateComplaintsBadge === "function") {
+            updateComplaintsBadge();
+        }
+
         return;
     }
 
     if (tabName === "users") {
         if (typeof loadUsers === "function") {
             loadUsers();
+        }
+
+        if (typeof updateComplaintsBadge === "function") {
+            updateComplaintsBadge();
         }
     }
 }
@@ -156,6 +174,10 @@ async function loadHeaderUser() {
 window.addEventListener("DOMContentLoaded", async () => {
     initBossFilters();
     await loadHeaderUser();
+
+    if (typeof updateComplaintsBadge === "function") {
+        await updateComplaintsBadge();
+    }
 
     showTab("orders");
 });

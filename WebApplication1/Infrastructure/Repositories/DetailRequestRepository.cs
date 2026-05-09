@@ -33,4 +33,21 @@ public class DetailRequestRepository
     {
         await _collection.ReplaceOneAsync(x => x.Id == detailRequest.Id, detailRequest);
     }
+
+    public Task<List<DetailRequest>> GetPendingDecisionRequestsAsync()
+    {
+        var statuses = new[]
+        {
+            "APPROVED",
+            "REJECTED",
+            "CANCELED"
+        };
+
+        var filter = Builders<DetailRequest>.Filter.In(x => x.Status, statuses);
+
+        return _collection
+            .Find(filter)
+            .SortByDescending(x => x.CreatedAt)
+            .ToListAsync();
+    }
 }

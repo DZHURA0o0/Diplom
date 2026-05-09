@@ -32,7 +32,7 @@ public class BossComplaintsController : ControllerBase
     }
 
     [HttpPatch("{orderId}/resolve")]
-    public async Task<ActionResult> Resolve(string orderId, [FromBody] CloseComplaintRequest req)
+    public async Task<ActionResult> Resolve(string orderId, [FromBody] CloseComplaintRequest? req)
     {
         var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "BOSS";
 
@@ -45,7 +45,7 @@ public class BossComplaintsController : ControllerBase
     }
 
     [HttpPatch("{orderId}/reject")]
-    public async Task<ActionResult> Reject(string orderId, [FromBody] CloseComplaintRequest req)
+    public async Task<ActionResult> Reject(string orderId, [FromBody] CloseComplaintRequest? req)
     {
         var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "BOSS";
 
@@ -69,26 +69,40 @@ public class BossComplaintsController : ControllerBase
                 isSubmitted = order.Complaint?.IsSubmitted ?? false,
                 text = order.Complaint?.Text,
                 createdAt = order.Complaint?.CreatedAt,
-                resolvedByReportId = order.Complaint?.ResolvedByReportId
+                resolvedByReportId = order.Complaint?.ResolvedByReportId,
+                closedAt = order.Complaint?.ClosedAt,
+                closedBy = order.Complaint?.ClosedBy,
+                closeComment = order.Complaint?.CloseComment
             }
         };
     }
 
     private static string? GetComplaintStatus(Order order)
-    {
-        var complaint = order.Complaint;
+{
+    var complaint = order.Complaint;
 
-        if (complaint == null || !complaint.IsSubmitted)
-            return null;
+    if (complaint == null || !complaint.IsSubmitted)
+        return null;
 
-        if (!string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
-            return "RESOLVED";
+    if (complaint.ClosedAt != null &&
+        !string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        return "RESOLVED";
 
-        if (string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
-            return "IN_REWORK";
+    if (complaint.ClosedAt != null &&
+        string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        return "REJECTED";
 
+    if (string.Equals(order.Status, "REWORK_REVIEW", StringComparison.OrdinalIgnoreCase))
+        return "REWORK_DONE";
+
+    if (string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
+        return "IN_REWORK";
+
+    if (string.Equals(order.Status, "UNDER_COMPLAINT", StringComparison.OrdinalIgnoreCase))
         return "SUBMITTED";
-    }
+
+    return "SUBMITTED";
+}
 }
 
 public class CloseComplaintRequest

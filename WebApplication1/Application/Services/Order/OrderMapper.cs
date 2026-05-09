@@ -36,7 +36,10 @@ public static class OrderMapper
                     IsSubmitted = order.Complaint.IsSubmitted,
                     Text = order.Complaint.Text,
                     CreatedAt = order.Complaint.CreatedAt,
-                    ResolvedByReportId = order.Complaint.ResolvedByReportId
+                    ResolvedByReportId = order.Complaint.ResolvedByReportId,
+                    ClosedAt = order.Complaint.ClosedAt,
+                    ClosedBy = order.Complaint.ClosedBy,
+                    CloseComment = order.Complaint.CloseComment
                 }
         };
     }

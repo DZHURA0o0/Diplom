@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "RSE4tG9N7N8=",
+  "dgSpecHash": "DjxGxFyKUpY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+  "projectFilePath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\malts\\.nuget\\packages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
     "C:\\Users\\malts\\.nuget\\packages\\dnsclient\\1.6.1\\dnsclient.1.6.1.nupkg.sha512",
@@ -30,10 +30,10 @@
     {
       "code": "NU1510",
       "level": "Warning",
-      "message": "PackageReference Microsoft.AspNetCore.Identity не будет урезано. Рассмотрите возможность удаления этого пакета из зависимостей, так как он, вероятно, не требуется.",
-      "projectPath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+      "message": "PackageReference Microsoft.AspNetCore.Identity will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
+      "projectPath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\malts\\Documents\\GitHub\\Diplom\\WebApplication1\\WebApplication1.csproj",
+      "filePath": "C:\\Users\\malts\\Documents\\DiplomV2\\Diplom\\WebApplication1\\WebApplication1.csproj",
       "libraryId": "Microsoft.AspNetCore.Identity",
       "targetGraphs": [
         "net10.0"

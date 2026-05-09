@@ -31,7 +31,6 @@ async function handleStart(orderId) {
 
     setPageStatus("Заявку переведено в статус 'У роботі'.");
 
-    // Після старту заявки відкриваємо окремий простір тільки для неї
     await openOrderWorkspace(orderId);
   } catch (e) {
     console.error(e);
@@ -110,7 +109,7 @@ async function handleMoveToExecution(orderId) {
     const status = getCachedOrderStatus(orderId);
 
     if (status === "WAITING_DETAILS") {
-      setPageStatus("Заявка очікує деталей. Перехід до виконання заблоковано.", true);
+      setPageStatus("Заявка очікує деталей. Спочатку натисни 'Деталі отримано'.", true);
       return;
     }
 
@@ -135,6 +134,11 @@ async function handleFinishOrder(orderId) {
 
     if (status === "WAITING_DETAILS") {
       setPageStatus("Заявка очікує деталей. Звіт заблоковано до отримання деталей.", true);
+      return;
+    }
+
+    if (status === "DETAILS_RECEIVED") {
+      setPageStatus("Спочатку переведи заявку до виконання.", true);
       return;
     }
 
@@ -174,7 +178,7 @@ async function handleRework(orderId) {
     setPageStatus("Збереження повторного звіту...");
     await sendReworkReport(orderId, reportText);
 
-    setPageStatus("Переробку завершено.");
+    setPageStatus("Переробку завершено. Заявку передано начальнику на перевірку.");
     await refreshFocusedOrder(orderId);
   } catch (e) {
     console.error(e);

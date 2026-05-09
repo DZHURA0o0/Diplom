@@ -31,27 +31,38 @@ public class SpecialistWorkReportService
         if (string.IsNullOrWhiteSpace(reportText))
             return (false, "Текст звіту порожній.");
 
+        if (!isRework)
+        {
+            return (false,
+                "Цей endpoint використовується тільки для повторного звіту по переробці. " +
+                "Звичайне завершення заявки виконується через /finish.");
+        }
+
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order is null)
             return (false, "Заявку не знайдено.");
 
-        if (order.SpecialistId != specialistId)
+        if (string.IsNullOrWhiteSpace(order.SpecialistId))
+            return (false, "Заявка не призначена спеціалісту.");
+
+        if (!string.Equals(order.SpecialistId, specialistId.Trim(), StringComparison.OrdinalIgnoreCase))
             return (false, "Ця заявка не призначена даному спеціалісту.");
 
-        if (order.Status != "IN_PROGRESS" && order.Status != "REWORK")
-            return (false, "Звіт можна додавати тільки для статусів IN_PROGRESS або REWORK.");
-
-        if (isRework && order.Status != "REWORK")
+        if (!string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
             return (false, "Повторний звіт можна додавати тільки для заявки у статусі REWORK.");
 
-        if (!isRework && order.Status == "REWORK")
-            return (false, "Для заявки на переробці треба додавати повторний звіт.");
+        if (order.Complaint is null || !order.Complaint.IsSubmitted)
+            return (false, "У заявки немає активної скарги для переробки.");
+
+        if (!string.IsNullOrWhiteSpace(order.Complaint.ResolvedByReportId))
+            return (false, "Повторний звіт по цій скарзі вже додано.");
 
         var report = new WorkReport
         {
             Id = ObjectId.GenerateNewId().ToString(),
             OrderId = order.Id,
-            SpecialistId = specialistId,
+            SpecialistId = specialistId.Trim(),
             ReportText = reportText.Trim(),
             CreatedAt = DateTime.UtcNow
         };
@@ -59,14 +70,13 @@ public class SpecialistWorkReportService
         await _reports.CreateAsync(report);
 
         order.LastWorkReportId = report.Id;
-        order.Status = "DONE";
 
-        if (isRework)
-        {
-            order.Complaint ??= new ComplaintInfo();
-            order.Complaint.IsSubmitted = true;
-            order.Complaint.ResolvedByReportId = report.Id;
-        }
+        // ВАЖНО:
+        // Спеціаліст НЕ закриває заявку остаточно.
+        // Він тільки передає її начальнику на перевірку переробки.
+        order.Status = "REWORK_REVIEW";
+
+        order.Complaint.ResolvedByReportId = report.Id;
 
         await _orders.UpdateAsync(order);
 

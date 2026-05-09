@@ -5,6 +5,7 @@ using WebApplication1.Application.Services.Order;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Infrastructure.Extensions;
 using WebApplication1.Repositories;
+using WebApplication1.Application.Services.Details;
 using WebApplication1.Application.Services.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,10 @@ builder.Services.AddScoped<OrderWorkflowService>();
 
 builder.Services.AddScoped<ComplaintService>();
 builder.Services.AddScoped<BossOrderDetailsService>();
+builder.Services.AddScoped<DetailRequestStatusSyncService>();
+builder.Services.AddHostedService<DetailRequestStatusBackgroundService>();
+// Work reports / rework reports
+builder.Services.AddScoped<SpecialistWorkReportService>();
 
 // Email notifications
 builder.Services.AddSingleton<EmailNotificationService>();

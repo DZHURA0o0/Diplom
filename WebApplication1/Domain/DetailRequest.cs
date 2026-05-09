@@ -22,11 +22,12 @@ public class DetailRequest
     public string DetailNeeds { get; set; } = null!;
 
     [BsonElement("explanation")]
-    public string Explanation { get; set; } = null!;
+    public string? Explanation { get; set; }
 
     [BsonElement("photos")]
     public List<string> Photos { get; set; } = new();
 
+    // CREATED / APPROVED / REJECTED / CANCELED
     [BsonElement("status")]
     public string Status { get; set; } = "CREATED";
 

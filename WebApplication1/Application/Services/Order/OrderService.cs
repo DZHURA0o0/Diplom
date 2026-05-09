@@ -65,6 +65,9 @@ public class OrderService
         string? explanation)
         => _workflowService.CreateDetailRequestAsync(orderId, specialistId, detailNeeds, explanation);
 
+    public Task<(bool ok, string? message)> ReceiveDetailsAsync(string orderId, string? specialistId)
+        => _workflowService.ReceiveDetailsAsync(orderId, specialistId);
+
     public Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
         => _workflowService.MoveToExecutionAsync(orderId, specialistId);
 

@@ -1,10 +1,14 @@
 const STATUS_LABELS = {
+  NEW: "Нова",
   ASSIGNED: "Призначена",
   IN_PROGRESS: "У роботі",
   INSPECTION: "На перевірці",
   WAITING_DETAILS: "Очікує деталей",
+  DETAILS_RECEIVED: "Деталі отримано",
   EXECUTION: "На виконанні",
+  UNDER_COMPLAINT: "На оскарженні",
   REWORK: "На переробці",
+  REWORK_REVIEW: "Переробку завершено",
   DONE: "Виконана",
   CANCELED: "Скасована"
 };

@@ -32,6 +32,7 @@ public class OrderWorkflowService
             return (false, "Почати роботу можна тільки для заявки у статусі ASSIGNED.");
 
         order.Status = "IN_PROGRESS";
+
         await _orders.UpdateAsync(order);
 
         return (true, "Роботу розпочато.");
@@ -101,6 +102,27 @@ public class OrderWorkflowService
         return (true, "Запит на деталі створено.");
     }
 
+    public async Task<(bool ok, string? message)> ReceiveDetailsAsync(string orderId, string? specialistId)
+    {
+        var result = await GetAssignedOrderAsync(orderId, specialistId);
+        if (!result.ok)
+            return (false, result.message);
+
+        var order = result.order!;
+
+        if (!IsStatus(order, "WAITING_DETAILS"))
+            return (false, "Позначити отримання деталей можна тільки для заявки у статусі WAITING_DETAILS.");
+
+        if (string.IsNullOrWhiteSpace(order.DetailRequestId))
+            return (false, "У заявки немає створеного запиту на деталі.");
+
+        order.Status = "DETAILS_RECEIVED";
+
+        await _orders.UpdateAsync(order);
+
+        return (true, "Деталі отримано. Заявку можна переводити до виконання.");
+    }
+
     public async Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
     {
         var result = await GetAssignedOrderAsync(orderId, specialistId);
@@ -109,10 +131,11 @@ public class OrderWorkflowService
 
         var order = result.order!;
 
-        if (!IsAnyStatus(order, "WAITING_DETAILS", "INSPECTION", "REWORK"))
-            return (false, "Перевести до виконання не можна для цього статусу.");
+        if (!IsAnyStatus(order, "INSPECTION", "DETAILS_RECEIVED", "REWORK"))
+            return (false, "Перевести до виконання можна тільки після огляду, після отримання деталей або під час переробки.");
 
         order.Status = "EXECUTION";
+
         await _orders.UpdateAsync(order);
 
         return (true, "Заявку переведено у виконання.");
@@ -132,8 +155,8 @@ public class OrderWorkflowService
         if (string.IsNullOrWhiteSpace(workReportText))
             return (false, "Текст звіту порожній.");
 
-        if (!IsAnyStatus(order, "EXECUTION", "IN_PROGRESS", "REWORK"))
-            return (false, "Завершити можна тільки заявку у виконанні.");
+        if (!IsAnyStatus(order, "EXECUTION", "REWORK"))
+            return (false, "Завершити можна тільки заявку у виконанні або на переробці.");
 
         var report = new WorkReport
         {
@@ -168,6 +191,7 @@ public class OrderWorkflowService
             return (false, "Не визначено спеціаліста.", null);
 
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order == null)
             return (false, "Заявку не знайдено.", null);
 

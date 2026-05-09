@@ -130,6 +130,19 @@ public class SpecialistController : ControllerBase
         return Ok(new { message });
     }
 
+    [HttpPatch("{orderId}/details-received")]
+    public async Task<ActionResult> DetailsReceived(string orderId)
+    {
+        var specialistId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var (ok, message) = await _service.ReceiveDetailsAsync(orderId, specialistId);
+
+        if (!ok)
+            return BadRequest(new { message });
+
+        return Ok(new { message });
+    }
+
     [HttpPatch("{orderId}/execution")]
     public async Task<ActionResult> Execution(string orderId)
     {

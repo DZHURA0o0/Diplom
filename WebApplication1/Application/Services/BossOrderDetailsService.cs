@@ -47,17 +47,7 @@ public class BossOrderDetailsService
 
         var complaintSubmitted = order.Complaint?.IsSubmitted ?? false;
         var complaintText = order.Complaint?.Text;
-        string? complaintStatus = null;
-
-        if (complaintSubmitted)
-        {
-            if (!string.IsNullOrWhiteSpace(order.Complaint?.ResolvedByReportId))
-                complaintStatus = "RESOLVED";
-            else if (Normalize(order.Status) == "REWORK")
-                complaintStatus = "IN_REWORK";
-            else
-                complaintStatus = "SUBMITTED";
-        }
+        var complaintStatus = GetComplaintStatus(order);
 
         return new BossOrderDetailsDto
         {
@@ -89,6 +79,48 @@ public class BossOrderDetailsService
             ComplaintText = complaintText,
             ComplaintStatus = complaintStatus
         };
+    }
+
+    private static string? GetComplaintStatus(WebApplication1.Domain.Order order)
+    {
+        var complaint = order.Complaint;
+
+        if (complaint == null || !complaint.IsSubmitted)
+            return null;
+
+        if (complaint.ClosedAt != null &&
+            !string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        {
+            return "RESOLVED";
+        }
+
+        if (complaint.ClosedAt != null &&
+            string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        {
+            return "REJECTED";
+        }
+
+        if (Normalize(order.Status) == "REWORK_REVIEW")
+        {
+            return "REWORK_DONE";
+        }
+
+        if (Normalize(order.Status) == "REWORK")
+        {
+            return "IN_REWORK";
+        }
+
+        if (Normalize(order.Status) == "UNDER_COMPLAINT")
+        {
+            return "SUBMITTED";
+        }
+
+        if (!string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        {
+            return "REWORK_DONE";
+        }
+
+        return "SUBMITTED";
     }
 
     private static string Normalize(string? value)

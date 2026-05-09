@@ -18,4 +18,13 @@ public class ComplaintInfo
     [BsonElement("resolved_by_report_id")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? ResolvedByReportId { get; set; }
+
+    [BsonElement("closed_at")]
+    public DateTime? ClosedAt { get; set; }
+
+    [BsonElement("closed_by")]
+    public string? ClosedBy { get; set; }
+
+    [BsonElement("close_comment")]
+    public string? CloseComment { get; set; }
 }

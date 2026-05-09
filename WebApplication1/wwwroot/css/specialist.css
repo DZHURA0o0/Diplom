@@ -185,57 +185,104 @@
   flex-shrink: 0;
 }
 
+/* ===================== STATUS ===================== */
+
 .status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 110px;
+  min-width: 118px;
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-.status.ASSIGNED {
-  background: rgba(79, 158, 255, 0.18);
-  color: #8fc0ff;
+.status.NEW,
+.status.ASSIGNED,
+.status.EXECUTION {
+  background: linear-gradient(
+    135deg,
+    rgba(25, 111, 153, 0.55),
+    rgba(27, 97, 128, 0.48)
+  );
+  border-color: rgba(91, 201, 255, 0.16);
+  color: #79e0ff;
 }
 
-.status.IN_PROGRESS {
-  background: rgba(255, 193, 7, 0.16);
-  color: #ffd76a;
+.status.IN_PROGRESS,
+.status.WAITING_DETAILS {
+  background: linear-gradient(
+    135deg,
+    rgba(140, 100, 18, 0.52),
+    rgba(108, 79, 18, 0.44)
+  );
+  border-color: rgba(255, 214, 102, 0.16);
+  color: #ffd978;
 }
 
 .status.INSPECTION {
-  background: rgba(156, 39, 176, 0.16);
-  color: #d59df0;
+  background: linear-gradient(
+    135deg,
+    rgba(111, 52, 145, 0.52),
+    rgba(89, 38, 117, 0.44)
+  );
+  border-color: rgba(213, 157, 240, 0.16);
+  color: #dba7f3;
 }
 
-.status.WAITING_DETAILS {
-  background: rgba(255, 152, 0, 0.16);
-  color: #ffbf66;
+.status.DETAILS_RECEIVED {
+  background: linear-gradient(
+    135deg,
+    rgba(110, 160, 70, 0.5),
+    rgba(78, 126, 54, 0.42)
+  );
+  border-color: rgba(176, 230, 128, 0.16);
+  color: #c8f59a;
 }
 
-.status.EXECUTION {
-  background: rgba(0, 188, 212, 0.16);
-  color: #76e3f3;
+.status.UNDER_COMPLAINT,
+.status.CANCELED {
+  background: linear-gradient(
+    135deg,
+    rgba(190, 68, 68, 0.55),
+    rgba(145, 44, 44, 0.46)
+  );
+  border-color: rgba(255, 130, 130, 0.18);
+  color: #ffaaaa;
 }
 
-.status.REWORK {
-  background: rgba(255, 99, 132, 0.16);
-  color: #ff9bb3;
+.status.REWORK,
+.status.REWORK_REVIEW {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 177, 135, 0.34),
+    rgba(255, 138, 101, 0.24)
+  );
+  border-color: rgba(255, 190, 150, 0.35);
+  color: #ffd0b5;
+  box-shadow:
+    0 0 0 1px rgba(255, 190, 150, 0.12),
+    0 6px 16px rgba(255, 138, 101, 0.18);
 }
 
 .status.DONE {
-  background: rgba(46, 204, 113, 0.16);
+  background: linear-gradient(
+    135deg,
+    rgba(27, 104, 93, 0.62),
+    rgba(24, 91, 83, 0.54)
+  );
+  border-color: rgba(126, 240, 174, 0.16);
   color: #7ef0ae;
 }
 
-.status.CANCELED {
-  background: rgba(244, 67, 54, 0.16);
-  color: #ff8e86;
-}
+/* ===================== DETAILS ===================== */
 
 .order-details {
   background: rgba(255, 255, 255, 0.035);
@@ -290,6 +337,31 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ===================== COMPLAINT BLOCK ===================== */
+
+.specialist-complaint-field {
+  border: 1px solid rgba(255, 177, 135, 0.24);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 177, 135, 0.1),
+    rgba(255, 138, 101, 0.06)
+  );
+}
+
+.specialist-complaint-field .details-label {
+  color: #ffd0b5;
+}
+
+.specialist-complaint-field .details-value {
+  margin: 0;
+  padding: 0;
+  text-indent: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+/* ===================== ACTIONS ===================== */
 
 .action-block {
   display: flex;
@@ -378,8 +450,9 @@
 }
 
 .state-badge.warning {
-  background: rgba(255, 152, 0, 0.16);
-  color: #ffbf66;
+  background: rgba(255, 177, 135, 0.18);
+  color: #ffd0b5;
+  border: 1px solid rgba(255, 190, 150, 0.26);
 }
 
 .btn-outline,
@@ -534,6 +607,8 @@
   line-height: 1.45;
 }
 
+/* ===================== RESPONSIVE ===================== */
+
 @media (max-width: 1200px) {
   .orders-header {
     display: none;
@@ -616,6 +691,9 @@
     gap: 4px;
   }
 }
+
+/* ===================== TOAST ===================== */
+
 .specialist-toast {
   position: fixed;
   right: 24px;

@@ -94,6 +94,70 @@ function renderOrders(data) {
   }
 }
 
+function getComplaint(order) {
+  return order?.complaint || order?.Complaint || null;
+}
+
+function getComplaintSubmitted(order) {
+  const complaint = getComplaint(order);
+
+  if (!complaint) {
+    return Boolean(order?.complaintSubmitted ?? order?.ComplaintSubmitted ?? false);
+  }
+
+  return Boolean(
+    complaint.isSubmitted ??
+    complaint.is_submitted ??
+    complaint.IsSubmitted ??
+    order?.complaintSubmitted ??
+    order?.ComplaintSubmitted ??
+    false
+  );
+}
+
+function getComplaintText(order) {
+  const complaint = getComplaint(order);
+
+  const text =
+    complaint?.text ??
+    complaint?.Text ??
+    complaint?.complaintText ??
+    complaint?.ComplaintText ??
+    order?.complaintText ??
+    order?.ComplaintText ??
+    null;
+
+  if (!text || !String(text).trim()) {
+    return "—";
+  }
+
+  return String(text).trim();
+}
+
+function shouldShowComplaintBlock(order) {
+  const status = String(order?.status ?? "").trim().toUpperCase();
+  const complaintText = getComplaintText(order);
+
+  return getComplaintSubmitted(order)
+    || status === "UNDER_COMPLAINT"
+    || status === "REWORK"
+    || status === "REWORK_REVIEW"
+    || (complaintText && complaintText !== "—");
+}
+
+function renderComplaintBlock(order) {
+  if (!shouldShowComplaintBlock(order)) {
+    return "";
+  }
+
+  return `
+    <div class="details-field full specialist-complaint-field">
+      <div class="details-label">Текст скарги</div>
+      <div class="details-value long-text">${escapeHtml(getComplaintText(order))}</div>
+    </div>
+  `;
+}
+
 function renderOrderDetails(o, container) {
   const rawId = getOrderId(o);
 
@@ -130,6 +194,8 @@ function renderOrderDetails(o, container) {
           <div class="details-label">Опис проблеми</div>
           <div class="details-value long-text">${escapeHtml(o.descriptionProblem ?? "—")}</div>
         </div>
+
+        ${renderComplaintBlock(o)}
 
         <div class="details-field full">
           <div class="details-label">Результат огляду</div>
@@ -183,6 +249,24 @@ function renderInactiveActionBlock(orderId, status) {
     text = "Щоб надіслати запит на деталі або перейти до виконання, відкрий заявку в режимі обробки.";
   }
 
+if (status === "WAITING_DETAILS") {
+  return `
+    <div class="action-block locked-action-block">
+      <div class="locked-title">Очікування деталей</div>
+
+      <div class="locked-text">
+        Запит на деталі відправлено. Очікується рішення по запиту.
+        Якщо запит буде одобрено, заявка автоматично перейде у статус "Деталі отримано".
+        Якщо запит буде відхилено або скасовано, заявка повернеться на етап перевірки.
+      </div>
+    </div>
+  `;
+}
+
+  if (status === "DETAILS_RECEIVED") {
+    text = "Щоб перевести заявку до виконання після отримання деталей, відкрий її в режимі обробки.";
+  }
+
   if (status === "EXECUTION") {
     text = "Щоб написати фінальний звіт, відкрий заявку в режимі обробки.";
   }
@@ -209,12 +293,13 @@ function renderActionBlock(order, orderId) {
   const status = String(order.status ?? "").trim().toUpperCase();
   const isFocused = focusedOrderId && String(focusedOrderId) === String(orderId);
 
-  const needsFocusedWorkspace = [
-    "IN_PROGRESS",
-    "INSPECTION",
-    "EXECUTION",
-    "REWORK"
-  ].includes(status);
+ const needsFocusedWorkspace = [
+  "IN_PROGRESS",
+  "INSPECTION",
+  "DETAILS_RECEIVED",
+  "EXECUTION",
+  "REWORK"
+].includes(status);
 
   if (!isFocused && needsFocusedWorkspace) {
     return renderInactiveActionBlock(orderId, status);
@@ -277,14 +362,35 @@ function renderActionBlock(order, orderId) {
     `;
   }
 
-  if (status === "WAITING_DETAILS") {
-    return `
-      <div class="action-block locked-action-block">
-        <div class="locked-title">Очікування деталей</div>
+ if (status === "WAITING_DETAILS") {
+  return `
+    <div class="action-block locked-action-block">
+      <div class="locked-title">Очікування деталей</div>
 
-        <div class="locked-text">
-          Запит на деталі вже відправлено. Подальша взаємодія із заявкою заблокована:
-          неможливо перейти до виконання або написати звіт, поки статус заявки не буде змінено після отримання деталей.
+      <div class="locked-text">
+        Запит на деталі відправлено. Очікується рішення по запиту.
+        Якщо запит буде одобрено, заявка автоматично перейде у статус "Деталі отримано".
+        Якщо запит буде відхилено або скасовано, заявка повернеться на етап перевірки.
+      </div>
+    </div>
+  `;
+}
+
+  if (status === "DETAILS_RECEIVED") {
+    return `
+      <div class="action-block">
+        <div class="action-row">
+          <span class="state-badge">Деталі отримано</span>
+        </div>
+
+        <div class="inactive-text">
+          Деталі отримано. Тепер заявку можна перевести до виконання.
+        </div>
+
+        <div class="action-row">
+          <button type="button" class="btn-action" onclick="handleMoveToExecution('${escapeJs(orderId)}')">
+            Перевести до виконання
+          </button>
         </div>
       </div>
     `;
@@ -324,6 +430,30 @@ function renderActionBlock(order, orderId) {
           <button type="button" class="btn-action" onclick="handleRework('${escapeJs(orderId)}')">
             Завершити переробку
           </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (status === "REWORK_REVIEW") {
+    return `
+      <div class="action-block locked-action-block">
+        <div class="locked-title">Переробку завершено</div>
+
+        <div class="locked-text">
+          Повторний звіт надіслано начальнику. Заявка очікує остаточного закриття начальником.
+        </div>
+      </div>
+    `;
+  }
+
+  if (status === "UNDER_COMPLAINT") {
+    return `
+      <div class="action-block locked-action-block">
+        <div class="locked-title">Заявка на оскарженні</div>
+
+        <div class="locked-text">
+          Працівник подав скаргу. Очікується рішення начальника.
         </div>
       </div>
     `;

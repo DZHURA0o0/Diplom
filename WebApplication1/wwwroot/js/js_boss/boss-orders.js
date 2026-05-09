@@ -12,8 +12,11 @@ const STATUS_LABELS = {
     IN_PROGRESS: "У роботі",
     INSPECTION: "На огляді",
     WAITING_DETAILS: "Очікує деталей",
+    DETAILS_RECEIVED: "Деталі отримано",
     EXECUTION: "На виконанні",
+    UNDER_COMPLAINT: "На оскарженні",
     REWORK: "На переробці",
+    REWORK_REVIEW: "Переробку завершено",
     DONE: "Виконана",
     CANCELED: "Скасована"
 };
@@ -101,15 +104,53 @@ function getComplaintStatus(order) {
 
     status = String(status || "").trim().toUpperCase();
 
-    if (!status && getComplaintSubmitted(order)) {
-        if (orderStatus === "REWORK") return "IN_REWORK";
-        if (complaint?.resolvedByReportId || complaint?.resolved_by_report_id) return "RESOLVED";
+    if (status === "OPEN") {
         return "SUBMITTED";
     }
 
-    if (status === "OPEN") return "SUBMITTED";
+    if (status) {
+        return status;
+    }
 
-    return status || null;
+    if (!getComplaintSubmitted(order)) {
+        return null;
+    }
+
+    const resolvedByReportId =
+        complaint?.resolvedByReportId ||
+        complaint?.resolved_by_report_id ||
+        null;
+
+    const closedAt =
+        complaint?.closedAt ||
+        complaint?.closed_at ||
+        null;
+
+    if (closedAt && resolvedByReportId) {
+        return "RESOLVED";
+    }
+
+    if (closedAt && !resolvedByReportId) {
+        return "REJECTED";
+    }
+
+    if (orderStatus === "REWORK_REVIEW") {
+        return "REWORK_DONE";
+    }
+
+    if (resolvedByReportId && !closedAt) {
+        return "REWORK_DONE";
+    }
+
+    if (orderStatus === "REWORK") {
+        return "IN_REWORK";
+    }
+
+    if (orderStatus === "UNDER_COMPLAINT") {
+        return "SUBMITTED";
+    }
+
+    return "SUBMITTED";
 }
 
 function getComplaintStatusLabel(order) {
@@ -117,6 +158,7 @@ function getComplaintStatusLabel(order) {
 
     if (status === "SUBMITTED") return "Подана";
     if (status === "IN_REWORK") return "На переробці";
+    if (status === "REWORK_DONE") return "Переробку завершено";
     if (status === "RESOLVED") return "Вирішена";
     if (status === "REJECTED") return "Відхилена";
 
@@ -245,7 +287,10 @@ function buildComplaintActionsHtml(order) {
         return "";
     }
 
-    if (complaintStatus === "SUBMITTED" && orderStatus === "DONE") {
+    if (
+        complaintStatus === "SUBMITTED" &&
+        (orderStatus === "UNDER_COMPLAINT" || orderStatus === "DONE")
+    ) {
         return `
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
@@ -262,28 +307,29 @@ function buildComplaintActionsHtml(order) {
     }
 
     if (complaintStatus === "IN_REWORK" || orderStatus === "REWORK") {
-        const canCloseComplaint = orderStatus === "DONE";
+        return `
+            <div class="complaint-actions-block">
+                <div class="complaint-actions-title">Дії по скарзі</div>
+                <div class="complaint-actions-note">
+                    Скарга знаходиться на переробці. Закрити її можна тільки після завершення роботи спеціалістом.
+                </div>
+            </div>
+        `;
+    }
 
+    if (complaintStatus === "REWORK_DONE" || orderStatus === "REWORK_REVIEW") {
         return `
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
 
                 <div class="complaint-actions-buttons">
-                    <button
-                        type="button"
-                        class="btn-main js-complaint-resolve"
-                        ${canCloseComplaint ? "" : "disabled"}
-                    >
+                    <button type="button" class="btn-main js-complaint-resolve">
                         Закрити скаргу
                     </button>
                 </div>
 
                 <div class="complaint-actions-note">
-                    ${
-                        canCloseComplaint
-                            ? "Переробку завершено. Начальник може закрити скаргу."
-                            : "Скарга знаходиться на переробці. Закрити її можна тільки після завершення роботи спеціалістом."
-                    }
+                    Переробку завершено. Начальник може перевірити результат і остаточно закрити заявку.
                 </div>
             </div>
         `;
@@ -417,8 +463,8 @@ function attachComplaintActionHandlers(order, detailsRow) {
             const restore = setPendingButton(resolveBtn, "Закриття...");
 
             try {
-                const result = await resolveComplaint(orderId, "Скаргу закрито начальником після переробки");
-                setStatus(result?.message || "Скаргу закрито");
+                const result = await resolveComplaint(orderId, "Скаргу закрито начальником після перевірки переробки");
+                setStatus(result?.message || "Скаргу закрито. Заявку остаточно виконано.");
                 await refreshOrdersAfterAction();
             } catch (err) {
                 setStatus(err.message || "Не вдалося закрити скаргу", true);
@@ -466,10 +512,25 @@ function createAssignControls(order) {
         return wrap;
     }
 
-    if (orderStatus === "DONE" || orderStatus === "CANCELED") {
+    if (
+        orderStatus === "DONE" ||
+        orderStatus === "CANCELED" ||
+        orderStatus === "UNDER_COMPLAINT" ||
+        orderStatus === "REWORK_REVIEW"
+    ) {
         const label = document.createElement("div");
         label.className = "btn-disabled";
-        label.textContent = orderStatus === "DONE" ? "Закрито" : "Заблоковано";
+
+        if (orderStatus === "DONE") {
+            label.textContent = "Закрито";
+        } else if (orderStatus === "UNDER_COMPLAINT") {
+            label.textContent = "Оскарження";
+        } else if (orderStatus === "REWORK_REVIEW") {
+            label.textContent = "Очікує закриття";
+        } else {
+            label.textContent = "Заблоковано";
+        }
+
         wrap.appendChild(label);
         return wrap;
     }
@@ -593,12 +654,16 @@ function getComplaintMarkHtml(order) {
         return "";
     }
 
-    if (complaintStatus === "SUBMITTED") {
+    if (complaintStatus === "SUBMITTED" || orderStatus === "UNDER_COMPLAINT") {
         return `<span class="complaint-row-mark complaint-row-mark-red" title="Нова скарга">!</span>`;
     }
 
     if (complaintStatus === "IN_REWORK" || orderStatus === "REWORK") {
         return `<span class="complaint-row-mark complaint-row-mark-yellow" title="Скарга на переробці">!</span>`;
+    }
+
+    if (complaintStatus === "REWORK_DONE" || orderStatus === "REWORK_REVIEW") {
+        return `<span class="complaint-row-mark complaint-row-mark-yellow" title="Переробку завершено, скаргу треба закрити">!</span>`;
     }
 
     return "";
@@ -725,7 +790,10 @@ function isActiveComplaintOrder(order) {
 
     return complaintStatus === "SUBMITTED"
         || complaintStatus === "IN_REWORK"
-        || orderStatus === "REWORK";
+        || complaintStatus === "REWORK_DONE"
+        || orderStatus === "UNDER_COMPLAINT"
+        || orderStatus === "REWORK"
+        || orderStatus === "REWORK_REVIEW";
 }
 
 async function getOrdersWithDetailsForComplaints() {

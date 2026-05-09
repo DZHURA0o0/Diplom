@@ -79,6 +79,7 @@ public class OrderRepository
             "IN_PROGRESS",
             "INSPECTION",
             "WAITING_DETAILS",
+            "DETAILS_RECEIVED",
             "EXECUTION",
             "REWORK"
         };

@@ -31,6 +31,7 @@ public class ComplaintService
             return (false, "Текст скарги занадто короткий.", null);
 
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order == null)
             return (false, "Заявку не знайдено.", null);
 
@@ -48,12 +49,17 @@ public class ComplaintService
             IsSubmitted = true,
             Text = text.Trim(),
             CreatedAt = DateTime.UtcNow,
-            ResolvedByReportId = null
+            ResolvedByReportId = null,
+            ClosedAt = null,
+            ClosedBy = null,
+            CloseComment = null
         };
+
+        order.Status = "UNDER_COMPLAINT";
 
         await _orders.UpdateAsync(order);
 
-        return (true, "Скаргу успішно подано.", order);
+        return (true, "Скаргу успішно подано. Заявку переведено на оскарження.", order);
     }
 
     public async Task<(bool ok, string? message, DomainOrder? order)> MoveToReworkAsync(
@@ -67,25 +73,26 @@ public class ComplaintService
             return (false, "Boss id required", null);
 
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order == null)
             return (false, "Order not found", null);
 
-        if (!IsStatus(order, "DONE"))
-            return (false, "Only DONE order can be moved to REWORK", null);
+        if (!IsStatus(order, "UNDER_COMPLAINT"))
+            return (false, "На переробку можна відправити тільки заявку у статусі UNDER_COMPLAINT.", null);
 
         var complaint = EnsureComplaint(order);
 
         if (!complaint.IsSubmitted)
             return (false, "Complaint not found", null);
 
-        if (!string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+        if (complaint.ClosedAt != null || !string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
             return (false, "Complaint already closed", null);
 
         order.Status = "REWORK";
 
         await _orders.UpdateAsync(order);
 
-        return (true, "Order moved to rework", order);
+        return (true, "Заявку відправлено на переробку.", order);
     }
 
     public async Task<(bool ok, string? message, DomainOrder? order)> ResolveAsync(
@@ -100,25 +107,37 @@ public class ComplaintService
             return (false, "Boss id required", null);
 
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order == null)
             return (false, "Order not found", null);
-
-        if (!IsStatus(order, "REWORK"))
-            return (false, "Only REWORK order can resolve complaint", null);
 
         var complaint = EnsureComplaint(order);
 
         if (!complaint.IsSubmitted)
             return (false, "Complaint not found", null);
 
-        if (!string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
-            return (false, "Already resolved", null);
+        if (!IsStatus(order, "REWORK_REVIEW"))
+            return (false, "Закрити скаргу можна тільки після того, як спеціаліст завершив переробку.", null);
 
+        if (string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+            return (false, "Переробку ще не підтверджено повторним звітом спеціаліста.", null);
+
+        if (complaint.ClosedAt != null)
+            return (false, "Complaint already closed", null);
+
+        complaint.ClosedAt = DateTime.UtcNow;
+        complaint.ClosedBy = bossId.Trim();
+        complaint.CloseComment = string.IsNullOrWhiteSpace(comment)
+            ? "Скаргу закрито начальником після перевірки переробки."
+            : comment.Trim();
+
+        // ВАЖНО:
+        // Только начальник переводит заявку в DONE после проверки переробки.
         order.Status = "DONE";
 
         await _orders.UpdateAsync(order);
 
-        return (true, "Complaint marked as resolved", order);
+        return (true, "Скаргу закрито. Заявку остаточно виконано.", order);
     }
 
     public async Task<(bool ok, string? message, DomainOrder? order)> RejectAsync(
@@ -133,39 +152,51 @@ public class ComplaintService
             return (false, "Boss id required", null);
 
         var order = await _orders.GetByIdAsync(orderId);
+
         if (order == null)
             return (false, "Order not found", null);
 
-        if (!IsStatus(order, "DONE"))
-            return (false, "Only DONE order can reject complaint", null);
+        if (!IsStatus(order, "UNDER_COMPLAINT"))
+            return (false, "Відхилити можна тільки скаргу у статусі UNDER_COMPLAINT.", null);
 
         var complaint = EnsureComplaint(order);
 
         if (!complaint.IsSubmitted)
             return (false, "Complaint not found", null);
 
-        complaint.IsSubmitted = false;
-        complaint.ResolvedByReportId = null;
+        if (complaint.ClosedAt != null)
+            return (false, "Complaint already closed", null);
+
+        complaint.ClosedAt = DateTime.UtcNow;
+        complaint.ClosedBy = bossId.Trim();
+        complaint.CloseComment = string.IsNullOrWhiteSpace(comment)
+            ? "Скаргу відхилено начальником."
+            : comment.Trim();
+
+        order.Status = "DONE";
 
         await _orders.UpdateAsync(order);
 
-        return (true, "Complaint rejected", order);
+        return (true, "Скаргу відхилено. Заявку повернено у статус DONE.", order);
     }
 
-  private static ComplaintInfo EnsureComplaint(DomainOrder order)
+    private static ComplaintInfo EnsureComplaint(DomainOrder order)
     {
         order.Complaint ??= new ComplaintInfo
         {
             IsSubmitted = false,
             Text = null,
             CreatedAt = null,
-            ResolvedByReportId = null
+            ResolvedByReportId = null,
+            ClosedAt = null,
+            ClosedBy = null,
+            CloseComment = null
         };
 
         return order.Complaint;
     }
 
-   private static bool IsStatus(DomainOrder order, string status)
+    private static bool IsStatus(DomainOrder order, string status)
     {
         return string.Equals(order.Status, status, StringComparison.OrdinalIgnoreCase);
     }
