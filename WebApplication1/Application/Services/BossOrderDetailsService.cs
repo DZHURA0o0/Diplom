@@ -1,5 +1,7 @@
+using WebApplication1.Domain;
 using WebApplication1.Models;
 using WebApplication1.Repositories;
+using DomainOrder = WebApplication1.Domain.Order;
 
 namespace WebApplication1.Application.Services.Boss;
 
@@ -28,6 +30,7 @@ public class BossOrderDetailsService
             return null;
 
         var order = await _orders.GetByIdAsync(id);
+
         if (order == null)
             return null;
 
@@ -37,9 +40,11 @@ public class BossOrderDetailsService
             ? await _users.FindByIdAsync(order.SpecialistId)
             : null;
 
-        var detailRequest = !string.IsNullOrWhiteSpace(order.DetailRequestId)
-            ? await _detailRequests.GetByIdAsync(order.DetailRequestId)
-            : null;
+        var detailRequests = await GetOrderDetailRequestsAsync(order);
+
+        var newestDetailRequest = detailRequests
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefault();
 
         var workReport = !string.IsNullOrWhiteSpace(order.LastWorkReportId)
             ? await _workReports.GetByIdAsync(order.LastWorkReportId)
@@ -56,9 +61,11 @@ public class BossOrderDetailsService
             ServiceType = order.ServiceType,
             DescriptionProblem = order.DescriptionProblem,
             InspectionResult = order.InspectionResult,
+
             ProductionWorkshopNumber = order.ProductionWorkshopNumber,
             FloorNumber = order.FloorNumber,
             RoomNumber = order.RoomNumber,
+
             CreatedAt = order.CreatedAt,
 
             WorkerFullName = worker?.FullName ?? "—",
@@ -69,8 +76,20 @@ public class BossOrderDetailsService
             SpecialistPhone = specialist?.Phone,
             SpecialistPosition = specialist?.Position,
 
-            DetailNeeds = detailRequest?.DetailNeeds,
-            DetailExplanation = detailRequest?.Explanation,
+            // Старі поля — показують останній запит, якщо десь ще використовуються.
+            DetailNeeds = newestDetailRequest?.DetailNeeds,
+            DetailExplanation = newestDetailRequest?.Explanation,
+
+            DetailRequestIds = detailRequests
+                .Select(x => x.Id)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+
+            DetailRequests = detailRequests
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(ToDetailRequestDto)
+                .ToList(),
 
             WorkReportText = workReport?.ReportText,
 
@@ -81,7 +100,42 @@ public class BossOrderDetailsService
         };
     }
 
-    private static string? GetComplaintStatus(WebApplication1.Domain.Order order)
+    private async Task<List<DetailRequest>> GetOrderDetailRequestsAsync(DomainOrder order)
+    {
+        var ids = OrderMapper.GetAllDetailRequestIds(order);
+
+        var byIds = ids.Count > 0
+            ? await _detailRequests.GetByIdsAsync(ids)
+            : new List<DetailRequest>();
+
+        var byOrderId = await _detailRequests.GetByOrderIdAsync(order.Id);
+
+        return byIds
+            .Concat(byOrderId)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+    }
+
+    private static DetailRequestDto ToDetailRequestDto(DetailRequest request)
+    {
+        return new DetailRequestDto
+        {
+            Id = request.Id,
+            OrderId = request.OrderId,
+            SpecialistId = request.SpecialistId,
+            DetailNeeds = request.DetailNeeds,
+            Explanation = request.Explanation,
+            Photos = request.Photos ?? new List<string>(),
+            Status = request.Status,
+            ApprovedBy = request.ApprovedBy,
+            ApprovedAt = request.ApprovedAt,
+            CreatedAt = request.CreatedAt
+        };
+    }
+
+    private static string? GetComplaintStatus(DomainOrder order)
     {
         var complaint = order.Complaint;
 

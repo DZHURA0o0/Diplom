@@ -74,14 +74,35 @@ public class OrderQueryService
                 dto.WorkReportText = report.ReportText;
         }
 
-        if (!string.IsNullOrWhiteSpace(order.DetailRequestId))
+        var detailIds = OrderMapper.GetAllDetailRequestIds(order);
+
+        var detailRequests = new List<DetailRequest>();
+
+        if (detailIds.Count > 0)
         {
-            var detailRequest = await _detailRequests.GetByIdAsync(order.DetailRequestId);
-            if (detailRequest != null)
-            {
-                dto.DetailNeeds = detailRequest.DetailNeeds;
-                dto.DetailExplanation = detailRequest.Explanation;
-            }
+            detailRequests = await _detailRequests.GetByIdsAsync(detailIds);
+        }
+        else
+        {
+            // Підстраховка для випадку, якщо старі дані мають тільки order_id у detail_requests.
+            detailRequests = await _detailRequests.GetByOrderIdAsync(order.Id);
+        }
+
+        dto.DetailRequests = detailRequests
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(OrderMapper.ToDto)
+            .ToList();
+
+        var lastRequest = detailRequests
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefault();
+
+        if (lastRequest != null)
+        {
+            dto.DetailRequestId = lastRequest.Id;
+            dto.DetailNeeds = lastRequest.DetailNeeds;
+            dto.DetailExplanation = lastRequest.Explanation;
+            dto.DetailRequestStatus = lastRequest.Status;
         }
 
         dto.LastWorkReportId = order.LastWorkReportId;

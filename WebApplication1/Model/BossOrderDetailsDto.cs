@@ -7,9 +7,11 @@ public class BossOrderDetailsDto
     public string? ServiceType { get; set; }
     public string? DescriptionProblem { get; set; }
     public string? InspectionResult { get; set; }
+
     public int ProductionWorkshopNumber { get; set; }
     public int FloorNumber { get; set; }
     public int RoomNumber { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public string? WorkerFullName { get; set; }
@@ -20,8 +22,13 @@ public class BossOrderDetailsDto
     public string? SpecialistPhone { get; set; }
     public string? SpecialistPosition { get; set; }
 
+    // Старі поля лишаємо для сумісності.
     public string? DetailNeeds { get; set; }
     public string? DetailExplanation { get; set; }
+
+    // Нова логіка: історія всіх запитів деталей.
+    public List<string> DetailRequestIds { get; set; } = new();
+    public List<DetailRequestDto> DetailRequests { get; set; } = new();
 
     public string? WorkReportText { get; set; }
 

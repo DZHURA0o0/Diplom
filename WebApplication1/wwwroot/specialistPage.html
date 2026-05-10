@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Specialist</title>
+
   <link rel="stylesheet" href="/css/login.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/specialist.css">
@@ -32,48 +33,274 @@
     <main class="main specialist-main">
       <div class="specialist-card">
 
-        <div class="specialist-top">
-          <div id="hello" class="hello-text">Заявки спеціаліста</div>
+        <div class="specialist-panel-head">
+          <div>
+            <div id="hello" class="hello-text">Заявки спеціаліста</div>
+            <div class="hello-subtitle">
+              Перегляд призначених заявок, аналітики, переробок та запитів деталей.
+            </div>
+          </div>
 
           <div class="top-actions">
-            <button type="button" id="backToOrdersTopBtn" class="btn-outline workspace-back-btn" hidden onclick="closeOrderWorkspace()">← До списку заявок</button>
-            <button type="button" class="btn-outline" onclick="handleRefresh()">Оновити</button>
-            <button type="button" class="btn-danger-soft" onclick="logout()">Вийти</button>
+            <button
+              type="button"
+              id="backToOrdersTopBtn"
+              class="btn-outline workspace-back-btn"
+              hidden
+              onclick="closeOrderWorkspace()"
+            >
+              ← До списку заявок
+            </button>
+
+            <button type="button" class="btn-outline" onclick="handleRefresh()">
+              Оновити
+            </button>
+
+            <button type="button" class="btn-danger-soft" onclick="logout()">
+              Вийти
+            </button>
           </div>
         </div>
 
-        <div class="specialist-filter">
-          <select id="statusFilter">
-            <option value="">Усі статуси</option>
-            <option value="ASSIGNED">Призначена</option>
-            <option value="IN_PROGRESS">У роботі</option>
-            <option value="INSPECTION">На перевірці</option>
-            <option value="WAITING_DETAILS">Очікує деталей</option>
-            <option value="DETAILS_RECEIVED">Деталі отримано</option>
-            <option value="EXECUTION">На виконанні</option>
-            <option value="REWORK">На переробці</option>
-            <option value="REWORK_REVIEW">Переробку завершено</option>
-            <option value="DONE">Виконана</option>
-            <option value="CANCELED">Скасована</option>
-          </select>
-        </div>
+        <nav id="specialistTabs" class="specialist-tabs" aria-label="Розділи панелі спеціаліста">
+          <button
+            type="button"
+            class="specialist-tab active"
+            data-specialist-tab="orders"
+            aria-selected="true"
+          >
+            Заявки
+          </button>
 
-        <div id="pageStatus" class="status-text">Завантаження...</div>
+          <button
+            type="button"
+            class="specialist-tab"
+            data-specialist-tab="analytics"
+            aria-selected="false"
+          >
+            Аналітика
+          </button>
 
-        <div class="orders-wrapper">
-          <div class="orders-header">
-            <div>Статус</div>
-            <div>Працівник</div>
-            <div>Тип заявки</div>
-            <div>Опис проблеми</div>
-            <div>Локація</div>
-            <div>Дата</div>
+          <button
+            type="button"
+            class="specialist-tab"
+            data-specialist-tab="reworks"
+            aria-selected="false"
+          >
+            Переробки
+          </button>
+
+          <button
+            type="button"
+            class="specialist-tab"
+            data-specialist-tab="details"
+            aria-selected="false"
+          >
+            Запити деталей
+          </button>
+        </nav>
+
+        <!-- ===================== ЗАЯВКИ ===================== -->
+
+        <section
+          id="specialistOrdersPanel"
+          class="specialist-tab-panel"
+          data-specialist-panel="orders"
+        >
+          <div class="section-toolbar">
+            <div class="specialist-filter">
+              <label for="statusFilter">Фільтр статусу:</label>
+
+              <select id="statusFilter">
+                <option value="">Усі статуси</option>
+                <option value="ASSIGNED">Призначена</option>
+                <option value="IN_PROGRESS">У роботі</option>
+                <option value="INSPECTION">На перевірці</option>
+                <option value="WAITING_DETAILS">Очікує деталей</option>
+                <option value="DETAILS_RECEIVED">Деталі отримано</option>
+                <option value="EXECUTION">На виконанні</option>
+                <option value="REWORK">На переробці</option>
+                <option value="REWORK_REVIEW">Переробку завершено</option>
+                <option value="DONE">Виконана</option>
+                <option value="CANCELED">Скасована</option>
+              </select>
+            </div>
           </div>
 
-          <div id="orders">
-            <div class="empty">Завантаження...</div>
+          <div id="pageStatus" class="status-text">Завантаження...</div>
+
+          <div class="orders-wrapper">
+            <div class="orders-header">
+              <div>Статус</div>
+              <div>Працівник</div>
+              <div>Тип заявки</div>
+              <div>Опис проблеми</div>
+              <div>Локація</div>
+              <div>Дата</div>
+            </div>
+
+            <div id="orders">
+              <div class="empty">Завантаження...</div>
+            </div>
           </div>
+        </section>
+
+        <!-- ===================== АНАЛІТИКА ===================== -->
+
+        <section
+          id="specialistAnalyticsPanel"
+          class="specialist-tab-panel"
+          data-specialist-panel="analytics"
+          hidden
+        >
+          <section id="specialistAnalyticsBlock" class="specialist-analytics-block">
+            <div class="specialist-analytics-head">
+              <div>
+                <div class="specialist-analytics-title">Аналітика спеціаліста</div>
+                <div class="specialist-analytics-subtitle">
+                  Особисті показники, статистика відділу та активність заявників.
+                </div>
+              </div>
+
+              <div class="specialist-analytics-filter">
+                <label>
+                  <span>Від</span>
+                  <input type="date" id="specialistAnalyticsFrom">
+                </label>
+
+                <label>
+                  <span>До</span>
+                  <input type="date" id="specialistAnalyticsTo">
+                </label>
+
+                <button type="button" class="btn-outline" onclick="loadSpecialistAnalytics()">
+                  Оновити аналітику
+                </button>
+
+                <button type="button" class="btn-outline" onclick="resetSpecialistAnalyticsFilters()">
+                  Скинути
+                </button>
+              </div>
+            </div>
+
+            <div id="specialistAnalyticsStatus" class="specialist-analytics-status"></div>
+
+            <div class="specialist-analytics-two-columns">
+              <div class="specialist-analytics-section">
+                <div class="specialist-analytics-section-title">Особиста аналітика</div>
+                <div id="specialistPersonalSummary" class="specialist-analytics-cards"></div>
+              </div>
+
+              <div class="specialist-analytics-section">
+                <div class="specialist-analytics-section-title">Аналітика відділу</div>
+                <div id="specialistDepartmentSummary" class="specialist-analytics-cards"></div>
+              </div>
+            </div>
+
+            <div class="specialist-analytics-section">
+              <div class="specialist-analytics-section-title">Порівняння з відділом</div>
+              <div id="specialistAnalyticsComparison" class="specialist-comparison-grid"></div>
+            </div>
+
+            <div class="specialist-analytics-charts-grid">
+              <div class="specialist-chart-card">
+                <div class="specialist-chart-title">Мої заявки за статусами</div>
+                <div class="specialist-chart-subtitle">
+                  Розподіл тільки моїх призначених заявок.
+                </div>
+                <div id="chartPersonalStatus" class="specialist-chart-bars"></div>
+              </div>
+
+              <div class="specialist-chart-card">
+                <div class="specialist-chart-title">Заявки відділу за статусами</div>
+                <div class="specialist-chart-subtitle">
+                  Загальна картина без деталізації інших спеціалістів.
+                </div>
+                <div id="chartDepartmentStatus" class="specialist-chart-bars"></div>
+              </div>
+            </div>
+
+            <div class="specialist-analytics-section">
+              <div class="specialist-analytics-section-title">Активність заявників</div>
+              <div class="specialist-analytics-subtitle">
+                Хто найчастіше створює заявки та хто найчастіше подає скарги за обраний період.
+              </div>
+
+              <div id="specialistWorkerActivity" class="specialist-worker-activity-grid"></div>
+            </div>
+          </section>
+        </section>
+
+        <!-- ===================== ПЕРЕРОБКИ ===================== -->
+
+        <section
+  id="specialistReworksPanel"
+  class="specialist-tab-panel"
+  data-specialist-panel="reworks"
+  hidden
+>
+  <div class="specialist-subpage">
+    <div class="specialist-subpage-head">
+      <div>
+        <div class="specialist-subpage-title">Переробки</div>
+        <div class="specialist-subpage-subtitle">
+          Заявки, які повернуті спеціалісту після скарги або очікують перевірки начальником.
         </div>
+      </div>
+
+      <button type="button" class="btn-outline" onclick="renderSpecialistReworksTab()">
+        Оновити
+      </button>
+    </div>
+
+    <div id="specialistReworksList" class="specialist-sublist"></div>
+  </div>
+</section>
+
+        <!-- ===================== ЗАПИТИ ДЕТАЛЕЙ ===================== -->
+
+<section
+  id="specialistDetailsPanel"
+  class="specialist-tab-panel"
+  data-specialist-panel="details"
+  hidden
+>
+  <div class="specialist-subpage">
+    <div class="specialist-subpage-head">
+      <div>
+        <div class="specialist-subpage-title">Запити деталей</div>
+        <div class="specialist-subpage-subtitle">
+          Історія всіх запитів деталей по заявках спеціаліста.
+        </div>
+      </div>
+
+      <button type="button" class="btn-outline" onclick="renderSpecialistDetailRequestsTab()">
+        Оновити
+      </button>
+    </div>
+
+    <div class="specialist-subfilters">
+      <button type="button" class="specialist-mini-filter active" data-detail-request-filter="" onclick="setSpecialistDetailRequestFilter('')">
+        Усі
+      </button>
+
+      <button type="button" class="specialist-mini-filter" data-detail-request-filter="CREATED" onclick="setSpecialistDetailRequestFilter('CREATED')">
+        Очікують деталей
+      </button>
+
+      <button type="button" class="specialist-mini-filter" data-detail-request-filter="APPROVED" onclick="setSpecialistDetailRequestFilter('APPROVED')">
+        Деталі отримано
+      </button>
+
+      <button type="button" class="specialist-mini-filter" data-detail-request-filter="CANCELED" onclick="setSpecialistDetailRequestFilter('CANCELED')">
+        Скасовані
+      </button>
+    </div>
+
+    <div id="specialistDetailRequestsList" class="specialist-sublist"></div>
+  </div>
+</section>     
+<!-- =====================  ===================== -->  
 
       </div>
     </main>
@@ -83,14 +310,15 @@
     </footer>
   </div>
 
-<script src="/js/guard.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <script src="/js/guard.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
-<script src="/js/js_specialist/specialist-api.js"></script>
-<script src="/js/js_specialist/specialist-utils.js"></script>
-<script src="/js/js_specialist/specialist-actions.js"></script>
-<script src="/js/js_specialist/specialist-render.js"></script>
-<script src="/js/js_specialist/specialist-page.js"></script>
-<script src="/js/js_specialist/specialist-realtime.js"></script>
+  <script src="/js/js_specialist/specialist-api.js"></script>
+  <script src="/js/js_specialist/specialist-utils.js"></script>
+  <script src="/js/js_specialist/specialist-analytics.js"></script>
+  <script src="/js/js_specialist/specialist-actions.js"></script>
+  <script src="/js/js_specialist/specialist-render.js"></script>
+  <script src="/js/js_specialist/specialist-page.js"></script>
+  <script src="/js/js_specialist/specialist-realtime.js"></script>
 </body>
 </html>

@@ -79,8 +79,14 @@ public class OrderWorkflowService
         if (string.IsNullOrWhiteSpace(detailNeeds))
             return (false, "Не вказано потрібні деталі.");
 
-        if (!IsStatus(order, "INSPECTION"))
-            return (false, "Запит на деталі можна створити тільки після огляду.");
+        if (IsAnyStatus(order, "CANCELED", "DONE", "UNDER_COMPLAINT", "REWORK_REVIEW"))
+            return (false, "Для цієї заявки вже не можна створити запит на деталі.");
+
+        if (!IsAnyStatus(order, "INSPECTION", "WAITING_DETAILS", "DETAILS_RECEIVED"))
+        {
+            return (false,
+                "Запит на деталі можна створити тільки після огляду, під час очікування деталей або після отримання попередніх деталей.");
+        }
 
         var request = new DetailRequest
         {
@@ -89,12 +95,18 @@ public class OrderWorkflowService
             SpecialistId = specialistId!.Trim(),
             DetailNeeds = detailNeeds.Trim(),
             Explanation = string.IsNullOrWhiteSpace(explanation) ? null : explanation.Trim(),
+            Status = "CREATED",
             CreatedAt = DateTime.UtcNow
         };
 
         await _detailRequests.CreateAsync(request);
 
+        AddDetailRequestId(order, request.Id);
+
+        // Старе поле тримаємо як останній актуальний запит для сумісності.
         order.DetailRequestId = request.Id;
+
+        // Новий запит означає, що заявка знову чекає деталей.
         order.Status = "WAITING_DETAILS";
 
         await _orders.UpdateAsync(order);
@@ -113,14 +125,26 @@ public class OrderWorkflowService
         if (!IsStatus(order, "WAITING_DETAILS"))
             return (false, "Позначити отримання деталей можна тільки для заявки у статусі WAITING_DETAILS.");
 
-        if (string.IsNullOrWhiteSpace(order.DetailRequestId))
-            return (false, "У заявки немає створеного запиту на деталі.");
+        var requests = await GetOrderDetailRequestsAsync(order);
 
-        order.Status = "DETAILS_RECEIVED";
+        var activeRequests = requests
+            .Where(x => IsDetailStatus(x, "CREATED"))
+            .ToList();
 
-        await _orders.UpdateAsync(order);
+        if (activeRequests.Count == 0)
+            return (false, "У заявки немає активних запитів на деталі.");
 
-        return (true, "Деталі отримано. Заявку можна переводити до виконання.");
+        foreach (var request in activeRequests)
+        {
+            request.Status = "APPROVED";
+            request.ApprovedAt = DateTime.UtcNow;
+
+            await _detailRequests.UpdateAsync(request);
+        }
+
+        await RecalculateOrderDetailStatusAsync(order);
+
+        return (true, "Деталі отримано. Статус заявки оновлено.");
     }
 
     public async Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
@@ -130,6 +154,9 @@ public class OrderWorkflowService
             return (false, result.message);
 
         var order = result.order!;
+
+        if (IsStatus(order, "WAITING_DETAILS"))
+            return (false, "Заявка ще очікує деталей. Спочатку потрібно отримати всі активні запити.");
 
         if (!IsAnyStatus(order, "INSPECTION", "DETAILS_RECEIVED", "REWORK"))
             return (false, "Перевести до виконання можна тільки після огляду, після отримання деталей або під час переробки.");
@@ -180,6 +207,74 @@ public class OrderWorkflowService
         return (true, "Заявку завершено.");
     }
 
+    private async Task RecalculateOrderDetailStatusAsync(WebApplication1.Domain.Order order)
+    {
+        var requests = await GetOrderDetailRequestsAsync(order);
+
+        if (requests.Count == 0)
+        {
+            order.Status = "INSPECTION";
+            await _orders.UpdateAsync(order);
+            return;
+        }
+
+        if (requests.Any(x => IsDetailStatus(x, "CREATED")))
+        {
+            order.Status = "WAITING_DETAILS";
+            await _orders.UpdateAsync(order);
+            return;
+        }
+
+        var usefulRequests = requests
+            .Where(x => !IsDetailStatus(x, "REJECTED") && !IsDetailStatus(x, "CANCELED"))
+            .ToList();
+
+        if (usefulRequests.Count == 0)
+        {
+            order.Status = "INSPECTION";
+            await _orders.UpdateAsync(order);
+            return;
+        }
+
+        if (usefulRequests.All(x => IsDetailStatus(x, "APPROVED")))
+        {
+            order.Status = "DETAILS_RECEIVED";
+            await _orders.UpdateAsync(order);
+            return;
+        }
+
+        order.Status = "WAITING_DETAILS";
+        await _orders.UpdateAsync(order);
+    }
+
+    private async Task<List<DetailRequest>> GetOrderDetailRequestsAsync(WebApplication1.Domain.Order order)
+    {
+        var ids = OrderMapper.GetAllDetailRequestIds(order);
+
+        var byIds = ids.Count > 0
+            ? await _detailRequests.GetByIdsAsync(ids)
+            : new List<DetailRequest>();
+
+        var byOrderId = await _detailRequests.GetByOrderIdAsync(order.Id);
+
+        return byIds
+            .Concat(byOrderId)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+    }
+
+    private static void AddDetailRequestId(WebApplication1.Domain.Order order, string requestId)
+    {
+        order.DetailRequestIds ??= new List<string>();
+
+        if (!order.DetailRequestIds.Any(x => string.Equals(x, requestId, StringComparison.OrdinalIgnoreCase)))
+        {
+            order.DetailRequestIds.Add(requestId);
+        }
+    }
+
     private async Task<(bool ok, string? message, WebApplication1.Domain.Order? order)> GetAssignedOrderAsync(
         string orderId,
         string? specialistId)
@@ -209,5 +304,10 @@ public class OrderWorkflowService
     private static bool IsAnyStatus(WebApplication1.Domain.Order order, params string[] statuses)
     {
         return statuses.Any(status => IsStatus(order, status));
+    }
+
+    private static bool IsDetailStatus(DetailRequest request, string status)
+    {
+        return string.Equals(request.Status, status, StringComparison.OrdinalIgnoreCase);
     }
 }

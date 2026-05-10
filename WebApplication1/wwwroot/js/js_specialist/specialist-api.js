@@ -96,7 +96,6 @@ async function sendDetailRequest(orderId, detailNeeds, explanation) {
   });
 }
 
-
 async function moveToExecution(orderId) {
   return await apiRequest(`/api/specialist/orders/${orderId}/execution`, {
     method: "PATCH"
@@ -134,4 +133,21 @@ async function fetchOrderReports(orderId) {
   });
 
   return Array.isArray(data) ? data : [];
+}
+
+async function fetchSpecialistAnalytics(from = "", to = "") {
+  const params = new URLSearchParams();
+
+  if (from) params.append("from", from);
+  if (to) params.append("to", to);
+
+  const query = params.toString();
+
+  const url = query
+    ? `/api/specialist/analytics?${query}`
+    : `/api/specialist/analytics`;
+
+  return await apiRequest(url, {
+    method: "GET"
+  });
 }

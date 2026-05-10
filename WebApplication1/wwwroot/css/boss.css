@@ -21,6 +21,7 @@
   --yellow: #ffd978;
   --red: #ff9d96;
   --purple: #dba7f3;
+  --orange: #ffd0b5;
 
   --radius-card: 18px;
   --radius-panel: 22px;
@@ -29,7 +30,6 @@
   --shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.18);
   --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.2);
 }
-
 
 /* ===================== LAYOUT ===================== */
 
@@ -94,6 +94,10 @@
   margin-bottom: 10px;
 }
 
+.toolbar-left {
+  align-items: center;
+}
+
 .toolbar-label {
   font-size: 13px;
   font-weight: 700;
@@ -105,10 +109,10 @@
   color: var(--text-muted);
 }
 
-.hidden {
+.hidden,
+[hidden] {
   display: none !important;
 }
-
 
 /* ===================== STATUS TEXT ===================== */
 
@@ -122,7 +126,6 @@
 .status-text.error {
   color: #ff9d9d;
 }
-
 
 /* ===================== TABS ===================== */
 
@@ -179,7 +182,6 @@
   background: rgba(255, 193, 7, .18);
   border: 1px solid rgba(255, 193, 7, .45);
 }
-
 
 /* ===================== BUTTONS ===================== */
 
@@ -254,7 +256,6 @@
   background: linear-gradient(135deg, rgba(231,76,60,.95), rgba(192,57,43,.9));
 }
 
-
 /* ===================== INPUTS / SELECTS ===================== */
 
 .boss-select,
@@ -308,6 +309,53 @@
   cursor: pointer;
 }
 
+/* fallback для фильтра, если в HTML нет class="boss-select" */
+#statusFilter {
+  min-width: 180px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-control);
+  background: var(--bg-control);
+  color: var(--text-main);
+  outline: none;
+  font-size: 14px;
+}
+
+#statusFilter option {
+  color: #000000;
+}
+
+#statusFilter:hover {
+  background: var(--bg-control-hover);
+}
+
+#statusFilter:focus {
+  border-color: rgba(121, 224, 255, .42);
+  box-shadow: 0 0 0 3px rgba(121, 224, 255, .08);
+}
+
+/* fallback для кнопки "Оновити", если она без класса */
+#statusFilter + button,
+.toolbar button:not(.btn-primary):not(.btn-secondary):not(.btn-danger-soft):not(.btn-main) {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border-control);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 850;
+  color: var(--text-main);
+  background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+  box-shadow: 0 8px 18px rgba(0,0,0,.16);
+  transition: .18s ease;
+}
+
+#statusFilter + button:hover,
+.toolbar button:not(.btn-primary):not(.btn-secondary):not(.btn-danger-soft):not(.btn-main):hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.11));
+}
 
 /* ===================== TABLES ===================== */
 
@@ -364,6 +412,10 @@
   background: linear-gradient(180deg, rgba(30,55,85,.65), rgba(20,45,72,.75));
 }
 
+.boss-table tbody tr.main-row.is-open {
+  background: linear-gradient(180deg, rgba(32,62,96,.7), rgba(22,48,78,.8));
+}
+
 .boss-table tbody tr.details-row.hidden {
   display: none;
 }
@@ -376,7 +428,6 @@
 .boss-table tbody tr:last-child td {
   border-bottom: none;
 }
-
 
 /* ===================== TABLE HELPERS ===================== */
 
@@ -402,7 +453,6 @@
   width: 220px;
   white-space: nowrap;
 }
-
 
 /* ===================== STATUS BADGES ===================== */
 
@@ -431,8 +481,7 @@
 }
 
 .status-IN_PROGRESS,
-.status-WAITING_DETAILS,
-.status-REWORK {
+.status-WAITING_DETAILS {
   color: var(--yellow);
   background: rgba(140,100,18,.48);
 }
@@ -442,18 +491,34 @@
   background: rgba(111,52,145,.48);
 }
 
+.status-DETAILS_RECEIVED {
+  color: #c8f59a;
+  background: rgba(110,160,70,.45);
+}
+
+.status-UNDER_COMPLAINT,
+.status-CANCELED {
+  color: var(--red);
+  background: rgba(132,49,49,.52);
+}
+
+.status-REWORK,
+.status-REWORK_REVIEW {
+  color: var(--orange);
+  background: rgba(255,138,101,.22);
+  border-color: rgba(255,190,150,.32);
+}
+
 .status-DONE,
 .account-ACTIVE {
   color: var(--green);
   background: rgba(27,104,93,.55);
 }
 
-.status-CANCELED,
 .account-INACTIVE {
   color: var(--red);
   background: rgba(132,49,49,.52);
 }
-
 
 /* ===================== EXPAND MARK ===================== */
 
@@ -476,7 +541,6 @@
 .main-row.is-open .expand-mark {
   transform: rotate(180deg);
 }
-
 
 /* ===================== ORDER DETAILS ===================== */
 
@@ -529,6 +593,119 @@
   color: #d9e6f5;
 }
 
+/* ===================== DETAIL REQUEST HISTORY ===================== */
+
+.boss-detail-request-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.boss-detail-request-item {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.065);
+}
+
+.boss-detail-request-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.boss-detail-request-head strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.boss-detail-request-head span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.boss-detail-request-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.boss-detail-request-status.CREATED {
+  color: var(--yellow);
+  background: rgba(140,100,18,.36);
+  border-color: rgba(255,214,102,.18);
+}
+
+.boss-detail-request-status.APPROVED {
+  color: var(--green);
+  background: rgba(27,104,93,.36);
+  border-color: rgba(126,240,174,.18);
+}
+
+.boss-detail-request-status.REJECTED,
+.boss-detail-request-status.CANCELED {
+  color: var(--red);
+  background: rgba(132,49,49,.44);
+  border-color: rgba(255,130,130,.18);
+}
+
+.boss-detail-request-status.UNKNOWN {
+  color: #dbeafe;
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.12);
+}
+
+.boss-detail-request-body {
+  display: grid;
+  gap: 8px;
+}
+
+.boss-detail-request-row {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.055);
+}
+
+.boss-detail-request-row span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.boss-detail-request-row p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.boss-detail-request-empty {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.06);
+  color: var(--text-muted);
+  font-size: 13px;
+}
 
 /* ===================== ASSIGN AREA ===================== */
 
@@ -569,7 +746,6 @@
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.08);
 }
-
 
 /* ===================== COMPLAINTS ===================== */
 
@@ -633,7 +809,6 @@
   border: 1px solid rgba(255,193,7,.45);
 }
 
-
 /* ===================== REPORTS ===================== */
 
 .report-item + .report-item {
@@ -660,7 +835,6 @@
   color: var(--text-muted);
 }
 
-
 /* ===================== EMPTY / ERROR ===================== */
 
 .empty-box,
@@ -676,7 +850,6 @@
 .error-box {
   color: #ff9d9d;
 }
-
 
 /* ===================== ANALYTICS ===================== */
 
@@ -804,7 +977,6 @@
   border-color: rgba(255,77,77,.42);
 }
 
-
 /* ===================== ANALYTICS CHARTS ===================== */
 
 .analytics-charts-grid {
@@ -891,7 +1063,6 @@
   font-size: 13px;
 }
 
-
 /* ===================== RESPONSIVE ===================== */
 
 @media (max-width: 1200px) {
@@ -949,7 +1120,8 @@
   .boss-input,
   .toolbar select,
   .assign-wrap select,
-  .users-wrap select {
+  .users-wrap select,
+  #statusFilter {
     width: 100%;
     min-width: 0;
   }
@@ -980,5 +1152,13 @@
 
   .analytics-chart-value {
     text-align: left;
+  }
+
+  .boss-detail-request-head {
+    flex-direction: column;
+  }
+
+  .boss-detail-request-status {
+    width: 100%;
   }
 }

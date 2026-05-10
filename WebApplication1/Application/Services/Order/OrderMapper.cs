@@ -14,6 +14,8 @@ public static class OrderMapper
             SpecialistId = order.SpecialistId,
 
             DetailRequestId = order.DetailRequestId,
+            DetailRequestIds = GetAllDetailRequestIds(order),
+
             LastWorkReportId = order.LastWorkReportId,
 
             ServiceType = order.ServiceType,
@@ -41,6 +43,44 @@ public static class OrderMapper
                     ClosedBy = order.Complaint.ClosedBy,
                     CloseComment = order.Complaint.CloseComment
                 }
+        };
+    }
+
+    public static List<string> GetAllDetailRequestIds(Order order)
+    {
+        var ids = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(order.DetailRequestId))
+            ids.Add(order.DetailRequestId.Trim());
+
+        if (order.DetailRequestIds != null)
+        {
+            ids.AddRange(
+                order.DetailRequestIds
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+            );
+        }
+
+        return ids
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public static DetailRequestDto ToDto(DetailRequest request)
+    {
+        return new DetailRequestDto
+        {
+            Id = request.Id,
+            OrderId = request.OrderId,
+            SpecialistId = request.SpecialistId,
+            DetailNeeds = request.DetailNeeds,
+            Explanation = request.Explanation,
+            Photos = request.Photos ?? new List<string>(),
+            Status = request.Status,
+            ApprovedBy = request.ApprovedBy,
+            ApprovedAt = request.ApprovedAt,
+            CreatedAt = request.CreatedAt
         };
     }
 }

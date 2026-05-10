@@ -37,30 +37,7 @@ public class SpecialistController : ControllerBase
         {
             var worker = await _userService.GetByIdAsync(o.WorkerId);
 
-            result.Add(new
-            {
-                id = o.Id,
-                workerId = o.WorkerId,
-                workerName = worker?.FullName,
-
-                status = o.Status,
-                serviceType = o.ServiceType,
-                descriptionProblem = o.DescriptionProblem,
-
-                productionWorkshopNumber = o.ProductionWorkshopNumber,
-                floorNumber = o.FloorNumber,
-                roomNumber = o.RoomNumber,
-
-                inspectionResult = o.InspectionResult,
-                inspectionAt = o.InspectionAt,
-
-                workReportText = o.WorkReportText,
-                detailNeeds = o.DetailNeeds,
-                detailExplanation = o.DetailExplanation,
-
-                complaint = o.Complaint,
-                createdAt = o.CreatedAt
-            });
+            result.Add(ToSpecialistOrderResponse(o, worker?.FullName));
         }
 
         return Ok(result);
@@ -79,7 +56,15 @@ public class SpecialistController : ControllerBase
         if (order.SpecialistId != specialistId)
             return Forbid();
 
-        return Ok(order);
+        var orders = await _service.GetBySpecialistAsync(specialistId!, null);
+        var dto = orders.FirstOrDefault(x => x.Id == orderId);
+
+        if (dto == null)
+            return NotFound(new { message = "Order not found" });
+
+        var worker = await _userService.GetByIdAsync(dto.WorkerId);
+
+        return Ok(ToSpecialistOrderResponse(dto, worker?.FullName));
     }
 
     [HttpPatch("{orderId}/start")]
@@ -171,5 +156,39 @@ public class SpecialistController : ControllerBase
             return BadRequest(new { message });
 
         return Ok(new { message });
+    }
+
+    private static object ToSpecialistOrderResponse(OrderDto o, string? workerName)
+    {
+        return new
+        {
+            id = o.Id,
+            workerId = o.WorkerId,
+            workerName,
+
+            status = o.Status,
+            serviceType = o.ServiceType,
+            descriptionProblem = o.DescriptionProblem,
+
+            productionWorkshopNumber = o.ProductionWorkshopNumber,
+            floorNumber = o.FloorNumber,
+            roomNumber = o.RoomNumber,
+
+            inspectionResult = o.InspectionResult,
+            inspectionAt = o.InspectionAt,
+
+            workReportText = o.WorkReportText,
+
+            detailRequestId = o.DetailRequestId,
+            detailRequestIds = o.DetailRequestIds,
+            detailRequests = o.DetailRequests,
+
+            detailNeeds = o.DetailNeeds,
+            detailExplanation = o.DetailExplanation,
+            detailRequestStatus = o.DetailRequestStatus,
+
+            complaint = o.Complaint,
+            createdAt = o.CreatedAt
+        };
     }
 }

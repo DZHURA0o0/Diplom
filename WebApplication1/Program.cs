@@ -1,3 +1,4 @@
+using WebApplication1.Application.Hubs;
 using WebApplication1.Application.Services.Auth;
 using WebApplication1.Application.Services.Boss;
 using WebApplication1.Application.Services.Complaints;
@@ -24,6 +25,9 @@ builder.Services.AddCors(opt =>
 builder.Services.AddMongo(builder.Configuration);
 builder.Services.AddJwtAuth(builder.Configuration);
 
+// SignalR
+builder.Services.AddSignalR();
+
 // Repositories
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<OrderRepository>();
@@ -41,10 +45,14 @@ builder.Services.AddScoped<OrderWorkflowService>();
 
 builder.Services.AddScoped<ComplaintService>();
 builder.Services.AddScoped<BossOrderDetailsService>();
-builder.Services.AddScoped<BossAnalyticsService>();
 
+// Analytics
+builder.Services.AddScoped<BossAnalyticsService>();
+builder.Services.AddScoped<SpecialistAnalyticsService>();
+
+// Details status sync via MongoDB Change Stream
 builder.Services.AddScoped<DetailRequestStatusSyncService>();
-builder.Services.AddHostedService<DetailRequestStatusBackgroundService>();
+builder.Services.AddHostedService<DetailRequestChangeStreamService>();
 
 // Work reports / rework reports
 builder.Services.AddScoped<SpecialistWorkReportService>();
@@ -52,7 +60,7 @@ builder.Services.AddScoped<SpecialistWorkReportService>();
 // Email notifications
 builder.Services.AddSingleton<EmailNotificationService>();
 
-// MongoDB watcher
+// MongoDB watcher for order notifications
 builder.Services.AddHostedService<OrderStatusWatcherService>();
 
 // Test email on application startup
@@ -73,5 +81,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// SignalR hub
+app.MapHub<SpecialistNotificationHub>("/hubs/specialist");
 
 app.Run();

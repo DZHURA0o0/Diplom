@@ -1,227 +1,503 @@
-requireRole(["SPECIALIST"]);
-
 let specialistOrders = [];
+let specialistAllOrders = [];
 let openedOrderId = null;
-
-// Якщо не null — спеціаліст знаходиться в режимі обробки однієї заявки
 let focusedOrderId = null;
 
-window.addEventListener("DOMContentLoaded", async () => {
-  const filter = document.getElementById("statusFilter");
-
-  if (filter) {
-    filter.addEventListener("change", async () => {
-      focusedOrderId = null;
-      openedOrderId = null;
-      await loadOrders();
-    });
-  }
-
-  await loadHeaderUser();
-  await loadOrders();
-});
+let activeSpecialistTab = "orders";
 
 function setPageStatus(text, isError = false) {
   const el = document.getElementById("pageStatus");
+
   if (!el) return;
 
-  el.textContent = text ?? "";
+  el.textContent = text || "";
   el.className = isError ? "status-text error" : "status-text";
 }
 
 function updateWorkspaceChrome() {
-  const isFocusMode = Boolean(focusedOrderId);
-
-  const filterBox = document.querySelector(".specialist-filter");
-  const ordersHeader = document.querySelector(".orders-header");
   const card = document.querySelector(".specialist-card");
-  const title = document.getElementById("hello");
   const backBtn = document.getElementById("backToOrdersTopBtn");
 
-  if (filterBox) {
-    filterBox.style.display = isFocusMode ? "none" : "";
-  }
-
-  if (ordersHeader) {
-    ordersHeader.style.display = isFocusMode ? "none" : "";
-  }
+  const isFocusMode = Boolean(focusedOrderId);
 
   if (card) {
     card.classList.toggle("single-order-mode", isFocusMode);
   }
 
-  if (title) {
-    title.textContent = isFocusMode
-      ? "Обробка заявки"
-      : "Заявки спеціаліста";
-  }
-
   if (backBtn) {
     backBtn.hidden = !isFocusMode;
+    backBtn.classList.toggle("is-hidden", !isFocusMode);
   }
 }
-function toggleDetails(id) {
-  if (focusedOrderId) {
-    openedOrderId = id;
-    renderOrders(specialistOrders);
-    return;
+
+function getStatusFilterValue() {
+  const filter = document.getElementById("statusFilter");
+  return filter?.value || "";
+}
+
+function getSpecialistOrderId(order) {
+  if (typeof getOrderId === "function") {
+    return getOrderId(order);
   }
+
+  return order?.id || order?._id || "";
+}
+
+function updateOrderInCaches(order) {
+  if (!order) return;
+
+  const orderId = getSpecialistOrderId(order);
+  if (!orderId) return;
+
+  function upsert(list) {
+    const currentList = Array.isArray(list) ? list : [];
+    const index = currentList.findIndex(item => getSpecialistOrderId(item) === orderId);
+
+    if (index >= 0) {
+      currentList[index] = order;
+      return currentList;
+    }
+
+    return [order, ...currentList];
+  }
+
+  specialistOrders = upsert(specialistOrders);
+  specialistAllOrders = upsert(specialistAllOrders);
+}
+
+async function fetchSpecialistOrdersSafe(status = "") {
+  if (typeof fetchSpecialistOrders === "function") {
+    return await fetchSpecialistOrders(status);
+  }
+
+  if (typeof fetchMySpecialistOrders === "function") {
+    return await fetchMySpecialistOrders(status);
+  }
+
+  if (typeof fetchMyOrders === "function") {
+    return await fetchMyOrders(status);
+  }
+
+  if (typeof apiFetch === "function") {
+    const query = status ? `?status=${encodeURIComponent(status)}` : "";
+    return await apiFetch(`/api/specialist/orders${query}`);
+  }
+
+  const token = localStorage.getItem("token");
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+
+  const response = await fetch(`/api/specialist/orders${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Не вдалося завантажити заявки");
+  }
+
+  return await response.json();
+}
+
+async function fetchSpecialistOrderByIdSafe(orderId) {
+  if (typeof fetchSpecialistOrderById === "function") {
+    return await fetchSpecialistOrderById(orderId);
+  }
+
+  if (typeof fetchSpecialistOrder === "function") {
+    return await fetchSpecialistOrder(orderId);
+  }
+
+  if (typeof apiFetch === "function") {
+    return await apiFetch(`/api/specialist/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`/api/specialist/orders/${encodeURIComponent(orderId)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Не вдалося завантажити заявку");
+  }
+
+  return await response.json();
+}
+
+async function loadOrders(options = {}) {
+  const {
+    render = true,
+    statusOverride = null,
+    silent = false,
+    updateAllCache = false
+  } = options;
+
+  const status = statusOverride !== null
+    ? statusOverride
+    : getStatusFilterValue();
+
+  try {
+    if (!silent) {
+      setPageStatus("Завантаження заявок...");
+    }
+
+    const data = await fetchSpecialistOrdersSafe(status);
+    const orders = Array.isArray(data) ? data : [];
+
+    specialistOrders = orders;
+
+    if (!status || updateAllCache || statusOverride === "") {
+      specialistAllOrders = orders;
+    }
+
+    if (render && activeSpecialistTab === "orders") {
+      renderOrders(specialistOrders);
+    }
+
+    if (!silent) {
+      setPageStatus(`Завантажено ${orders.length} заявок`);
+    }
+
+    return orders;
+  } catch (e) {
+    console.error(e);
+
+    if (render && activeSpecialistTab === "orders") {
+      const container = document.getElementById("orders");
+
+      if (container) {
+        const msg = typeof escapeHtml === "function"
+          ? escapeHtml(e.message || "Помилка завантаження")
+          : String(e.message || "Помилка завантаження");
+
+        container.innerHTML = `<div class="error-box">${msg}</div>`;
+      }
+    }
+
+    if (!silent) {
+      setPageStatus("Помилка завантаження заявок: " + e.message, true);
+    }
+
+    return [];
+  }
+}
+
+async function ensureSpecialistAllOrdersLoaded(force = false) {
+  if (!force && Array.isArray(specialistAllOrders) && specialistAllOrders.length > 0) {
+    return specialistAllOrders;
+  }
+
+  return await loadOrders({
+    render: false,
+    statusOverride: "",
+    silent: true,
+    updateAllCache: true
+  });
+}
+
+async function refreshFocusedOrder(orderId) {
+  try {
+    const order = await fetchSpecialistOrderByIdSafe(orderId);
+    updateOrderInCaches(order);
+
+    if (focusedOrderId) {
+      focusedOrderId = String(orderId);
+      openedOrderId = String(orderId);
+    }
+
+    if (activeSpecialistTab === "orders") {
+      renderOrders(specialistOrders);
+    }
+
+    return order;
+  } catch (e) {
+    console.error(e);
+
+    await loadOrders({
+      render: activeSpecialistTab === "orders",
+      statusOverride: getStatusFilterValue(),
+      silent: true
+    });
+
+    if (activeSpecialistTab === "orders") {
+      renderOrders(specialistOrders);
+    }
+
+    return null;
+  }
+}
+
+function toggleDetails(orderId) {
+  if (!orderId) return;
+
+  const id = String(orderId);
 
   openedOrderId = openedOrderId === id ? null : id;
   renderOrders(specialistOrders);
 }
 
-async function handleRefresh() {
-  if (focusedOrderId) {
-    await refreshFocusedOrder(focusedOrderId);
-    return;
-  }
-
-  await loadOrders();
-}
-
-async function loadOrders() {
-  const container = document.getElementById("orders");
-  const status = document.getElementById("statusFilter")?.value ?? "";
-
-  focusedOrderId = null;
-  openedOrderId = null;
-  updateWorkspaceChrome();
-
-  if (container) {
-    container.innerHTML = `<div class="empty">Завантаження...</div>`;
-  }
-
-  setPageStatus("Завантаження...");
-
-  try {
-    const data = await fetchSpecialistOrders(status);
-    specialistOrders = sortOrdersNewFirst(data);
-
-    renderOrders(specialistOrders);
-    setPageStatus(`Завантажено заявок: ${specialistOrders.length}`);
-  } catch (e) {
-    console.error(e);
-
-    if (container) {
-      container.innerHTML = `
-        <div class="error-box">
-          ${escapeHtml(e.message || "Не вдалося завантажити заявки.")}
-        </div>
-      `;
-    }
-
-    setPageStatus("Помилка завантаження.", true);
-  }
-}
-
 async function openOrderWorkspace(orderId) {
+  if (!orderId) return;
+
   focusedOrderId = String(orderId);
   openedOrderId = String(orderId);
+
+  await switchSpecialistTab("orders", false);
+
+  const order = await refreshFocusedOrder(orderId);
+
+  if (!order) {
+    renderOrders(specialistOrders);
+  }
+
   updateWorkspaceChrome();
 
-  await refreshFocusedOrder(orderId);
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 async function closeOrderWorkspace() {
   focusedOrderId = null;
   openedOrderId = null;
+
   updateWorkspaceChrome();
 
-  await loadOrders();
-}
-
-function mergeOrderIntoCache(order) {
-  const id = getOrderId(order);
-  const index = specialistOrders.findIndex(x => getOrderId(x) === id);
-
-  if (index >= 0) {
-    specialistOrders[index] = order;
-  } else {
-    specialistOrders.push(order);
+  if (activeSpecialistTab !== "orders") {
+    await switchSpecialistTab("orders", false);
   }
 
-  specialistOrders = sortOrdersNewFirst(specialistOrders);
+  await loadOrders({
+    render: true,
+    statusOverride: getStatusFilterValue(),
+    silent: true
+  });
 }
 
-async function refreshFocusedOrder(orderId) {
-  const container = document.getElementById("orders");
-
-  focusedOrderId = String(orderId);
-  openedOrderId = String(orderId);
-  updateWorkspaceChrome();
-
-  if (container) {
-    container.innerHTML = `<div class="empty">Завантаження заявки...</div>`;
-  }
-
-  setPageStatus("Завантаження заявки...");
-
-  try {
-    const order = await fetchSpecialistOrderById(orderId);
-    mergeOrderIntoCache(order);
-
-    renderOrders(specialistOrders);
-    setPageStatus("Відкрита одна заявка для обробки.");
-  } catch (e) {
-    console.error(e);
-
-    if (container) {
-      container.innerHTML = `
-        <div class="error-box">
-          ${escapeHtml(e.message || "Не вдалося завантажити заявку.")}
-        </div>
-      `;
+async function handleRefresh() {
+  if (activeSpecialistTab === "orders") {
+    if (focusedOrderId) {
+      await refreshFocusedOrder(focusedOrderId);
+      return;
     }
 
-    setPageStatus("Помилка завантаження заявки.", true);
+    await loadOrders();
+    return;
+  }
+
+  if (activeSpecialistTab === "analytics") {
+    await ensureSpecialistAllOrdersLoaded(true);
+
+    if (typeof loadSpecialistAnalytics === "function") {
+      await loadSpecialistAnalytics();
+    }
+
+    return;
+  }
+
+  if (activeSpecialistTab === "details") {
+    await ensureSpecialistAllOrdersLoaded(true);
+
+    if (typeof renderSpecialistDetailRequestsTab === "function") {
+      renderSpecialistDetailRequestsTab();
+    }
+
+    return;
+  }
+
+  if (activeSpecialistTab === "reworks") {
+    await ensureSpecialistAllOrdersLoaded(true);
+
+    if (typeof renderSpecialistReworksTab === "function") {
+      renderSpecialistReworksTab();
+    }
   }
 }
 
-function parseJwt(tokenValue) {
-  try {
-    return JSON.parse(atob(tokenValue.split(".")[1]));
-  } catch {
-    return null;
+function initSpecialistTabs() {
+  const buttons = document.querySelectorAll("[data-specialist-tab]");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", async () => {
+      const tab = button.dataset.specialistTab;
+      await switchSpecialistTab(tab);
+    });
+  });
+}
+
+async function switchSpecialistTab(tab, shouldLoad = true) {
+  const targetTab = tab || "orders";
+  activeSpecialistTab = targetTab;
+
+  document.querySelectorAll("[data-specialist-tab]").forEach(button => {
+    const isActive = button.dataset.specialistTab === targetTab;
+
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  document.querySelectorAll("[data-specialist-panel]").forEach(panel => {
+    panel.hidden = panel.dataset.specialistPanel !== targetTab;
+  });
+
+  if (targetTab !== "orders") {
+    focusedOrderId = null;
+    openedOrderId = null;
+    updateWorkspaceChrome();
+  }
+
+  if (targetTab === "orders") {
+    if (shouldLoad) {
+      await loadOrders();
+    } else {
+      renderOrders(specialistOrders);
+    }
+
+    return;
+  }
+
+  if (targetTab === "analytics") {
+    await ensureSpecialistAllOrdersLoaded();
+
+    if (typeof initSpecialistAnalyticsFilters === "function") {
+      initSpecialistAnalyticsFilters();
+    }
+
+    if (shouldLoad && typeof loadSpecialistAnalytics === "function") {
+      await loadSpecialistAnalytics();
+    }
+
+    return;
+  }
+
+  if (targetTab === "details") {
+    await ensureSpecialistAllOrdersLoaded();
+
+    if (typeof renderSpecialistDetailRequestsTab === "function") {
+      renderSpecialistDetailRequestsTab();
+    }
+
+    return;
+  }
+
+  if (targetTab === "reworks") {
+    await ensureSpecialistAllOrdersLoaded();
+
+    if (typeof renderSpecialistReworksTab === "function") {
+      renderSpecialistReworksTab();
+    }
   }
 }
 
 async function loadHeaderUser() {
   const nameEl = document.getElementById("headerUserName");
   const roleEl = document.querySelector(".app-user-role");
-
-  if (!nameEl) {
-    console.error("headerUserName not found");
-    return;
-  }
+  const helloEl = document.getElementById("hello");
 
   try {
-    const res = await fetch("/api/auth/me", {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token")
-      }
-    });
+    let user = null;
 
-    if (!res.ok) {
-      throw new Error("Failed to load user");
+    if (typeof getCurrentUser === "function") {
+      user = await getCurrentUser();
+    } else if (typeof apiFetch === "function") {
+      user = await apiFetch("/api/auth/me");
+    } else {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Token not found");
+      }
+
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Не вдалося отримати дані користувача");
+      }
+
+      user = await response.json();
     }
 
-    const data = await res.json();
+    const fullName =
+      user?.fullName ||
+      user?.full_name ||
+      user?.name ||
+      user?.login ||
+      "Спеціаліст";
 
-    nameEl.textContent =
-      data.fullName ||
-      data.login ||
-      "Користувач";
+    if (nameEl) {
+      nameEl.textContent = fullName;
+    }
 
     if (roleEl) {
-      if (data.role === "SPECIALIST") roleEl.textContent = "Спеціаліст";
-      else if (data.role === "WORKER") roleEl.textContent = "Працівник";
-      else if (data.role === "BOSS") roleEl.textContent = "Начальник";
-      else roleEl.textContent = data.role || "";
+      roleEl.textContent = "Спеціаліст";
     }
 
+    if (helloEl && activeSpecialistTab === "orders") {
+      helloEl.textContent = "Заявки спеціаліста";
+    }
   } catch (e) {
-    console.error("HEADER LOAD ERROR:", e);
-    nameEl.textContent = "Користувач";
+    console.warn("Header user load failed:", e);
+
+    if (nameEl) {
+      nameEl.textContent = "Спеціаліст";
+    }
+
+    if (roleEl) {
+      roleEl.textContent = "Спеціаліст";
+    }
   }
 }
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+
+  window.location.href = "/";
+}
+
+window.logout = logout;
+
+window.loadHeaderUser = loadHeaderUser;
+window.handleRefresh = handleRefresh;
+window.openOrderWorkspace = openOrderWorkspace;
+window.closeOrderWorkspace = closeOrderWorkspace;
+window.toggleDetails = toggleDetails;
+
+window.addEventListener("DOMContentLoaded", async () => {
+  initSpecialistTabs();
+
+  const filter = document.getElementById("statusFilter");
+
+  if (filter) {
+    filter.addEventListener("change", async () => {
+      focusedOrderId = null;
+      openedOrderId = null;
+
+      await loadOrders({
+        render: activeSpecialistTab === "orders",
+        statusOverride: getStatusFilterValue()
+      });
+    });
+  }
+
+  await loadHeaderUser();
+
+  if (typeof initSpecialistAnalyticsFilters === "function") {
+    initSpecialistAnalyticsFilters();
+  }
+
+  await switchSpecialistTab("orders", true);
+
+  await ensureSpecialistAllOrdersLoaded();
+});

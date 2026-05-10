@@ -24,13 +24,18 @@ function requireFocusedWorkspace(orderId, actionText) {
   return false;
 }
 
+function canCreateDetailRequestByStatus(status) {
+  return ["INSPECTION", "WAITING_DETAILS", "DETAILS_RECEIVED"].includes(
+    String(status ?? "").trim().toUpperCase()
+  );
+}
+
 async function handleStart(orderId) {
   try {
     setPageStatus("Збереження...");
     await startSpecialistOrder(orderId);
 
     setPageStatus("Заявку переведено в статус 'У роботі'.");
-
     await openOrderWorkspace(orderId);
   } catch (e) {
     console.error(e);
@@ -71,8 +76,8 @@ async function handleSendDetailRequest(orderId) {
 
     const status = getCachedOrderStatus(orderId);
 
-    if (status === "WAITING_DETAILS") {
-      setPageStatus("Запит на деталі вже відправлено. Дії заблоковано до отримання деталей.", true);
+    if (!canCreateDetailRequestByStatus(status)) {
+      setPageStatus("У поточному статусі заявки не можна створити запит на деталі.", true);
       return;
     }
 
@@ -92,7 +97,7 @@ async function handleSendDetailRequest(orderId) {
     setPageStatus("Надсилання запиту на деталі...");
     await sendDetailRequest(orderId, detailNeeds, explanation);
 
-    setPageStatus("Запит на деталі відправлено. Подальші дії заблоковано до отримання деталей.");
+    setPageStatus("Запит на деталі створено. Його додано в історію заявки.");
     await refreshFocusedOrder(orderId);
   } catch (e) {
     console.error(e);
@@ -109,7 +114,7 @@ async function handleMoveToExecution(orderId) {
     const status = getCachedOrderStatus(orderId);
 
     if (status === "WAITING_DETAILS") {
-      setPageStatus("Заявка очікує деталей. Спочатку натисни 'Деталі отримано'.", true);
+      setPageStatus("Заявка ще очікує деталей. Перехід до виконання заблоковано.", true);
       return;
     }
 

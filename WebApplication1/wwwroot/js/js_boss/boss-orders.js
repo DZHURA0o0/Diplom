@@ -34,6 +34,15 @@ const SERVICE_TYPE_LABELS = {
     PLUMBING: "Сантехніка"
 };
 
+const DETAIL_REQUEST_STATUS_LABELS = {
+    CREATED: "Очікує деталей",
+    APPROVED: "Деталі отримано",
+    REJECTED: "Відхилено",
+    CANCELED: "Скасовано",
+    WAITING: "Очікує деталей",
+    RECEIVED: "Деталі отримано"
+};
+
 function escapeHtml(value) {
     if (value === null || value === undefined) return "";
 
@@ -184,10 +193,19 @@ function localizeStatus(status) {
     return STATUS_LABELS[key] || status || "—";
 }
 
+function serviceTypeLabel(value) {
+    const key = String(value || "").trim().toUpperCase();
+    return SERVICE_TYPE_LABELS[key] || value || "—";
+}
+
 function getStatusBadge(order) {
     const status = String(order.status || "UNKNOWN").trim().toUpperCase();
 
-    return `<span class="status-badge status-${escapeHtml(status)}">${escapeHtml(localizeStatus(status))}</span>`;
+    return `
+        <span class="status-badge status-${escapeHtml(status)}">
+            ${escapeHtml(localizeStatus(status))}
+        </span>
+    `;
 }
 
 function shortText(value, max = 60) {
@@ -199,12 +217,6 @@ function shortText(value, max = 60) {
     return text.slice(0, max).trim() + "…";
 }
 
-function serviceTypeLabel(value) {
-    const key = String(value || "").trim().toUpperCase();
-
-    return SERVICE_TYPE_LABELS[key] || value || "—";
-}
-
 async function ensurePeopleLoaded() {
     if (bossPeopleLoaded) return;
 
@@ -214,6 +226,7 @@ async function ensurePeopleLoaded() {
     ]);
 
     bossWorkersMap = {};
+    bossSpecialistsMap = {};
 
     for (const worker of workers) {
         const id = worker.id || worker._id;
@@ -231,8 +244,6 @@ async function ensurePeopleLoaded() {
             roleInSystem: specialist.roleInSystem || specialist.role_in_system || ""
         }))
         .filter(x => x.id);
-
-    bossSpecialistsMap = {};
 
     for (const specialist of bossSpecialists) {
         bossSpecialistsMap[specialist.id] = specialist.fullName || specialist.login || specialist.id;
@@ -254,13 +265,126 @@ function createDetailsField(label, value, options = {}) {
     `;
 }
 
+/* ===================== DETAIL REQUESTS ===================== */
+
+function normalizeDetailRequest(item) {
+    item = item || {};
+
+    return {
+        id: item.id || item.Id || "",
+        detailNeeds: item.detailNeeds || item.DetailNeeds || "",
+        explanation: item.explanation || item.Explanation || "",
+        status: item.status || item.Status || "",
+        createdAt: item.createdAt || item.CreatedAt || null,
+        approvedAt: item.approvedAt || item.ApprovedAt || null,
+        approvedBy: item.approvedBy || item.ApprovedBy || null
+    };
+}
+
+function formatDetailRequestStatus(status) {
+    const key = String(status || "").trim().toUpperCase();
+    return DETAIL_REQUEST_STATUS_LABELS[key] || status || "—";
+}
+
+function getDetailRequestStatusClass(status) {
+    const key = String(status || "").trim().toUpperCase();
+
+    if (key === "CREATED" || key === "WAITING") return "CREATED";
+    if (key === "APPROVED" || key === "RECEIVED") return "APPROVED";
+    if (key === "REJECTED") return "REJECTED";
+    if (key === "CANCELED") return "CANCELED";
+
+    return "UNKNOWN";
+}
+
+function getOrderDetailRequests(order) {
+    const requests = order.detailRequests || order.DetailRequests || [];
+
+    if (Array.isArray(requests) && requests.length > 0) {
+        return requests
+            .map(normalizeDetailRequest)
+            .filter(x => x.id || x.detailNeeds || x.explanation)
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    const oldNeeds = order.detailNeeds || order.DetailNeeds || "";
+    const oldExplanation = order.detailExplanation || order.DetailExplanation || "";
+    const oldStatus = order.detailRequestStatus || order.DetailRequestStatus || "";
+    const oldId = order.detailRequestId || order.DetailRequestId || "";
+
+    if (!oldNeeds && !oldExplanation && !oldId) {
+        return [];
+    }
+
+    return [
+        {
+            id: oldId,
+            detailNeeds: oldNeeds,
+            explanation: oldExplanation,
+            status: oldStatus,
+            createdAt: null,
+            approvedAt: null,
+            approvedBy: null
+        }
+    ];
+}
+
+function buildDetailRequestsHtml(order) {
+    const requests = getOrderDetailRequests(order);
+
+    if (requests.length === 0) {
+        return `
+            <div class="boss-detail-request-empty">
+                Запитів деталей ще немає.
+            </div>
+        `;
+    }
+
+    return `
+        <div class="boss-detail-request-history">
+            ${requests.map((request, index) => {
+                const statusClass = getDetailRequestStatusClass(request.status);
+
+                return `
+                    <div class="boss-detail-request-item">
+                        <div class="boss-detail-request-head">
+                            <div>
+                                <strong>Запит деталей ${requests.length - index}</strong>
+                                <span>${escapeHtml(formatDate(request.createdAt))}</span>
+                            </div>
+
+                            <div class="boss-detail-request-status ${statusClass}">
+                                ${escapeHtml(formatDetailRequestStatus(request.status))}
+                            </div>
+                        </div>
+
+                        <div class="boss-detail-request-body">
+                            <div class="boss-detail-request-row">
+                                <span>Потрібні деталі</span>
+                                <p>${escapeHtml(request.detailNeeds || "—")}</p>
+                            </div>
+
+                            <div class="boss-detail-request-row">
+                                <span>Пояснення</span>
+                                <p>${escapeHtml(request.explanation || "—")}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
+}
+
+/* ===================== REPORTS ===================== */
+
 function buildReportsHtml(reports) {
     if (!Array.isArray(reports) || reports.length === 0) {
         return "—";
     }
 
-    return reports
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    return [...reports]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         .map((report, index) => {
             const reportText = escapeHtml(report.reportText || report.text || "—");
             const createdAt = formatDate(report.createdAt);
@@ -271,12 +395,15 @@ function buildReportsHtml(reports) {
                         <span class="report-item-title">Звіт ${reports.length - index}</span>
                         <span class="report-item-date">${escapeHtml(createdAt)}</span>
                     </div>
+
                     <div class="report-item-body">${reportText}</div>
                 </div>
             `;
         })
         .join("");
 }
+
+/* ===================== COMPLAINT ACTIONS ===================== */
 
 function buildComplaintActionsHtml(order) {
     const orderStatus = String(order.status || "").trim().toUpperCase();
@@ -294,10 +421,12 @@ function buildComplaintActionsHtml(order) {
         return `
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
+
                 <div class="complaint-actions-buttons">
                     <button type="button" class="btn-main js-complaint-rework">
                         На переробку
                     </button>
+
                     <button type="button" class="btn-secondary js-complaint-reject">
                         Відхилити скаргу
                     </button>
@@ -310,6 +439,7 @@ function buildComplaintActionsHtml(order) {
         return `
             <div class="complaint-actions-block">
                 <div class="complaint-actions-title">Дії по скарзі</div>
+
                 <div class="complaint-actions-note">
                     Скарга знаходиться на переробці. Закрити її можна тільки після завершення роботи спеціалістом.
                 </div>
@@ -356,10 +486,13 @@ function buildComplaintActionsHtml(order) {
     return "";
 }
 
+/* ===================== FULL ORDER DETAILS ===================== */
+
 function buildDetailsHtml(order) {
     const complaintSubmitted = getComplaintSubmitted(order);
     const complaintStatusLabel = getComplaintStatusLabel(order);
     const reportsHtml = buildReportsHtml(order.reports);
+    const detailRequestsHtml = buildDetailRequestsHtml(order);
 
     return `
         <div class="order-details-grid">
@@ -380,10 +513,10 @@ function buildDetailsHtml(order) {
             ${createDetailsField("Поверх", escapeHtml(order.floorNumber ?? "—"))}
             ${createDetailsField("Кімната", escapeHtml(order.roomNumber ?? "—"))}
 
-            ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult || "—"), { full: true, valueClass: "long-text" })}
             ${createDetailsField("Опис проблеми", escapeHtml(order.descriptionProblem || "—"), { full: true, valueClass: "long-text" })}
-            ${createDetailsField("Потреба в деталях", escapeHtml(order.detailNeeds || "—"), { full: true, valueClass: "long-text" })}
-            ${createDetailsField("Пояснення до деталей", escapeHtml(order.detailExplanation || "—"), { full: true, valueClass: "long-text" })}
+            ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult || "—"), { full: true, valueClass: "long-text" })}
+
+            ${createDetailsField("Історія запитів деталей", detailRequestsHtml, { full: true })}
 
             ${createDetailsField("Усі звіти", reportsHtml, { full: true, valueClass: "long-text" })}
 
@@ -395,6 +528,8 @@ function buildDetailsHtml(order) {
         ${buildComplaintActionsHtml(order)}
     `;
 }
+
+/* ===================== COMMON ACTION HELPERS ===================== */
 
 function setPendingButton(button, pendingText) {
     if (!button) return null;
@@ -424,6 +559,8 @@ async function refreshOrdersAfterAction() {
         await loadOrders();
     }
 }
+
+/* ===================== COMPLAINT HANDLERS ===================== */
 
 function attachComplaintActionHandlers(order, detailsRow) {
     const orderId = getOrderId(order);
@@ -456,9 +593,7 @@ function attachComplaintActionHandlers(order, detailsRow) {
             e.preventDefault();
             e.stopPropagation();
 
-            if (resolveBtn.disabled) {
-                return;
-            }
+            if (resolveBtn.disabled) return;
 
             const restore = setPendingButton(resolveBtn, "Закриття...");
 
@@ -491,6 +626,8 @@ function attachComplaintActionHandlers(order, detailsRow) {
         });
     }
 }
+
+/* ===================== ASSIGN CONTROLS ===================== */
 
 function stopRowToggle(e) {
     e.stopPropagation();
@@ -585,6 +722,8 @@ function createAssignControls(order) {
 
     return wrap;
 }
+
+/* ===================== RENDER ORDERS ===================== */
 
 function sortOrders(orders) {
     return [...orders].sort((a, b) => {
@@ -712,13 +851,16 @@ function renderOrdersTable(orders, tbodyId = "orders") {
                 ${complaintMark}
                 <span class="expand-mark">⌄</span>
             </td>
+
             <td>${escapeHtml(getWorkerName(order))}</td>
             <td>${escapeHtml(getSpecialistName(order))}</td>
             <td>${getStatusBadge(order)}</td>
             <td>${escapeHtml(serviceTypeLabel(order.serviceType || order.service_type))}</td>
+
             <td class="cell-truncate" title="${escapeHtml(order.descriptionProblem || order.description_problem || "")}">
                 ${escapeHtml(shortText(order.descriptionProblem || order.description_problem || "", 70))}
             </td>
+
             <td>${escapeHtml(formatLocation(order))}</td>
             <td class="cell-actions"></td>
         `;
@@ -749,6 +891,8 @@ function renderOrdersTable(orders, tbodyId = "orders") {
     }
 }
 
+/* ===================== LOAD ORDERS ===================== */
+
 async function loadOrders() {
     if (typeof activeTab !== "undefined" && activeTab !== "orders") return;
 
@@ -773,10 +917,19 @@ async function loadOrders() {
             await updateComplaintsBadge();
         }
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="error-box">${escapeHtml(err.message || "Load orders error")}</div></td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="error-box">${escapeHtml(err.message || "Load orders error")}</div>
+                </td>
+            </tr>
+        `;
+
         setStatus(err.message || "Load orders error", true);
     }
 }
+
+/* ===================== COMPLAINTS TAB ===================== */
 
 function isComplaintOrder(order) {
     return getComplaintSubmitted(order);
@@ -848,7 +1001,14 @@ async function loadComplaintsOrders() {
 
         await updateComplaintsBadge(detailedOrders);
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="error-box">${escapeHtml(err.message || "Complaints load error")}</div></td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="error-box">${escapeHtml(err.message || "Complaints load error")}</div>
+                </td>
+            </tr>
+        `;
+
         setStatus(err.message || "Complaints load error", true);
     }
 }

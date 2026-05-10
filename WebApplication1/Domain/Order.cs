@@ -18,9 +18,15 @@ public class Order
     [BsonRepresentation(BsonType.ObjectId)]
     public string? SpecialistId { get; set; }
 
+    // Старе поле залишаємо для сумісності зі старими заявками.
+    // Нову логіку ведемо через DetailRequestIds.
     [BsonElement("detail_request_id")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? DetailRequestId { get; set; }
+
+    [BsonElement("detail_request_ids")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public List<string> DetailRequestIds { get; set; } = new();
 
     [BsonElement("last_work_report_id")]
     [BsonRepresentation(BsonType.ObjectId)]

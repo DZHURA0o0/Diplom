@@ -1,4 +1,6 @@
+using WebApplication1.Domain;
 using WebApplication1.Repositories;
+using DomainOrder = WebApplication1.Domain.Order;
 
 namespace WebApplication1.Application.Services.Details;
 
@@ -6,57 +8,173 @@ public class DetailRequestStatusSyncService
 {
     private readonly DetailRequestRepository _detailRequests;
     private readonly OrderRepository _orders;
+    private readonly ILogger<DetailRequestStatusSyncService> _logger;
 
     public DetailRequestStatusSyncService(
         DetailRequestRepository detailRequests,
-        OrderRepository orders)
+        OrderRepository orders,
+        ILogger<DetailRequestStatusSyncService> logger)
     {
         _detailRequests = detailRequests;
         _orders = orders;
+        _logger = logger;
+    }
+
+    public async Task RecalculateByOrderIdAsync(string? orderId)
+    {
+        if (string.IsNullOrWhiteSpace(orderId))
+            return;
+
+        var order = await _orders.GetByIdAsync(orderId.Trim());
+
+        if (order == null)
+        {
+            _logger.LogWarning("Detail request sync skipped. Order not found: {OrderId}", orderId);
+            return;
+        }
+
+        if (IsStatus(order.Status, "CANCELED") || IsStatus(order.Status, "DONE"))
+        {
+            _logger.LogInformation(
+                "Detail request sync skipped. Order {OrderId} has final status {Status}",
+                order.Id,
+                order.Status
+            );
+
+            return;
+        }
+
+        await RecalculateOrderDetailStatusAsync(order);
     }
 
     public async Task SyncAsync()
     {
         var requests = await _detailRequests.GetPendingDecisionRequestsAsync();
 
-        foreach (var request in requests)
+        var orderIds = requests
+            .Where(x => !string.IsNullOrWhiteSpace(x.OrderId))
+            .Select(x => x.OrderId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var orderId in orderIds)
         {
-            var order = await _orders.GetByIdAsync(request.OrderId);
-
-            if (order == null)
-                continue;
-
-            if (!IsStatus(order.Status, "WAITING_DETAILS"))
-                continue;
-
-            if (!string.Equals(order.DetailRequestId, request.Id, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var requestStatus = Normalize(request.Status);
-
-            if (requestStatus == "APPROVED")
-            {
-                order.Status = "DETAILS_RECEIVED";
-                await _orders.UpdateAsync(order);
-                continue;
-            }
-
-            if (requestStatus == "REJECTED" || requestStatus == "CANCELED")
-            {
-                order.Status = "INSPECTION";
-                await _orders.UpdateAsync(order);
-                continue;
-            }
+            await RecalculateByOrderIdAsync(orderId);
         }
     }
 
-    private static string Normalize(string? value)
+    private async Task RecalculateOrderDetailStatusAsync(DomainOrder order)
     {
-        return (value ?? "").Trim().ToUpperInvariant();
+        var requests = await _detailRequests.GetByOrderIdAsync(order.Id);
+
+        if (requests.Count == 0)
+        {
+            _logger.LogInformation(
+                "No detail requests found for order {OrderId}",
+                order.Id
+            );
+
+            return;
+        }
+
+        SyncOrderDetailRequestIds(order, requests);
+
+        if (requests.Any(x => IsDetailStatus(x, "CREATED") || IsDetailStatus(x, "WAITING")))
+        {
+            await UpdateOrderStatusIfNeededAsync(order, "WAITING_DETAILS");
+            return;
+        }
+
+        var usefulRequests = requests
+            .Where(x =>
+                !IsDetailStatus(x, "REJECTED") &&
+                !IsDetailStatus(x, "CANCELED"))
+            .ToList();
+
+        if (usefulRequests.Count == 0)
+        {
+            await UpdateOrderStatusIfNeededAsync(order, "INSPECTION");
+            return;
+        }
+
+        if (usefulRequests.All(x => IsDetailStatus(x, "APPROVED") || IsDetailStatus(x, "RECEIVED")))
+        {
+            await UpdateOrderStatusIfNeededAsync(order, "DETAILS_RECEIVED");
+            return;
+        }
+
+        await UpdateOrderStatusIfNeededAsync(order, "WAITING_DETAILS");
+    }
+
+    private async Task UpdateOrderStatusIfNeededAsync(DomainOrder order, string newStatus)
+    {
+        if (IsStatus(order.Status, newStatus))
+        {
+            await _orders.UpdateAsync(order);
+
+            _logger.LogInformation(
+                "Order {OrderId} detail status sync completed. Status unchanged: {Status}",
+                order.Id,
+                order.Status
+            );
+
+            return;
+        }
+
+        var oldStatus = order.Status;
+        order.Status = newStatus;
+
+        await _orders.UpdateAsync(order);
+
+        _logger.LogInformation(
+            "Order {OrderId} status changed by detail request sync: {OldStatus} -> {NewStatus}",
+            order.Id,
+            oldStatus,
+            newStatus
+        );
+    }
+
+    private static void SyncOrderDetailRequestIds(DomainOrder order, List<DetailRequest> requests)
+    {
+        order.DetailRequestIds ??= new List<string>();
+
+        var requestIds = requests
+            .Select(x => x.Id)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var id in requestIds)
+        {
+            if (!order.DetailRequestIds.Any(x => string.Equals(x, id, StringComparison.OrdinalIgnoreCase)))
+            {
+                order.DetailRequestIds.Add(id);
+            }
+        }
+
+        var newest = requests
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefault();
+
+        if (newest != null)
+            order.DetailRequestId = newest.Id;
     }
 
     private static bool IsStatus(string? current, string expected)
     {
-        return string.Equals(current, expected, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(
+            current,
+            expected,
+            StringComparison.OrdinalIgnoreCase
+        );
+    }
+
+    private static bool IsDetailStatus(DetailRequest request, string status)
+    {
+        return string.Equals(
+            request.Status,
+            status,
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 }
