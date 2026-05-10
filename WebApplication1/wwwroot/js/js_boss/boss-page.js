@@ -1,10 +1,5 @@
 let activeTab = "orders";
 
-function logout() {
-    localStorage.removeItem("token");
-    window.location.href = "/";
-}
-
 function setStatus(text, isError = false) {
     const el = document.getElementById("status");
     if (!el) return;
@@ -85,48 +80,34 @@ function initBossFilters() {
 }
 
 function setVisibleTab(tabName) {
-    const ordersTab = document.getElementById("ordersTab");
-    const complaintsTab = document.getElementById("complaintsTab");
-    const usersTab = document.getElementById("usersTab");
-    const analyticsTab = document.getElementById("analyticsTab");
+    const tabs = {
+        orders: document.getElementById("ordersTab"),
+        complaints: document.getElementById("complaintsTab"),
+        users: document.getElementById("usersTab"),
+        analytics: document.getElementById("analyticsTab")
+    };
 
-    if (ordersTab) {
-        ordersTab.classList.toggle("hidden", tabName !== "orders");
-    }
-
-    if (complaintsTab) {
-        complaintsTab.classList.toggle("hidden", tabName !== "complaints");
-    }
-
-    if (usersTab) {
-        usersTab.classList.toggle("hidden", tabName !== "users");
-    }
-
-    if (analyticsTab) {
-        analyticsTab.classList.toggle("hidden", tabName !== "analytics");
-    }
+    Object.entries(tabs).forEach(([name, element]) => {
+        element?.classList.toggle("hidden", tabName !== name);
+    });
 }
 
 function setActiveTabButton(tabName) {
-    const tabOrdersBtn = document.getElementById("tabOrdersBtn");
-    const tabComplaintsBtn = document.getElementById("tabComplaintsBtn");
-    const tabUsersBtn = document.getElementById("tabUsersBtn");
-    const tabAnalyticsBtn = document.getElementById("tabAnalyticsBtn");
+    const buttons = {
+        orders: document.getElementById("tabOrdersBtn"),
+        complaints: document.getElementById("tabComplaintsBtn"),
+        users: document.getElementById("tabUsersBtn"),
+        analytics: document.getElementById("tabAnalyticsBtn")
+    };
 
-    if (tabOrdersBtn) {
-        tabOrdersBtn.classList.toggle("active", tabName === "orders");
-    }
+    Object.entries(buttons).forEach(([name, button]) => {
+        button?.classList.toggle("active", tabName === name);
+    });
+}
 
-    if (tabComplaintsBtn) {
-        tabComplaintsBtn.classList.toggle("active", tabName === "complaints");
-    }
-
-    if (tabUsersBtn) {
-        tabUsersBtn.classList.toggle("active", tabName === "users");
-    }
-
-    if (tabAnalyticsBtn) {
-        tabAnalyticsBtn.classList.toggle("active", tabName === "analytics");
+function refreshComplaintsBadgeIfPossible() {
+    if (typeof updateComplaintsBadge === "function") {
+        updateComplaintsBadge();
     }
 }
 
@@ -136,59 +117,26 @@ function showTab(tabName) {
     setVisibleTab(tabName);
     setActiveTabButton(tabName);
 
-    if (tabName === "orders") {
-        if (typeof loadOrders === "function") {
-            loadOrders();
-        }
+    const tabLoaders = {
+        orders: loadOrders,
+        complaints: loadComplaintsOrders,
+        users: loadUsers,
+        analytics: loadAnalytics
+    };
 
-        if (typeof updateComplaintsBadge === "function") {
-            updateComplaintsBadge();
-        }
-
-        return;
+    if (typeof tabLoaders[tabName] === "function") {
+        tabLoaders[tabName]();
     }
 
-    if (tabName === "complaints") {
-        if (typeof loadComplaintsOrders === "function") {
-            loadComplaintsOrders();
-        }
-
-        if (typeof updateComplaintsBadge === "function") {
-            updateComplaintsBadge();
-        }
-
-        return;
-    }
-
-    if (tabName === "users") {
-        if (typeof loadUsers === "function") {
-            loadUsers();
-        }
-
-        if (typeof updateComplaintsBadge === "function") {
-            updateComplaintsBadge();
-        }
-
-        return;
-    }
-
-    if (tabName === "analytics") {
-        if (typeof loadAnalytics === "function") {
-            loadAnalytics();
-        }
-
-        if (typeof updateComplaintsBadge === "function") {
-            updateComplaintsBadge();
-        }
-    }
+    refreshComplaintsBadgeIfPossible();
 }
 
 async function loadHeaderUser() {
+    const roleEl = document.getElementById("headerUserRole");
+    const nameEl = document.getElementById("headerUserName");
+
     try {
         const me = await fetchMe();
-
-        const roleEl = document.getElementById("headerUserRole");
-        const nameEl = document.getElementById("headerUserName");
 
         const role = me.role || me.roleInSystem || me.role_in_system || "BOSS";
         const fullName = me.fullName || me.full_name || me.name || me.login || "Начальник";
@@ -197,7 +145,7 @@ async function loadHeaderUser() {
         if (roleEl) {
             roleEl.textContent = role === "BOSS"
                 ? "Начальник відділу"
-                : role;
+                : formatRole(role);
         }
 
         if (nameEl) {
@@ -205,12 +153,8 @@ async function loadHeaderUser() {
                 ? fullName
                 : (login || "Начальник");
         }
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e);
-
-        const roleEl = document.getElementById("headerUserRole");
-        const nameEl = document.getElementById("headerUserName");
 
         if (roleEl) roleEl.textContent = "Начальник відділу";
         if (nameEl) nameEl.textContent = "—";

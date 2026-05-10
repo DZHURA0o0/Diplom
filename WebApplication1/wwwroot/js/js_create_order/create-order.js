@@ -2,24 +2,45 @@ requireRole(["WORKER"]);
 
 let isCreating = false;
 
-function validate(showMessage = true) {
-  const f = createOrderUi.getFields();
+/* ===================== VALIDATION ===================== */
 
-  const rules = [
-    [() => !f.serviceType, "Select Service Type"],
-    [() => !f.descriptionProblem || f.descriptionProblem.length < 5, "Description must be at least 5 characters"],
-    [() => Number.isNaN(f.workshopNumber) || f.workshopNumber < 0, "Invalid Workshop Number"],
-    [() => Number.isNaN(f.floorNumber) || f.floorNumber < 0, "Invalid Floor Number"],
-    [() => Number.isNaN(f.roomNumber) || f.roomNumber < 0, "Invalid Room Number"]
-  ];
+const CREATE_ORDER_VALIDATION_RULES = [
+  {
+    isInvalid: fields => !fields.serviceType,
+    message: "Оберіть тип заявки."
+  },
+  {
+    isInvalid: fields => !fields.descriptionProblem || fields.descriptionProblem.length < 5,
+    message: "Опис проблеми має містити мінімум 5 символів."
+  },
+  {
+    isInvalid: fields => Number.isNaN(fields.workshopNumber) || fields.workshopNumber < 0,
+    message: "Некоректний номер цеху."
+  },
+  {
+    isInvalid: fields => Number.isNaN(fields.floorNumber) || fields.floorNumber < 0,
+    message: "Некоректний номер поверху."
+  },
+  {
+    isInvalid: fields => Number.isNaN(fields.roomNumber) || fields.roomNumber < 0,
+    message: "Некоректний номер кімнати."
+  }
+];
 
-  const error = rules.find(rule => rule[0]());
+function getCreateOrderValidationError(fields) {
+  const failedRule = CREATE_ORDER_VALIDATION_RULES.find(rule => rule.isInvalid(fields));
+  return failedRule?.message || "";
+}
+
+function validateCreateOrderForm(showMessage = true) {
+  const fields = createOrderUi.getFields();
+  const error = getCreateOrderValidationError(fields);
 
   if (error) {
     createOrderUi.setButtonDisabled(true);
 
     if (showMessage) {
-      createOrderUi.setMessage(error[1], "red");
+      createOrderUi.setMessage(error, "red");
     }
 
     return false;
@@ -36,95 +57,116 @@ function validate(showMessage = true) {
   return true;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadHeaderUser();
-});
+/* ===================== HEADER / USER ===================== */
 
-async function handleLoadCurrentUser() {
-  const result = await createOrderService.loadCurrentUser();
-
-  if (!result.ok) {
-    createOrderUi.setCreatedBy("failed to load user");
-    createOrderUi.setMessage(result.error, "red");
-    validate(false);
-    return;
-  }
-
-  const data = result.data;
-
-  createOrderUi.setCreatedBy(
-    `${data.fullName ?? data.login ?? "unknown"} (${data.role ?? "no role"})`
-  );
-
-  createOrderUi.fillUserLocation(data);
-  validate(false);
+function getUserDisplayName(user) {
+  return user?.fullName || user?.full_name || user?.login || "Користувач";
 }
 
-async function handleCreateOrder() {
-  if (isCreating) return;
-  if (!validate(true)) return;
-
-  const data = createOrderUi.getFields();
-
-  isCreating = true;
-  createOrderUi.setButtonDisabled(true);
-  createOrderUi.setMessage("Creating order...", "#ffffff");
-
-  const result = await createOrderService.createOrder(data);
-
-  if (!result.ok) {
-    isCreating = false;
-    createOrderUi.setMessage(result.error, "red");
-    validate(false);
-    return;
-  }
-
-  createOrderUi.setMessage("");
-  createOrderUi.hideCreateButton();
-  createOrderUi.showSuccessModal(() => {
-    window.location.href = "/workerPage.html";
-  });
+function getUserRole(user) {
+  return user?.role || user?.roleInSystem || user?.role_in_system || "";
 }
 
-function initCreateOrderPage() {
-  createOrderUi.initCustomSelect(() => validate(false));
-  createOrderUi.bindInputs(() => validate(false));
-  createOrderUi.bindCreate(handleCreateOrder);
-
-  validate(false);
-  handleLoadCurrentUser();
-}
 async function loadHeaderUser() {
   const nameEl = document.getElementById("headerUserName");
   const roleEl = document.getElementById("headerUserRole");
 
   try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("No token");
-
-    const res = await fetch("/api/auth/me", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
+    const user = await apiRequest("/api/auth/me", {
+      method: "GET"
     });
 
-    if (!res.ok) {
-      throw new Error("Failed to load /api/auth/me: " + res.status);
+    if (nameEl) {
+      nameEl.textContent = getUserDisplayName(user);
     }
 
-    const data = await res.json();
-
-    nameEl.textContent = data.fullName || data.login || "Користувач";
-
-    if (data.role === "WORKER") roleEl.textContent = "Працівник";
-    else if (data.role === "SPECIALIST") roleEl.textContent = "Спеціаліст";
-    else if (data.role === "BOSS") roleEl.textContent = "Начальник";
-    else roleEl.textContent = "";
+    if (roleEl) {
+      roleEl.textContent = formatRole(getUserRole(user));
+    }
   } catch (e) {
     console.error("loadHeaderUser error:", e);
-    nameEl.textContent = "Користувач";
-    roleEl.textContent = "";
+
+    if (nameEl) {
+      nameEl.textContent = "Користувач";
+    }
+
+    if (roleEl) {
+      roleEl.textContent = "";
+    }
   }
 }
 
-document.addEventListener("DOMContentLoaded", initCreateOrderPage);
+async function loadCurrentWorkerData() {
+  const result = await createOrderService.loadCurrentUser();
+
+  if (!result.ok) {
+    createOrderUi.setCreatedBy("Не вдалося завантажити користувача");
+    createOrderUi.setMessage(result.error || "Помилка завантаження користувача", "red");
+    validateCreateOrderForm(false);
+    return;
+  }
+
+  const user = result.data;
+
+  createOrderUi.setCreatedBy(
+    `${getUserDisplayName(user)} (${formatRole(getUserRole(user))})`
+  );
+
+  createOrderUi.fillUserLocation(user);
+  validateCreateOrderForm(false);
+}
+
+/* ===================== CREATE ORDER ===================== */
+
+function setCreatingState(isActive) {
+  isCreating = isActive;
+  createOrderUi.setButtonDisabled(isActive);
+  createOrderUi.setButtonText(isActive ? "Створення..." : "Створити заявку");
+}
+
+async function handleCreateOrder() {
+  if (isCreating) {
+    return;
+  }
+
+  if (!validateCreateOrderForm(true)) {
+    return;
+  }
+
+  const orderData = createOrderUi.getFields();
+
+  setCreatingState(true);
+  createOrderUi.setMessage("Створення заявки...", "#ffffff");
+
+  const result = await createOrderService.createOrder(orderData);
+
+  if (!result.ok) {
+    setCreatingState(false);
+    createOrderUi.setMessage(result.error || "Не вдалося створити заявку", "red");
+    validateCreateOrderForm(false);
+    return;
+  }
+
+  createOrderUi.setMessage("");
+  createOrderUi.hideCreateButton();
+
+  createOrderUi.showSuccessModal(() => {
+    window.location.href = "/workerPage.html";
+  });
+}
+
+/* ===================== INIT ===================== */
+
+function initCreateOrderPage() {
+  createOrderUi.initCustomSelect(() => validateCreateOrderForm(false));
+  createOrderUi.bindInputs(() => validateCreateOrderForm(false));
+  createOrderUi.bindCreate(handleCreateOrder);
+
+  validateCreateOrderForm(false);
+  loadCurrentWorkerData();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadHeaderUser();
+  initCreateOrderPage();
+});

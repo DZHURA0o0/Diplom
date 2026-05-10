@@ -62,6 +62,9 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/js/js_workers/create-complaint.js"></script>
+<script src="/js/guard.js"></script>
+<script>requireRole(["WORKER"]);</script>
+<script src="/js/shared.js"></script>
+<script src="/js/js_workers/create-complaint.js"></script>
 </body>
 </html>

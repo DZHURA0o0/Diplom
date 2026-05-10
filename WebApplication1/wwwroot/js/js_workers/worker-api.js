@@ -1,51 +1,22 @@
-function getToken() {
-  return localStorage.getItem("token");
-}
-
 async function fetchMyOrders(status = "") {
-  const token = getToken();
-
-  if (!token) {
-    window.location.href = "/";
-    return null;
-  }
-
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
-
-  const res = await fetch(`/api/worker/orders${query}`, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
+  const data = await apiRequest(`/api/worker/orders${query}`, {
+    method: "GET"
   });
 
-  const text = await res.text();
-
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}\n${text}`);
+  if (!Array.isArray(data)) {
+    throw new Error("Неправильний формат відповіді при завантаженні заявок.");
   }
 
-  return JSON.parse(text);
+  return data;
 }
 
-async function fetchMyOrderById(orderId) {
-  const token = getToken();
-
-  if (!token) {
-    window.location.href = "/";
-    return null;
-  }
-
-  const res = await fetch(`/api/worker/orders/${encodeURIComponent(orderId)}`, {
+async function submitWorkerComplaint(orderId, text) {
+  return await apiRequest(`/api/worker/orders/${encodeURIComponent(orderId)}/complaint`, {
+    method: "POST",
     headers: {
-      Authorization: "Bearer " + token
-    }
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text })
   });
-
-  const text = await res.text();
-
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}\n${text}`);
-  }
-
-  return JSON.parse(text);
 }

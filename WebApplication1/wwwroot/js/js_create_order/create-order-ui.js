@@ -1,128 +1,195 @@
 let selectedServiceType = "";
 
 const createOrderUi = (() => {
-  const btn = document.getElementById("btnCreateOrder");
-  const msg = document.getElementById("msg");
-  const createdBy = document.getElementById("createdBy");
-
   const elements = {
+    btn: document.getElementById("btnCreateOrder"),
+    msg: document.getElementById("msg"),
+    createdBy: document.getElementById("createdBy"),
+
     descriptionProblem: document.getElementById("descriptionProblem"),
     workshopNumber: document.getElementById("workshopNumber"),
     floorNumber: document.getElementById("floorNumber"),
     roomNumber: document.getElementById("roomNumber"),
+
     serviceTypeText: document.getElementById("serviceTypeText"),
     serviceTypeSelect: document.getElementById("serviceTypeSelect"),
+
     successModal: document.getElementById("successModal"),
     successModalOk: document.getElementById("successModalOk")
   };
 
+  function getElementValue(name) {
+    return elements[name]?.value?.trim() ?? "";
+  }
+
+  function getNumberValue(name) {
+    const rawValue = getElementValue(name);
+    return rawValue === "" ? NaN : Number(rawValue);
+  }
+
   function getFields() {
     return {
       serviceType: selectedServiceType,
-      descriptionProblem: elements.descriptionProblem.value.trim(),
-      workshopNumber: parseInt(elements.workshopNumber.value, 10),
-      floorNumber: parseInt(elements.floorNumber.value, 10),
-      roomNumber: parseInt(elements.roomNumber.value, 10)
+      descriptionProblem: getElementValue("descriptionProblem"),
+      workshopNumber: getNumberValue("workshopNumber"),
+      floorNumber: getNumberValue("floorNumber"),
+      roomNumber: getNumberValue("roomNumber")
     };
   }
 
   function setMessage(text, color = "") {
-    msg.textContent = text;
-    msg.style.color = color;
+    if (!elements.msg) {
+      return;
+    }
+
+    elements.msg.textContent = text || "";
+    elements.msg.style.color = color || "";
   }
 
   function setButtonDisabled(disabled) {
-    btn.disabled = disabled;
+    if (elements.btn) {
+      elements.btn.disabled = Boolean(disabled);
+    }
+  }
+
+  function setButtonText(text) {
+    if (elements.btn) {
+      elements.btn.textContent = text;
+    }
   }
 
   function hideCreateButton() {
-    btn.style.display = "none";
+    if (elements.btn) {
+      elements.btn.style.display = "none";
+    }
   }
 
   function setCreatedBy(text) {
-    createdBy.textContent = text;
+    if (elements.createdBy) {
+      elements.createdBy.textContent = text || "";
+    }
+  }
+
+  function fillNumberField(name, value) {
+    if (
+      elements[name] &&
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      elements[name].value = value;
+    }
   }
 
   function fillUserLocation(data) {
-    if (data.workshopNumber !== undefined && data.workshopNumber !== null) {
-      elements.workshopNumber.value = data.workshopNumber;
+    fillNumberField("workshopNumber", data?.workshopNumber);
+    fillNumberField("floorNumber", data?.floorNumber);
+    fillNumberField("roomNumber", data?.officeNumber);
+  }
+
+  function resetCustomSelect() {
+    selectedServiceType = "";
+
+    if (elements.serviceTypeText) {
+      elements.serviceTypeText.textContent = "Оберіть тип заявки";
     }
 
-    if (data.floorNumber !== undefined && data.floorNumber !== null) {
-      elements.floorNumber.value = data.floorNumber;
-    }
-
-    if (data.officeNumber !== undefined && data.officeNumber !== null) {
-      elements.roomNumber.value = data.officeNumber;
-    }
+    const options = elements.serviceTypeSelect?.querySelectorAll(".custom-option") || [];
+    options.forEach(option => option.classList.remove("selected"));
   }
 
   function resetForm() {
-    selectedServiceType = "";
-    elements.serviceTypeText.textContent = "Оберіть тип заявки";
+    resetCustomSelect();
 
-    const options = elements.serviceTypeSelect.querySelectorAll(".custom-option");
-    options.forEach(option => option.classList.remove("selected"));
+    if (elements.descriptionProblem) {
+      elements.descriptionProblem.value = "";
+    }
+  }
 
-    elements.descriptionProblem.value = "";
+  function closeCustomSelect() {
+    elements.serviceTypeSelect?.classList.remove("open");
+  }
+
+  function toggleCustomSelect() {
+    elements.serviceTypeSelect?.classList.toggle("open");
+  }
+
+  function selectCustomOption(option, onChange) {
+    const options = elements.serviceTypeSelect?.querySelectorAll(".custom-option") || [];
+
+    options.forEach(item => item.classList.remove("selected"));
+    option.classList.add("selected");
+
+    selectedServiceType = option.dataset.value || "";
+
+    if (elements.serviceTypeText) {
+      elements.serviceTypeText.textContent = option.textContent.trim();
+    }
+
+    closeCustomSelect();
+
+    if (typeof onChange === "function") {
+      onChange();
+    }
   }
 
   function initCustomSelect(onChange) {
     const select = elements.serviceTypeSelect;
-    if (!select) return;
+
+    if (!select) {
+      return;
+    }
 
     const trigger = select.querySelector(".custom-select-trigger");
     const options = select.querySelectorAll(".custom-option");
 
-    trigger.addEventListener("click", () => {
-      select.classList.toggle("open");
+    trigger?.addEventListener("click", event => {
+      event.stopPropagation();
+      toggleCustomSelect();
     });
 
     options.forEach(option => {
-      option.addEventListener("click", () => {
-        options.forEach(o => o.classList.remove("selected"));
-        option.classList.add("selected");
-
-        selectedServiceType = option.dataset.value;
-        elements.serviceTypeText.textContent = option.textContent.trim();
-        select.classList.remove("open");
-
-        if (typeof onChange === "function") {
-          onChange();
-        }
+      option.addEventListener("click", event => {
+        event.stopPropagation();
+        selectCustomOption(option, onChange);
       });
     });
 
     document.addEventListener("click", event => {
       if (!select.contains(event.target)) {
-        select.classList.remove("open");
+        closeCustomSelect();
       }
     });
   }
 
   function bindInputs(onChange) {
-    const ids = [
-      "descriptionProblem",
-      "workshopNumber",
-      "floorNumber",
-      "roomNumber"
-    ];
+    [
+      elements.descriptionProblem,
+      elements.workshopNumber,
+      elements.floorNumber,
+      elements.roomNumber
+    ].forEach(element => {
+      if (!element) {
+        return;
+      }
 
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      el.addEventListener("input", onChange);
-      el.addEventListener("change", onChange);
+      element.addEventListener("input", onChange);
+      element.addEventListener("change", onChange);
     });
   }
 
   function bindCreate(handler) {
-    btn.addEventListener("click", handler);
+    elements.btn?.addEventListener("click", handler);
   }
 
   function showSuccessModal(onOk) {
-    if (!elements.successModal) return;
+    if (!elements.successModal) {
+      if (typeof onOk === "function") {
+        onOk();
+      }
+
+      return;
+    }
 
     elements.successModal.classList.remove("hidden");
     document.body.classList.add("modal-open");
@@ -143,6 +210,7 @@ const createOrderUi = (() => {
     getFields,
     setMessage,
     setButtonDisabled,
+    setButtonText,
     hideCreateButton,
     setCreatedBy,
     fillUserLocation,

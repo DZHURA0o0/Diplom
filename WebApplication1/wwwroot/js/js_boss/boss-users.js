@@ -1,13 +1,3 @@
-function escapeHtml(value) {
-    if (value === null || value === undefined) return "";
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-}
-
 function normalizeUser(user) {
     return {
         id: user.id || user._id || "",
@@ -21,47 +11,21 @@ function normalizeUser(user) {
 
 function createUserCell(content, className = "") {
     const td = document.createElement("td");
-    if (className) td.className = className;
+
+    if (className) {
+        td.className = className;
+    }
+
     td.innerHTML = content;
     return td;
 }
 
-function roleLabel(role) {
-    const map = {
-        WORKER: "Працівник",
-        SPECIALIST: "Спеціаліст",
-        BOSS: "Начальник"
-    };
-    return map[role] || role || "—";
-}
-
-function statusLabel(status) {
-    const map = {
-        ACTIVE: "Активний",
-        INACTIVE: "Неактивний"
-    };
-    return map[status] || status || "—";
-}
-
 function buildRoleBadge(role) {
-    return `<span class="status-badge">${escapeHtml(roleLabel(role))}</span>`;
+    return `<span class="status-badge">${escapeHtml(formatRole(role))}</span>`;
 }
 
 function buildAccountBadge(status) {
-    return `<span class="status-badge account-${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>`;
-}
-
-function setPendingButton(button, pendingText) {
-    if (!button) return null;
-
-    const original = button.textContent;
-    button.disabled = true;
-    button.textContent = pendingText;
-
-    return () => {
-        button.disabled = false;
-        button.textContent = original;
-    };
+    return `<span class="status-badge account-${escapeHtml(status)}">${escapeHtml(formatAccountStatus(status))}</span>`;
 }
 
 function buildUserRoleControl(user) {
@@ -71,8 +35,12 @@ function buildUserRoleControl(user) {
     const select = document.createElement("select");
 
     ["WORKER", "SPECIALIST", "BOSS"].forEach(role => {
-        const option = new Option(roleLabel(role), role);
-        if (user.role === role) option.selected = true;
+        const option = new Option(formatRole(role), role);
+
+        if (user.role === role) {
+            option.selected = true;
+        }
+
         select.appendChild(option);
     });
 
@@ -101,10 +69,8 @@ function buildUserRoleControl(user) {
             }
 
             await loadUsers();
-
             setStatus("Роль оновлено");
-        }
-        catch (e) {
+        } catch (e) {
             console.error(e);
             setStatus("Помилка зміни ролі: " + e.message, true);
             restore?.();
@@ -142,10 +108,8 @@ function buildUserStatusControl(user) {
             }
 
             await loadUsers();
-
             setStatus("Статус оновлено");
-        }
-        catch (e) {
+        } catch (e) {
             console.error(e);
             setStatus("Помилка зміни статусу: " + e.message, true);
             restore?.();
@@ -179,8 +143,29 @@ function buildUserRow(rawUser) {
     return tr;
 }
 
+function sortUsers(users) {
+    const roleOrder = {
+        BOSS: 1,
+        SPECIALIST: 2,
+        WORKER: 3
+    };
+
+    return [...users].sort((a, b) => {
+        const roleA = roleOrder[a.role] ?? 999;
+        const roleB = roleOrder[b.role] ?? 999;
+
+        if (roleA !== roleB) {
+            return roleA - roleB;
+        }
+
+        return String(a.fullName).localeCompare(String(b.fullName), "uk");
+    });
+}
+
 async function loadUsers() {
     if (typeof activeTab !== "undefined" && activeTab !== "users") return;
+
+    const body = document.getElementById("users");
 
     try {
         setStatus("Завантаження користувачів...");
@@ -190,7 +175,6 @@ async function loadUsers() {
 
         const users = await fetchUsers(role, status);
 
-        const body = document.getElementById("users");
         if (!body) return;
 
         body.innerHTML = "";
@@ -201,27 +185,14 @@ async function loadUsers() {
             return;
         }
 
-        users
-            .map(normalizeUser)
-            .sort((a, b) => {
-                const roleOrder = { BOSS: 1, SPECIALIST: 2, WORKER: 3 };
-                const ra = roleOrder[a.role] ?? 999;
-                const rb = roleOrder[b.role] ?? 999;
-
-                if (ra !== rb) return ra - rb;
-
-                return String(a.fullName).localeCompare(String(b.fullName), "uk");
-            })
-            .forEach(user => {
-                body.appendChild(buildUserRow(user));
-            });
+        sortUsers(users.map(normalizeUser)).forEach(user => {
+            body.appendChild(buildUserRow(user));
+        });
 
         setStatus("Завантажено " + users.length + " користувачів");
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e);
 
-        const body = document.getElementById("users");
         if (body) {
             body.innerHTML = `<tr><td colspan="8"><div class="error-box">${escapeHtml(e.message || "Users load error")}</div></td></tr>`;
         }

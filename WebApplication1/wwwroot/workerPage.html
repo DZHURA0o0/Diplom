@@ -3,32 +3,32 @@
 <head>
   <meta charset="utf-8">
   <title>Worker</title>
+
   <link rel="stylesheet" href="/css/login.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/worker.css">
 </head>
 
-<body onload="loadOrders()">
+<body>
   <div class="page">
 
- <header class="app-header">
-  <div class="app-header-left">
-    <img src="/img/logohader.png" alt="logo" class="app-logo">
-  </div>
+    <header class="app-header">
+      <div class="app-header-left">
+        <img src="/img/logohader.png" alt="logo" class="app-logo">
+      </div>
 
-  <div class="app-header-center">
-    <div class="app-title-main">Відділ системного адміністрування</div>
-    <div class="app-title-sub">Сторінка подачи та перегляду власних заявок</div>
-  </div>
+      <div class="app-header-center">
+        <div class="app-title-main">Відділ системного адміністрування</div>
+        <div class="app-title-sub">Сторінка подачі та перегляду власних заявок</div>
+      </div>
 
-  <div class="app-header-right">
-    <div class="app-user-box">
-      <div class="app-user-role" id="headerUserRole"></div>
-      <div class="app-user-name" id="headerUserName"></div>
-
-    </div>
-  </div>
-</header>
+      <div class="app-header-right">
+        <div class="app-user-box">
+          <div class="app-user-role" id="headerUserRole"></div>
+          <div class="app-user-name" id="headerUserName"></div>
+        </div>
+      </div>
+    </header>
 
     <main class="main worker-main">
       <div class="worker-card">
@@ -37,10 +37,14 @@
           <div id="hello" class="hello-text"></div>
 
           <div class="top-actions">
-            <button type="button" class="btn-secondary" onclick="logout()">Вийти</button>
+            <button type="button" class="btn-secondary" onclick="logout()">
+              Вийти
+            </button>
 
             <a href="/create-order.html" class="action-link">
-              <button type="button" class="btn-primary">Створити заявку</button>
+              <button type="button" class="btn-primary">
+                Створити заявку
+              </button>
             </a>
           </div>
         </div>
@@ -53,12 +57,18 @@
             <option value="IN_PROGRESS">У роботі</option>
             <option value="INSPECTION">На перевірці</option>
             <option value="WAITING_DETAILS">Очікує деталей</option>
+            <option value="DETAILS_RECEIVED">Деталі отримано</option>
             <option value="EXECUTION">На виконанні</option>
+            <option value="UNDER_COMPLAINT">На оскарженні</option>
+            <option value="REWORK">На переробці</option>
+            <option value="REWORK_REVIEW">Переробку завершено</option>
             <option value="DONE">Виконана</option>
             <option value="CANCELED">Скасована</option>
           </select>
 
-          <button type="button" class="btn-primary-2" onclick="loadOrders()">Оновити</button>
+          <button type="button" class="btn-primary-2" onclick="loadOrders()">
+            Оновити
+          </button>
         </div>
 
         <div class="orders-wrapper">
@@ -84,10 +94,59 @@
     </footer>
   </div>
 
+  <div id="workerComplaintModal" class="worker-complaint-modal hidden">
+    <div class="worker-complaint-dialog">
+      <div class="worker-complaint-head">
+        <div>
+          <div class="worker-complaint-title">Подати скаргу</div>
+          <div class="worker-complaint-subtitle">
+            Опиши, що саме було виконано неправильно або неякісно.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="worker-complaint-close"
+          onclick="closeWorkerComplaintModal()"
+        >
+          ×
+        </button>
+      </div>
+
+      <textarea
+        id="workerComplaintText"
+        class="worker-complaint-textarea"
+        placeholder="Введіть текст скарги..."
+      ></textarea>
+
+      <div id="workerComplaintError" class="worker-complaint-error"></div>
+
+      <div class="worker-complaint-actions">
+        <button
+          type="button"
+          id="workerComplaintCancelBtn"
+          class="btn-secondary"
+        >
+          Скасувати
+        </button>
+
+        <button
+          type="button"
+          id="workerComplaintSubmitBtn"
+          class="btn-complaint"
+        >
+          Подати скаргу
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/guard.js"></script>
-  <script src="/js/js_workers/worker-utils.js"></script>
+  <script src="/js/shared.js"></script>
+
   <script src="/js/js_workers/worker-api.js"></script>
   <script src="/js/js_workers/worker-render.js"></script>
   <script src="/js/js_workers/worker-page.js"></script>
+  <script src="/js/js_workers/worker-complaint-modal.js"></script>
 </body>
 </html>

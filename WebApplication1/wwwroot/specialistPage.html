@@ -100,8 +100,6 @@
           </button>
         </nav>
 
-        <!-- ===================== ЗАЯВКИ ===================== -->
-
         <section
           id="specialistOrdersPanel"
           class="specialist-tab-panel"
@@ -144,8 +142,6 @@
             </div>
           </div>
         </section>
-
-        <!-- ===================== АНАЛІТИКА ===================== -->
 
         <section
           id="specialistAnalyticsPanel"
@@ -231,76 +227,91 @@
           </section>
         </section>
 
-        <!-- ===================== ПЕРЕРОБКИ ===================== -->
+        <section
+          id="specialistReworksPanel"
+          class="specialist-tab-panel"
+          data-specialist-panel="reworks"
+          hidden
+        >
+          <div class="specialist-subpage">
+            <div class="specialist-subpage-head">
+              <div>
+                <div class="specialist-subpage-title">Переробки</div>
+                <div class="specialist-subpage-subtitle">
+                  Заявки, які повернуті спеціалісту після скарги або очікують перевірки начальником.
+                </div>
+              </div>
+
+              <button type="button" class="btn-outline" onclick="renderSpecialistReworksTab()">
+                Оновити
+              </button>
+            </div>
+
+            <div id="specialistReworksList" class="specialist-sublist"></div>
+          </div>
+        </section>
 
         <section
-  id="specialistReworksPanel"
-  class="specialist-tab-panel"
-  data-specialist-panel="reworks"
-  hidden
->
-  <div class="specialist-subpage">
-    <div class="specialist-subpage-head">
-      <div>
-        <div class="specialist-subpage-title">Переробки</div>
-        <div class="specialist-subpage-subtitle">
-          Заявки, які повернуті спеціалісту після скарги або очікують перевірки начальником.
-        </div>
-      </div>
+          id="specialistDetailsPanel"
+          class="specialist-tab-panel"
+          data-specialist-panel="details"
+          hidden
+        >
+          <div class="specialist-subpage">
+            <div class="specialist-subpage-head">
+              <div>
+                <div class="specialist-subpage-title">Запити деталей</div>
+                <div class="specialist-subpage-subtitle">
+                  Історія всіх запитів деталей по заявках спеціаліста.
+                </div>
+              </div>
 
-      <button type="button" class="btn-outline" onclick="renderSpecialistReworksTab()">
-        Оновити
-      </button>
-    </div>
+              <button type="button" class="btn-outline" onclick="renderSpecialistDetailRequestsTab()">
+                Оновити
+              </button>
+            </div>
 
-    <div id="specialistReworksList" class="specialist-sublist"></div>
-  </div>
-</section>
+            <div class="specialist-subfilters">
+              <button
+                type="button"
+                class="specialist-mini-filter active"
+                data-detail-request-filter=""
+                onclick="setSpecialistDetailRequestFilter('')"
+              >
+                Усі
+              </button>
 
-        <!-- ===================== ЗАПИТИ ДЕТАЛЕЙ ===================== -->
+              <button
+                type="button"
+                class="specialist-mini-filter"
+                data-detail-request-filter="CREATED"
+                onclick="setSpecialistDetailRequestFilter('CREATED')"
+              >
+                Очікують деталей
+              </button>
 
-<section
-  id="specialistDetailsPanel"
-  class="specialist-tab-panel"
-  data-specialist-panel="details"
-  hidden
->
-  <div class="specialist-subpage">
-    <div class="specialist-subpage-head">
-      <div>
-        <div class="specialist-subpage-title">Запити деталей</div>
-        <div class="specialist-subpage-subtitle">
-          Історія всіх запитів деталей по заявках спеціаліста.
-        </div>
-      </div>
+              <button
+                type="button"
+                class="specialist-mini-filter"
+                data-detail-request-filter="APPROVED"
+                onclick="setSpecialistDetailRequestFilter('APPROVED')"
+              >
+                Деталі отримано
+              </button>
 
-      <button type="button" class="btn-outline" onclick="renderSpecialistDetailRequestsTab()">
-        Оновити
-      </button>
-    </div>
+              <button
+                type="button"
+                class="specialist-mini-filter"
+                data-detail-request-filter="CANCELED"
+                onclick="setSpecialistDetailRequestFilter('CANCELED')"
+              >
+                Скасовані
+              </button>
+            </div>
 
-    <div class="specialist-subfilters">
-      <button type="button" class="specialist-mini-filter active" data-detail-request-filter="" onclick="setSpecialistDetailRequestFilter('')">
-        Усі
-      </button>
-
-      <button type="button" class="specialist-mini-filter" data-detail-request-filter="CREATED" onclick="setSpecialistDetailRequestFilter('CREATED')">
-        Очікують деталей
-      </button>
-
-      <button type="button" class="specialist-mini-filter" data-detail-request-filter="APPROVED" onclick="setSpecialistDetailRequestFilter('APPROVED')">
-        Деталі отримано
-      </button>
-
-      <button type="button" class="specialist-mini-filter" data-detail-request-filter="CANCELED" onclick="setSpecialistDetailRequestFilter('CANCELED')">
-        Скасовані
-      </button>
-    </div>
-
-    <div id="specialistDetailRequestsList" class="specialist-sublist"></div>
-  </div>
-</section>     
-<!-- =====================  ===================== -->  
+            <div id="specialistDetailRequestsList" class="specialist-sublist"></div>
+          </div>
+        </section>
 
       </div>
     </main>
@@ -310,15 +321,17 @@
     </footer>
   </div>
 
-  <script src="/js/guard.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+<script src="/js/guard.js"></script>
+<script>requireRole(["SPECIALIST"]);</script>
+<script src="/js/shared.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
-  <script src="/js/js_specialist/specialist-api.js"></script>
-  <script src="/js/js_specialist/specialist-utils.js"></script>
-  <script src="/js/js_specialist/specialist-analytics.js"></script>
-  <script src="/js/js_specialist/specialist-actions.js"></script>
-  <script src="/js/js_specialist/specialist-render.js"></script>
-  <script src="/js/js_specialist/specialist-page.js"></script>
-  <script src="/js/js_specialist/specialist-realtime.js"></script>
+<script src="/js/js_specialist/specialist-api.js"></script>
+<script src="/js/js_specialist/specialist-utils.js"></script>
+<script src="/js/js_specialist/specialist-analytics.js"></script>
+<script src="/js/js_specialist/specialist-actions.js"></script>
+<script src="/js/js_specialist/specialist-render.js"></script>
+<script src="/js/js_specialist/specialist-page.js"></script>
+<script src="/js/js_specialist/specialist-realtime.js"></script>
 </body>
 </html>

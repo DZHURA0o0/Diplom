@@ -1,50 +1,26 @@
 let openedOrderId = null;
 
-const STATUS_LABELS = {
-    NEW: "НОВА",
-    ASSIGNED: "ПРИЗНАЧЕНА",
-    IN_PROGRESS: "У РОБОТІ",
-    INSPECTION: "ОГЛЯД",
-    WAITING_DETAILS: "ОЧІКУЄ",
-    DETAILS_RECEIVED: "ОТРИМАНО",
-    EXECUTION: "ВИКОНАННЯ",
-    UNDER_COMPLAINT: "СКАРГА",
-    REWORK: "НА ПЕРЕРОБЦІ",
-    REWORK_REVIEW: "НА ПЕРЕВІРЦІ",
-    DONE: "ВИКОНАНА",
-    CANCELED: "СКАСОВАНА"
-};
-
-const SERVICE_TYPE_LABELS = {
-  ELECTRICAL: "Електроживлення / електрика",
-  PC_PROBLEM: "Проблема з комп’ютером",
-  PRINTER_PROBLEM: "Проблема з принтером",
-  SOFTWARE_BUG: "Баг програмного забезпечення",
-  INTERNET: "Інтернет / мережа",
-  SEAL_DAMAGE: "Відсутня пломба / пошкоджена",
-  AUDIO_VIDEO: "Проблема з відео/аудіо обладнанням",
-  OTHER: "Інше"
-};
-
-function formatStatus(value) {
-  const key = String(value ?? "").trim().toUpperCase();
-  return STATUS_LABELS[key] ?? (value ?? "—");
+function getWorkerOrderId(order) {
+  return getOrderId(order);
 }
 
-function formatServiceType(value) {
-  const key = String(value ?? "").trim().toUpperCase();
-  return SERVICE_TYPE_LABELS[key] ?? (value ?? "—");
+function isDoneStatus(status) {
+  return String(status ?? "").trim().toUpperCase() === "DONE";
 }
 
-function normalizeStatusClass(status) {
-  return String(status ?? "")
-    .trim()
-    .toUpperCase()
-    .replaceAll(" ", "_");
+function getWorkerOrderById(orderId) {
+  const id = String(orderId);
+
+  return (window.workerOrdersState?.orders || [])
+    .find(order => getWorkerOrderId(order) === id) || null;
 }
 
 function renderOrders(data) {
   const container = document.getElementById("orders");
+
+  if (!container) {
+    return;
+  }
 
   if (!Array.isArray(data) || data.length === 0) {
     container.innerHTML = `<div class="empty">Заявок не знайдено.</div>`;
@@ -52,88 +28,205 @@ function renderOrders(data) {
     return;
   }
 
-  let html = "";
+  container.innerHTML = data.map(renderWorkerOrderItem).join("");
 
-  for (const o of data) {
-    const rawId = String(o.id ?? o._id ?? "");
-    const safeId = escapeAttr(rawId);
-    const isOpen = openedOrderId === rawId;
+  if (openedOrderId) {
+    const order = getWorkerOrderById(openedOrderId);
+    const details = document.getElementById(`details-${openedOrderId}`);
 
-    const statusRaw = String(o.status ?? "—");
-    const statusText = escapeHtml(formatStatus(statusRaw));
-    const statusClass = "status-" + normalizeStatusClass(statusRaw);
-
-    const serviceType = escapeHtml(formatServiceType(o.serviceType));
-    const descriptionProblem = escapeHtml(o.descriptionProblem ?? "—");
-    const specialistName = escapeHtml(o.specialistName ?? "—");
-    const createdAt = formatDate(o.createdAt);
-
-    const locationText = `Цех ${escapeHtml(o.productionWorkshopNumber ?? "—")}, пов. ${escapeHtml(o.floorNumber ?? "—")}, кімн. ${escapeHtml(o.roomNumber ?? "—")}`;
-
-    html += `
-      <div class="order-item">
-        <div class="order-row ${isOpen ? "expanded" : ""}" onclick="toggleDetails('${escapeJs(rawId)}')">
-          <div class="col">
-            <span class="status ${statusClass}">${statusText}</span>
-          </div>
-
-          <div class="col">
-            <div class="value">${serviceType}</div>
-          </div>
-
-          <div class="col wide">
-            <div class="truncate" title="${descriptionProblem}">
-              ${descriptionProblem}
-            </div>
-          </div>
-
-          <div class="col">
-            <div class="value">${locationText}</div>
-          </div>
-
-          <div class="col">
-            <div class="value">${specialistName}</div>
-          </div>
-
-          <div class="col col-date">
-            <div class="value">${createdAt}</div>
-            <div class="arrow">${isOpen ? "▲" : "▼"}</div>
-          </div>
-        </div>
-
-        <div id="details-${safeId}" class="order-details ${isOpen ? "" : "hidden"}"></div>
-      </div>
-    `;
-  }
-
-  container.innerHTML = html;
-
-  for (const o of data) {
-    const rawId = String(o.id ?? o._id ?? "");
-    const el = document.getElementById(`details-${rawId}`);
-    if (el) {
-      renderOrderDetails(o, el);
+    if (order && details) {
+      renderOrderDetails(order, details);
     }
   }
 }
 
+function renderWorkerOrderItem(order) {
+  const rawId = getWorkerOrderId(order);
+  const safeId = escapeAttr(rawId);
+  const isOpen = openedOrderId === rawId;
+
+  const statusRaw = String(order.status ?? "—");
+  const statusText = escapeHtml(formatStatusBadge(statusRaw));
+  const statusClass = "status-" + normalizeStatusClass(statusRaw);
+
+  const serviceType = escapeHtml(formatServiceType(order.serviceType));
+  const descriptionProblem = escapeHtml(order.descriptionProblem ?? "—");
+  const specialistName = escapeHtml(order.specialistName ?? "—");
+  const createdAt = formatDate(order.createdAt);
+  const locationText = formatLocation(order);
+
+  return `
+    <div class="order-item" data-order-id="${safeId}">
+      <div class="order-row ${isOpen ? "expanded" : ""}" onclick="toggleDetails('${escapeJs(rawId)}')">
+        <div class="col">
+          <span class="status ${statusClass}">${statusText}</span>
+        </div>
+
+        <div class="col">
+          <div class="value">${serviceType}</div>
+        </div>
+
+        <div class="col wide">
+          <div class="truncate" title="${descriptionProblem}">
+            ${descriptionProblem}
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="value">${locationText}</div>
+        </div>
+
+        <div class="col">
+          <div class="value">${specialistName}</div>
+        </div>
+
+        <div class="col col-date">
+          <div class="value">${createdAt}</div>
+          <div class="arrow">${isOpen ? "▲" : "▼"}</div>
+        </div>
+      </div>
+
+      <div id="details-${safeId}" class="order-details ${isOpen ? "" : "hidden"}"></div>
+    </div>
+  `;
+}
+
+function getWorkerDetailsElements(orderId) {
+  const details = document.getElementById(`details-${orderId}`);
+
+  if (!details) {
+    return {
+      item: null,
+      row: null,
+      details: null,
+      arrow: null
+    };
+  }
+
+  const item = details.closest(".order-item");
+  const row = item?.querySelector(".order-row") || null;
+  const arrow = row?.querySelector(".arrow") || null;
+
+  return {
+    item,
+    row,
+    details,
+    arrow
+  };
+}
+
+function setWorkerOrderDetailsOpen(orderId, shouldOpen) {
+  const id = String(orderId);
+  const order = getWorkerOrderById(id);
+  const { row, details, arrow } = getWorkerDetailsElements(id);
+
+  if (!order || !row || !details) {
+    return false;
+  }
+
+  if (shouldOpen) {
+    openedOrderId = id;
+
+    details.classList.remove("hidden");
+    row.classList.add("expanded");
+
+    if (arrow) {
+      arrow.textContent = "▲";
+    }
+
+    renderOrderDetails(order, details);
+    return true;
+  }
+
+  if (openedOrderId === id) {
+    openedOrderId = null;
+  }
+
+  details.classList.add("hidden");
+  row.classList.remove("expanded");
+
+  if (arrow) {
+    arrow.textContent = "▼";
+  }
+
+  return true;
+}
+
 function toggleDetails(id) {
-  openedOrderId = openedOrderId === id ? null : id;
-  loadOrders();
+  if (!id) {
+    return;
+  }
+
+  const targetId = String(id);
+  const { details } = getWorkerDetailsElements(targetId);
+
+  if (!details) {
+    return;
+  }
+
+  const shouldOpen = details.classList.contains("hidden");
+
+  if (openedOrderId && openedOrderId !== targetId) {
+    setWorkerOrderDetailsOpen(openedOrderId, false);
+  }
+
+  setWorkerOrderDetailsOpen(targetId, shouldOpen);
 }
 
-function isDoneStatus(status) {
-  return String(status ?? "").trim().toUpperCase() === "DONE";
+function replaceWorkerRenderedOrder(order) {
+  const orderId = getWorkerOrderId(order);
+
+  if (!orderId) {
+    return false;
+  }
+
+  const oldDetails = document.getElementById(`details-${orderId}`);
+
+  if (!oldDetails) {
+    return false;
+  }
+
+  const oldItem = oldDetails.closest(".order-item");
+
+  if (!oldItem) {
+    return false;
+  }
+
+  const wasOpen = !oldDetails.classList.contains("hidden");
+
+  if (wasOpen) {
+    openedOrderId = orderId;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = renderWorkerOrderItem(order).trim();
+
+  const newItem = wrapper.firstElementChild;
+
+  if (!newItem) {
+    return false;
+  }
+
+  oldItem.replaceWith(newItem);
+
+  const newDetails = document.getElementById(`details-${orderId}`);
+
+  if (newDetails && wasOpen) {
+    newDetails.classList.remove("hidden");
+    renderOrderDetails(order, newDetails);
+  }
+
+  return true;
 }
 
-function renderOrderDetails(o, container) {
-  const hasComplaint = !!o.complaint?.isSubmitted;
-  const isDone = isDoneStatus(o.status);
+function renderOrderDetails(order, container) {
+  const hasComplaint = !!order.complaint?.isSubmitted;
+  const isDone = isDoneStatus(order.status);
 
   const complaintStatusText = hasComplaint ? "Подана" : "Відсутня";
-  const complaintBody = o.complaint?.text ?? "";
-  const complaintCreatedAt = o.complaint?.createdAt
-    ? formatDate(o.complaint.createdAt)
+  const complaintBody = order.complaint?.text ?? "";
+  const complaintCreatedAt = order.complaint?.createdAt
+    ? formatDate(order.complaint.createdAt)
     : "—";
 
   let complaintActionHtml = "";
@@ -145,7 +238,7 @@ function renderOrderDetails(o, container) {
       <button
         type="button"
         class="btn-complaint"
-        onclick="goToComplaintPage('${escapeJs(o.id ?? "")}', '${escapeJs(o.status ?? "")}')">
+        onclick="event.stopPropagation(); goToComplaintPage('${escapeJs(getWorkerOrderId(order))}', '${escapeJs(order.status ?? "")}')">
         Створити
       </button>
     `;
@@ -162,56 +255,56 @@ function renderOrderDetails(o, container) {
   }
 
   container.innerHTML = `
-    <div class="details-card">
+    <div class="details-card" onclick="event.stopPropagation()">
       <div class="details-grid">
 
         <div class="details-field">
           <div class="details-label">Статус</div>
-          <div class="details-value">${escapeHtml(formatStatus(o.status))}</div>
+          <div class="details-value">${escapeHtml(formatStatus(order.status))}</div>
         </div>
 
         <div class="details-field">
           <div class="details-label">Тип послуги</div>
-          <div class="details-value">${escapeHtml(formatServiceType(o.serviceType))}</div>
+          <div class="details-value">${escapeHtml(formatServiceType(order.serviceType))}</div>
         </div>
 
         <div class="details-field">
           <div class="details-label">Спеціаліст</div>
-          <div class="details-value">${escapeHtml(o.specialistName ?? "—")}</div>
+          <div class="details-value">${escapeHtml(order.specialistName ?? "—")}</div>
         </div>
 
         <div class="details-field">
           <div class="details-label">Дата створення</div>
-          <div class="details-value">${formatDate(o.createdAt)}</div>
+          <div class="details-value">${formatDate(order.createdAt)}</div>
         </div>
 
         <div class="details-field">
           <div class="details-label">Дата огляду</div>
-          <div class="details-value">${formatDate(o.inspectionAt)}</div>
+          <div class="details-value">${formatDate(order.inspectionAt)}</div>
         </div>
 
         <div class="details-field full">
           <div class="details-label">Локація</div>
           <div class="details-value">
-            Цех ${escapeHtml(o.productionWorkshopNumber ?? "—")},
-            пов. ${escapeHtml(o.floorNumber ?? "—")},
-            кімн. ${escapeHtml(o.roomNumber ?? "—")}
+            Цех ${escapeHtml(order.productionWorkshopNumber ?? "—")},
+            пов. ${escapeHtml(order.floorNumber ?? "—")},
+            кімн. ${escapeHtml(order.roomNumber ?? "—")}
           </div>
         </div>
 
         <div class="details-field full">
           <div class="details-label">Опис проблеми</div>
-          <div class="details-value long-text">${escapeHtml(o.descriptionProblem ?? "—")}</div>
+          <div class="details-value long-text">${escapeHtml(order.descriptionProblem ?? "—")}</div>
         </div>
 
         <div class="details-field full">
           <div class="details-label">Результат огляду</div>
-          <div class="details-value long-text">${escapeHtml(o.inspectionResult ?? "—")}</div>
+          <div class="details-value long-text">${escapeHtml(order.inspectionResult ?? "—")}</div>
         </div>
 
         <div class="details-field full">
           <div class="details-label">Звіт по роботі</div>
-          <div class="details-value long-text">${escapeHtml(o.workReportText ?? "Відсутній")}</div>
+          <div class="details-value long-text">${escapeHtml(order.workReportText ?? "Відсутній")}</div>
         </div>
 
         <div class="details-field complaint-row">
@@ -246,23 +339,8 @@ function renderOrderDetails(o, container) {
   `;
 }
 
-function goToComplaintPage(orderId, status) {
-  if (!orderId) return;
-  if (!isDoneStatus(status)) return;
-
-  window.location.href = `/create-complaint.html?orderId=${encodeURIComponent(orderId)}`;
-}
-
-function escapeJs(value) {
-  return String(value ?? "")
-    .replaceAll("\\", "\\\\")
-    .replaceAll("'", "\\'");
-}
-
-function escapeAttr(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
+window.renderOrders = renderOrders;
+window.renderOrderDetails = renderOrderDetails;
+window.toggleDetails = toggleDetails;
+window.replaceWorkerRenderedOrder = replaceWorkerRenderedOrder;
+window.setWorkerOrderDetailsOpen = setWorkerOrderDetailsOpen;

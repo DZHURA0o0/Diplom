@@ -5,10 +5,14 @@ let focusedOrderId = null;
 
 let activeSpecialistTab = "orders";
 
+/* ===================== STATUS / UI ===================== */
+
 function setPageStatus(text, isError = false) {
   const el = document.getElementById("pageStatus");
 
-  if (!el) return;
+  if (!el) {
+    return;
+  }
 
   el.textContent = text || "";
   el.className = isError ? "status-text error" : "status-text";
@@ -36,18 +40,21 @@ function getStatusFilterValue() {
 }
 
 function getSpecialistOrderId(order) {
-  if (typeof getOrderId === "function") {
-    return getOrderId(order);
-  }
-
-  return order?.id || order?._id || "";
+  return getOrderId(order);
 }
 
+/* ===================== CACHE ===================== */
+
 function updateOrderInCaches(order) {
-  if (!order) return;
+  if (!order) {
+    return;
+  }
 
   const orderId = getSpecialistOrderId(order);
-  if (!orderId) return;
+
+  if (!orderId) {
+    return;
+  }
 
   function upsert(list) {
     const currentList = Array.isArray(list) ? list : [];
@@ -65,69 +72,87 @@ function updateOrderInCaches(order) {
   specialistAllOrders = upsert(specialistAllOrders);
 }
 
+function resetFocusedState() {
+  focusedOrderId = null;
+  openedOrderId = null;
+  updateWorkspaceChrome();
+}
+
+function orderMatchesCurrentSpecialistFilter(order) {
+  const filter = getStatusFilterValue();
+
+  if (!filter) {
+    return true;
+  }
+
+  return String(order?.status || "").trim().toUpperCase() ===
+    String(filter).trim().toUpperCase();
+}
+
+/* ===================== API WRAPPERS ===================== */
+
 async function fetchSpecialistOrdersSafe(status = "") {
-  if (typeof fetchSpecialistOrders === "function") {
-    return await fetchSpecialistOrders(status);
+  if (typeof fetchSpecialistOrders !== "function") {
+    throw new Error("fetchSpecialistOrders не підключено. Перевір specialist-api.js.");
   }
 
-  if (typeof fetchMySpecialistOrders === "function") {
-    return await fetchMySpecialistOrders(status);
-  }
-
-  if (typeof fetchMyOrders === "function") {
-    return await fetchMyOrders(status);
-  }
-
-  if (typeof apiFetch === "function") {
-    const query = status ? `?status=${encodeURIComponent(status)}` : "";
-    return await apiFetch(`/api/specialist/orders${query}`);
-  }
-
-  const token = localStorage.getItem("token");
-  const query = status ? `?status=${encodeURIComponent(status)}` : "";
-
-  const response = await fetch(`/api/specialist/orders${query}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || "Не вдалося завантажити заявки");
-  }
-
-  return await response.json();
+  const data = await fetchSpecialistOrders(status);
+  return Array.isArray(data) ? data : [];
 }
 
 async function fetchSpecialistOrderByIdSafe(orderId) {
-  if (typeof fetchSpecialistOrderById === "function") {
-    return await fetchSpecialistOrderById(orderId);
+  if (typeof fetchSpecialistOrderById !== "function") {
+    throw new Error("fetchSpecialistOrderById не підключено. Перевір specialist-api.js.");
   }
 
-  if (typeof fetchSpecialistOrder === "function") {
-    return await fetchSpecialistOrder(orderId);
-  }
-
-  if (typeof apiFetch === "function") {
-    return await apiFetch(`/api/specialist/orders/${encodeURIComponent(orderId)}`);
-  }
-
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`/api/specialist/orders/${encodeURIComponent(orderId)}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || "Не вдалося завантажити заявку");
-  }
-
-  return await response.json();
+  return await fetchSpecialistOrderById(orderId);
 }
+
+/* ===================== POINT ORDER REFRESH ===================== */
+
+async function refreshSpecialistOrderOnly(orderId) {
+  if (!orderId) {
+    return null;
+  }
+
+  try {
+    const order = await fetchSpecialistOrderByIdSafe(orderId);
+
+    updateOrderInCaches(order);
+
+    if (activeSpecialistTab !== "orders") {
+      return order;
+    }
+
+    const id = String(orderId);
+    const isFocused = Boolean(focusedOrderId) && String(focusedOrderId) === id;
+
+    if (!isFocused && !orderMatchesCurrentSpecialistFilter(order)) {
+      if (typeof removeSpecialistRenderedOrder === "function") {
+        removeSpecialistRenderedOrder(id);
+      }
+
+      return order;
+    }
+
+    if (typeof replaceSpecialistRenderedOrder === "function") {
+      const replaced = replaceSpecialistRenderedOrder(order);
+
+      if (replaced) {
+        return order;
+      }
+    }
+
+    renderOrders(specialistOrders);
+    return order;
+  } catch (e) {
+    console.error("refreshSpecialistOrderOnly error:", e);
+    setPageStatus("Не вдалося оновити заявку: " + e.message, true);
+    return null;
+  }
+}
+
+/* ===================== ORDERS LOADING ===================== */
 
 async function loadOrders(options = {}) {
   const {
@@ -147,7 +172,7 @@ async function loadOrders(options = {}) {
     }
 
     const data = await fetchSpecialistOrdersSafe(status);
-    const orders = Array.isArray(data) ? data : [];
+    const orders = sortOrdersNewFirst(data);
 
     specialistOrders = orders;
 
@@ -171,11 +196,11 @@ async function loadOrders(options = {}) {
       const container = document.getElementById("orders");
 
       if (container) {
-        const msg = typeof escapeHtml === "function"
-          ? escapeHtml(e.message || "Помилка завантаження")
-          : String(e.message || "Помилка завантаження");
-
-        container.innerHTML = `<div class="error-box">${msg}</div>`;
+        container.innerHTML = `
+          <div class="error-box">
+            ${escapeHtml(e.message || "Помилка завантаження")}
+          </div>
+        `;
       }
     }
 
@@ -188,7 +213,11 @@ async function loadOrders(options = {}) {
 }
 
 async function ensureSpecialistAllOrdersLoaded(force = false) {
-  if (!force && Array.isArray(specialistAllOrders) && specialistAllOrders.length > 0) {
+  if (
+    !force &&
+    Array.isArray(specialistAllOrders) &&
+    specialistAllOrders.length > 0
+  ) {
     return specialistAllOrders;
   }
 
@@ -201,39 +230,29 @@ async function ensureSpecialistAllOrdersLoaded(force = false) {
 }
 
 async function refreshFocusedOrder(orderId) {
-  try {
-    const order = await fetchSpecialistOrderByIdSafe(orderId);
-    updateOrderInCaches(order);
-
-    if (focusedOrderId) {
-      focusedOrderId = String(orderId);
-      openedOrderId = String(orderId);
-    }
-
-    if (activeSpecialistTab === "orders") {
-      renderOrders(specialistOrders);
-    }
-
-    return order;
-  } catch (e) {
-    console.error(e);
-
-    await loadOrders({
-      render: activeSpecialistTab === "orders",
-      statusOverride: getStatusFilterValue(),
-      silent: true
-    });
-
-    if (activeSpecialistTab === "orders") {
-      renderOrders(specialistOrders);
-    }
-
+  if (!orderId) {
     return null;
   }
+
+  if (focusedOrderId) {
+    focusedOrderId = String(orderId);
+    openedOrderId = String(orderId);
+  }
+
+  return await refreshSpecialistOrderOnly(orderId);
 }
 
+/* ===================== ORDER WORKSPACE ===================== */
+
 function toggleDetails(orderId) {
-  if (!orderId) return;
+  if (!orderId) {
+    return;
+  }
+
+  if (typeof toggleSpecialistOrderDetailsOnly === "function") {
+    toggleSpecialistOrderDetailsOnly(orderId);
+    return;
+  }
 
   const id = String(orderId);
 
@@ -242,7 +261,9 @@ function toggleDetails(orderId) {
 }
 
 async function openOrderWorkspace(orderId) {
-  if (!orderId) return;
+  if (!orderId) {
+    return;
+  }
 
   focusedOrderId = String(orderId);
   openedOrderId = String(orderId);
@@ -264,10 +285,7 @@ async function openOrderWorkspace(orderId) {
 }
 
 async function closeOrderWorkspace() {
-  focusedOrderId = null;
-  openedOrderId = null;
-
-  updateWorkspaceChrome();
+  resetFocusedState();
 
   if (activeSpecialistTab !== "orders") {
     await switchSpecialistTab("orders", false);
@@ -279,6 +297,8 @@ async function closeOrderWorkspace() {
     silent: true
   });
 }
+
+/* ===================== REFRESH ===================== */
 
 async function handleRefresh() {
   if (activeSpecialistTab === "orders") {
@@ -320,6 +340,8 @@ async function handleRefresh() {
   }
 }
 
+/* ===================== TABS ===================== */
+
 function initSpecialistTabs() {
   const buttons = document.querySelectorAll("[data-specialist-tab]");
 
@@ -331,25 +353,31 @@ function initSpecialistTabs() {
   });
 }
 
-async function switchSpecialistTab(tab, shouldLoad = true) {
-  const targetTab = tab || "orders";
-  activeSpecialistTab = targetTab;
-
+function setActiveSpecialistTabButton(targetTab) {
   document.querySelectorAll("[data-specialist-tab]").forEach(button => {
     const isActive = button.dataset.specialistTab === targetTab;
 
     button.classList.toggle("active", isActive);
     button.setAttribute("aria-selected", isActive ? "true" : "false");
   });
+}
 
+function setActiveSpecialistPanel(targetTab) {
   document.querySelectorAll("[data-specialist-panel]").forEach(panel => {
     panel.hidden = panel.dataset.specialistPanel !== targetTab;
   });
+}
+
+async function switchSpecialistTab(tab, shouldLoad = true) {
+  const targetTab = tab || "orders";
+
+  activeSpecialistTab = targetTab;
+
+  setActiveSpecialistTabButton(targetTab);
+  setActiveSpecialistPanel(targetTab);
 
   if (targetTab !== "orders") {
-    focusedOrderId = null;
-    openedOrderId = null;
-    updateWorkspaceChrome();
+    resetFocusedState();
   }
 
   if (targetTab === "orders") {
@@ -395,37 +423,17 @@ async function switchSpecialistTab(tab, shouldLoad = true) {
   }
 }
 
+/* ===================== HEADER ===================== */
+
 async function loadHeaderUser() {
   const nameEl = document.getElementById("headerUserName");
   const roleEl = document.querySelector(".app-user-role");
   const helloEl = document.getElementById("hello");
 
   try {
-    let user = null;
-
-    if (typeof getCurrentUser === "function") {
-      user = await getCurrentUser();
-    } else if (typeof apiFetch === "function") {
-      user = await apiFetch("/api/auth/me");
-    } else {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("Token not found");
-      }
-
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Не вдалося отримати дані користувача");
-      }
-
-      user = await response.json();
-    }
+    const user = await apiRequest("/api/auth/me", {
+      method: "GET"
+    });
 
     const fullName =
       user?.fullName ||
@@ -439,7 +447,7 @@ async function loadHeaderUser() {
     }
 
     if (roleEl) {
-      roleEl.textContent = "Спеціаліст";
+      roleEl.textContent = formatRole(user?.role || "SPECIALIST");
     }
 
     if (helloEl && activeSpecialistTab === "orders") {
@@ -458,38 +466,38 @@ async function loadHeaderUser() {
   }
 }
 
-function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("role");
+/* ===================== INIT ===================== */
 
-  window.location.href = "/";
+function initSpecialistStatusFilter() {
+  const filter = document.getElementById("statusFilter");
+
+  if (!filter) {
+    return;
+  }
+
+  filter.addEventListener("change", async () => {
+    resetFocusedState();
+
+    await loadOrders({
+      render: activeSpecialistTab === "orders",
+      statusOverride: getStatusFilterValue()
+    });
+  });
 }
-
-window.logout = logout;
 
 window.loadHeaderUser = loadHeaderUser;
 window.handleRefresh = handleRefresh;
 window.openOrderWorkspace = openOrderWorkspace;
 window.closeOrderWorkspace = closeOrderWorkspace;
 window.toggleDetails = toggleDetails;
+window.loadOrders = loadOrders;
+window.refreshFocusedOrder = refreshFocusedOrder;
+window.refreshSpecialistOrderOnly = refreshSpecialistOrderOnly;
+window.ensureSpecialistAllOrdersLoaded = ensureSpecialistAllOrdersLoaded;
 
 window.addEventListener("DOMContentLoaded", async () => {
   initSpecialistTabs();
-
-  const filter = document.getElementById("statusFilter");
-
-  if (filter) {
-    filter.addEventListener("change", async () => {
-      focusedOrderId = null;
-      openedOrderId = null;
-
-      await loadOrders({
-        render: activeSpecialistTab === "orders",
-        statusOverride: getStatusFilterValue()
-      });
-    });
-  }
+  initSpecialistStatusFilter();
 
   await loadHeaderUser();
 
@@ -498,6 +506,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   await switchSpecialistTab("orders", true);
-
   await ensureSpecialistAllOrdersLoaded();
 });

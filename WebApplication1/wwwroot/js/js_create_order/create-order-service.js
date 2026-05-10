@@ -1,62 +1,28 @@
 const createOrderService = (() => {
-  function getToken() {
-    return localStorage.getItem("token");
-  }
-
   async function loadCurrentUser() {
-    const token = getToken();
-
-    if (!token) {
-      return {
-        ok: false,
-        error: "No token found"
-      };
-    }
-
     try {
-      const res = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: "Bearer " + token
-        }
+      const data = await apiRequest("/api/auth/me", {
+        method: "GET"
       });
-
-      if (!res.ok) {
-        return {
-          ok: false,
-          error: "Failed to load current user: " + res.status
-        };
-      }
-
-      const data = await res.json();
 
       return {
         ok: true,
         data
       };
-    } catch {
+    } catch (e) {
       return {
         ok: false,
-        error: "Failed to load current user"
+        error: e.message || "Failed to load current user"
       };
     }
   }
 
   async function createOrder(orderData) {
-    const token = getToken();
-
-    if (!token) {
-      return {
-        ok: false,
-        error: "No token found"
-      };
-    }
-
     try {
-      const res = await fetch("/api/worker/orders", {
+      await apiRequest("/api/worker/orders", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           serviceType: orderData.serviceType,
@@ -67,27 +33,13 @@ const createOrderService = (() => {
         })
       });
 
-      let text = await res.text();
-
-      try {
-        const json = JSON.parse(text);
-        text = json.message ?? text;
-      } catch {}
-
-      if (!res.ok) {
-        return {
-          ok: false,
-          error: text || ("Error " + res.status)
-        };
-      }
-
       return {
         ok: true
       };
     } catch (e) {
       return {
         ok: false,
-        error: "Network error: " + e
+        error: e.message || "Network error"
       };
     }
   }

@@ -1,25 +1,13 @@
-const API = "";
+/* ===========================
+   BOSS API
+=========================== */
 
-function token() {
-  return localStorage.getItem("token");
-}
-
-function authHeaders(extra = {}) {
-  return {
-    ...extra,
-    Authorization: "Bearer " + token()
-  };
-}
-
-async function readResponse(response) {
-  const text = await response.text();
-  if (!text) return null;
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+function ensureArrayResponse(data, errorMessage) {
+  if (!Array.isArray(data)) {
+    throw new Error(errorMessage);
   }
+
+  return data;
 }
 
 /* ===========================
@@ -27,103 +15,49 @@ async function readResponse(response) {
 =========================== */
 
 async function fetchWorkers() {
-  const response = await fetch(`${API}/api/boss/orders/workers`, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest("/api/boss/orders/workers", {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    throw new Error(typeof data === "string" ? data : "Workers load error");
-  }
 
   return Array.isArray(data) ? data : [];
 }
 
 async function fetchSpecialists() {
-  const response = await fetch(`${API}/api/boss/orders/specialists`, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest("/api/boss/orders/specialists", {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    throw new Error(typeof data === "string" ? data : "Specialists load error");
-  }
 
   return Array.isArray(data) ? data : [];
 }
 
 async function fetchOrders(status = "") {
   const url = status
-    ? `${API}/api/boss/orders?status=${encodeURIComponent(status)}`
-    : `${API}/api/boss/orders`;
+    ? `/api/boss/orders?status=${encodeURIComponent(status)}`
+    : "/api/boss/orders";
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest(url, {
+    method: "GET"
   });
 
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Load error: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  if (!Array.isArray(data)) {
-    throw new Error("Wrong response format");
-  }
-
-  return data;
+  return ensureArrayResponse(data, "Wrong response format");
 }
 
 async function fetchOrderDetails(orderId) {
-  const response = await fetch(`${API}/api/boss/orders/${orderId}/details`, {
-    method: "GET",
-    headers: authHeaders()
+  return await apiRequest(`/api/boss/orders/${encodeURIComponent(orderId)}/details`, {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Order details load error: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function assignSpecialist(orderId, specialistId) {
-  const response = await fetch(`${API}/api/boss/orders/${orderId}/assign-specialist`, {
+  return await apiRequest(`/api/boss/orders/${encodeURIComponent(orderId)}/assign-specialist`, {
     method: "PATCH",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({
       specialistId: specialistId || null
     })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Assign error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 /* ===========================
@@ -131,66 +65,29 @@ async function assignSpecialist(orderId, specialistId) {
 =========================== */
 
 async function moveComplaintToRework(orderId) {
-  const response = await fetch(`${API}/api/boss/complaints/${orderId}/to-rework`, {
-    method: "PATCH",
-    headers: authHeaders()
+  return await apiRequest(`/api/boss/complaints/${encodeURIComponent(orderId)}/to-rework`, {
+    method: "PATCH"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "To rework error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function resolveComplaint(orderId, comment = "") {
-  const response = await fetch(`${API}/api/boss/complaints/${orderId}/resolve`, {
+  return await apiRequest(`/api/boss/complaints/${encodeURIComponent(orderId)}/resolve`, {
     method: "PATCH",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({ comment })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Resolve complaint error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function rejectComplaint(orderId, comment = "") {
-  const response = await fetch(`${API}/api/boss/complaints/${orderId}/reject`, {
+  return await apiRequest(`/api/boss/complaints/${encodeURIComponent(orderId)}/reject`, {
     method: "PATCH",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({ comment })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Reject complaint error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 /* ===========================
@@ -200,78 +97,44 @@ async function rejectComplaint(orderId, comment = "") {
 async function fetchUsers(role = "", status = "") {
   const params = new URLSearchParams();
 
-  if (role) params.append("role", role);
-  if (status) params.append("status", status);
+  if (role) {
+    params.append("role", role);
+  }
+
+  if (status) {
+    params.append("status", status);
+  }
 
   const query = params.toString();
   const url = query
-    ? `${API}/api/boss/users?${query}`
-    : `${API}/api/boss/users`;
+    ? `/api/boss/users?${query}`
+    : "/api/boss/users";
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest(url, {
+    method: "GET"
   });
 
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Users load error: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  if (!Array.isArray(data)) {
-    throw new Error("Wrong users response format");
-  }
-
-  return data;
+  return ensureArrayResponse(data, "Wrong users response format");
 }
 
 async function updateUserRole(userId, role) {
-  const response = await fetch(`${API}/api/boss/users/${userId}/role`, {
+  return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}/role`, {
     method: "PUT",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({ role })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Role update error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 async function updateUserAccountStatus(userId, accountStatus) {
-  const response = await fetch(`${API}/api/boss/users/${userId}/status`, {
+  return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}/status`, {
     method: "PUT",
-    headers: authHeaders({
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify({ accountStatus })
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Status update error";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 /* ===========================
@@ -279,22 +142,9 @@ async function updateUserAccountStatus(userId, accountStatus) {
 =========================== */
 
 async function fetchMe() {
-  const response = await fetch(`${API}/api/auth/me`, {
-    method: "GET",
-    headers: authHeaders()
+  return await apiRequest("/api/auth/me", {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? "Failed to load current user";
-
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 /* ===========================
@@ -302,26 +152,11 @@ async function fetchMe() {
 =========================== */
 
 async function fetchOrderReports(orderId) {
-  const response = await fetch(`${API}/api/orders/${orderId}/reports`, {
-    method: "GET",
-    headers: authHeaders()
+  const data = await apiRequest(`/api/orders/${encodeURIComponent(orderId)}/reports`, {
+    method: "GET"
   });
 
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Reports load error: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  if (!Array.isArray(data)) {
-    return [];
-  }
-
-  return data;
+  return Array.isArray(data) ? data : [];
 }
 
 /* ===========================
@@ -331,37 +166,24 @@ async function fetchOrderReports(orderId) {
 async function fetchBossAnalytics(from = "", to = "", specialistId = "") {
   const params = new URLSearchParams();
 
-  if (from) params.append("from", from);
-  if (to) params.append("to", to);
-  if (specialistId) params.append("specialistId", specialistId);
+  if (from) {
+    params.append("from", from);
+  }
+
+  if (to) {
+    params.append("to", to);
+  }
+
+  if (specialistId) {
+    params.append("specialistId", specialistId);
+  }
 
   const query = params.toString();
   const url = query
-    ? `${API}/api/boss/analytics?${query}`
-    : `${API}/api/boss/analytics`;
+    ? `/api/boss/analytics?${query}`
+    : "/api/boss/analytics";
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: authHeaders()
+  return await apiRequest(url, {
+    method: "GET"
   });
-
-  const data = await readResponse(response);
-
-  if (!response.ok) {
-    const message = typeof data === "string"
-      ? data
-      : data?.message ?? `Analytics load error: ${response.status}`;
-
-    throw new Error(message);
-  }
-
-  return data;
 }
-
-/* ===========================
-   АЛІАСИ ДЛЯ СУМІСНОСТІ
-=========================== */
-
-const bossMoveComplaintToRework = moveComplaintToRework;
-const bossRejectComplaint = rejectComplaint;
-const bossResolveComplaint = resolveComplaint;

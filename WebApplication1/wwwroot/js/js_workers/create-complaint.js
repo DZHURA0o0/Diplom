@@ -1,104 +1,198 @@
-const query = new URLSearchParams(window.location.search);
-const orderId = query.get("orderId") || "";
+const complaintPageState = {
+  orderId: new URLSearchParams(window.location.search).get("orderId") || "",
+  toastTimer: null,
+  isSubmitting: false
+};
 
-let toastTimer = null;
+/* ===================== DOM HELPERS ===================== */
 
-window.addEventListener("DOMContentLoaded", () => {
-  const orderIdInput = document.getElementById("orderId");
-  if (orderIdInput) {
-    orderIdInput.value = orderId;
+function getComplaintElements() {
+  return {
+    orderIdInput: document.getElementById("orderId"),
+    textArea: document.getElementById("complaintText"),
+    button: document.querySelector(".btn-submit"),
+    msg: document.getElementById("msg"),
+    toast: document.getElementById("toast")
+  };
+}
+
+function setComplaintMessage(text, isSuccess = false) {
+  const { msg } = getComplaintElements();
+
+  if (!msg) {
+    return;
   }
 
-  // 🔥 ВСЕГДА РАЗБЛОКИРОВАНО
-  setFormEnabled(true);
-});
-
-function setMessage(text, isSuccess = false) {
-  const msg = document.getElementById("msg");
-  if (!msg) return;
-
-  msg.textContent = text;
+  msg.textContent = text || "";
   msg.className = isSuccess ? "form-msg success" : "form-msg";
 }
 
-function showToast(message, type = "success") {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
+function showComplaintToast(message, type = "success") {
+  const { toast } = getComplaintElements();
+
+  if (!toast) {
+    return;
+  }
 
   toast.textContent = message;
   toast.className = `toast ${type}`;
   toast.classList.remove("hidden");
 
-  clearTimeout(toastTimer);
+  clearTimeout(complaintPageState.toastTimer);
 
-  toastTimer = setTimeout(() => {
+  complaintPageState.toastTimer = setTimeout(() => {
     toast.classList.add("hidden");
   }, 2600);
 }
 
-function setFormEnabled(enabled) {
-  const textArea = document.getElementById("complaintText");
-  const btn = document.querySelector(".btn-submit");
+function setComplaintFormEnabled(enabled) {
+  const { textArea, button } = getComplaintElements();
 
-  if (textArea) textArea.disabled = !enabled;
-  if (btn) btn.disabled = !enabled;
+  if (textArea) {
+    textArea.disabled = !enabled;
+  }
+
+  if (button) {
+    button.disabled = !enabled;
+  }
 }
 
-async function submitComplaint() {
-  const textArea = document.getElementById("complaintText");
-  const btn = document.querySelector(".btn-submit");
+function setComplaintButtonText(text) {
+  const { button } = getComplaintElements();
 
-  if (!textArea || !btn) return;
-
-  const text = textArea.value.trim();
-
-  setMessage("");
-
-  if (!orderId) {
-    showToast("Немає ID заявки", "error");
-    return;
+  if (button) {
+    button.textContent = text;
   }
+}
 
-  if (text.length < 3) {
-    showToast("Введи текст", "error");
-    return;
+function getComplaintText() {
+  const { textArea } = getComplaintElements();
+  return textArea?.value?.trim() || "";
+}
+
+/* ===================== VALIDATION ===================== */
+
+const COMPLAINT_VALIDATION_RULES = [
+  {
+    isInvalid: () => !complaintPageState.orderId,
+    message: "Немає ID заявки."
+  },
+  {
+    isInvalid: text => !text || text.length < 3,
+    message: "Введи текст скарги мінімум 3 символи."
+  },
+  {
+    isInvalid: text => text.length > 2000,
+    message: "Текст скарги занадто довгий. Максимум 2000 символів."
   }
+];
 
-  btn.disabled = true;
-  btn.textContent = "Подання...";
+function getComplaintValidationError(text) {
+  const failedRule = COMPLAINT_VALIDATION_RULES.find(rule => rule.isInvalid(text));
+  return failedRule?.message || "";
+}
 
-  try {
-    const res = await fetch(`/api/worker/orders/${encodeURIComponent(orderId)}/complaint`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + (localStorage.getItem("token") || "")
-      },
-      body: JSON.stringify({ text })
-    });
+function validateComplaintForm(showMessage = false) {
+  const text = getComplaintText();
+  const error = getComplaintValidationError(text);
 
-    const raw = await res.text();
-    let data = null;
-
-    try {
-      data = raw ? JSON.parse(raw) : null;
-    } catch {}
-
-    if (!res.ok) {
-      showToast(data?.message || raw || "Помилка", "error");
-      return;
+  if (error) {
+    if (showMessage) {
+      setComplaintMessage(error);
+      showComplaintToast(error, "error");
     }
 
-    showToast("Скаргу відправлено", "success");
+    return false;
+  }
+
+  setComplaintMessage("");
+  return true;
+}
+
+/* ===================== API ===================== */
+
+async function sendComplaint(orderId, text) {
+  return await apiRequest(`/api/worker/orders/${encodeURIComponent(orderId)}/complaint`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text })
+  });
+}
+
+/* ===================== ACTION ===================== */
+
+async function submitComplaint() {
+  if (complaintPageState.isSubmitting) {
+    return;
+  }
+
+  if (!validateComplaintForm(true)) {
+    return;
+  }
+
+  const { button } = getComplaintElements();
+  const text = getComplaintText();
+
+  complaintPageState.isSubmitting = true;
+
+  const restoreButton = setPendingButton(button, "Подання...");
+  setComplaintFormEnabled(false);
+  setComplaintMessage("Подання скарги...");
+
+  try {
+    const result = await sendComplaint(complaintPageState.orderId, text);
+
+    setComplaintMessage(result?.message || "Скаргу відправлено.", true);
+    showComplaintToast("Скаргу відправлено", "success");
 
     setTimeout(() => {
       window.location.href = "/workerPage.html";
     }, 1200);
+  } catch (e) {
+    const message = e.message || "Сервер не відповідає";
 
-  } catch {
-    showToast("Сервер не відповідає", "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Подати скаргу";
+    complaintPageState.isSubmitting = false;
+
+    restoreButton?.();
+    setComplaintFormEnabled(true);
+    setComplaintButtonText("Подати скаргу");
+
+    setComplaintMessage(message);
+    showComplaintToast(message, "error");
   }
 }
+
+/* ===================== INIT ===================== */
+
+function initComplaintPage() {
+  const { orderIdInput, textArea } = getComplaintElements();
+
+  if (orderIdInput) {
+    orderIdInput.value = complaintPageState.orderId;
+  }
+
+  if (!complaintPageState.orderId) {
+    setComplaintFormEnabled(false);
+    setComplaintMessage("Немає ID заявки. Повернись до списку заявок і відкрий скаргу звідти.");
+    showComplaintToast("Немає ID заявки", "error");
+    return;
+  }
+
+  setComplaintFormEnabled(true);
+
+  if (textArea) {
+    textArea.addEventListener("input", () => {
+      if (!complaintPageState.isSubmitting) {
+        validateComplaintForm(false);
+      }
+    });
+  }
+}
+
+/* ===================== GLOBAL EXPORTS ===================== */
+
+window.submitComplaint = submitComplaint;
+
+window.addEventListener("DOMContentLoaded", initComplaintPage);

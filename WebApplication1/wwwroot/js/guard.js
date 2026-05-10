@@ -1,31 +1,34 @@
-async function requireRole(roles){
+async function requireRole(roles) {
+  const token = localStorage.getItem("token");
 
-const token = localStorage.getItem("token")
+  if (!token) {
+    window.location.href = "/";
+    return;
+  }
 
-if(!token){
-window.location.href="/"
-return
+  const res = await fetch("/api/auth/me", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  if (!res.ok) {
+    window.location.href = "/";
+    return;
+  }
+
+  const data = await res.json();
+  const userRole = String(data.role || "").toUpperCase();
+  const allowedRoles = roles.map(role => String(role).toUpperCase());
+
+  if (!allowedRoles.includes(userRole)) {
+    window.location.href = "/";
+  }
 }
 
-const res = await fetch("http://localhost:5122/api/auth/me", {
-  headers: { Authorization: "Bearer " + token }
-});
-
-if(!res.ok){
-window.location.href="/"
-return
-}
-
-const data = await res.json()
-
-if(!roles.includes(data.role)){
-window.location.href="/"
-}
-
-}
-
-function logout(){
-localStorage.removeItem("token")
-localStorage.removeItem("role")
-window.location.href="/"
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("user");
+  window.location.href = "/";
 }

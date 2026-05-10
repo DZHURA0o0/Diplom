@@ -6,35 +6,7 @@ let bossSpecialists = [];
 let bossSpecialistsMap = {};
 let bossPeopleLoaded = false;
 
-const STATUS_LABELS = {
-    NEW: "НОВА",
-    ASSIGNED: "ПРИЗНАЧЕНА",
-    IN_PROGRESS: "У РОБОТІ",
-    INSPECTION: "ОГЛЯД",
-    WAITING_DETAILS: "ОЧІКУЄ",
-    DETAILS_RECEIVED: "ОТРИМАНО",
-    EXECUTION: "ВИКОНАННЯ",
-    UNDER_COMPLAINT: "СКАРГА",
-    REWORK: "НА ПЕРЕРОБЦІ",
-    REWORK_REVIEW: "НА ПЕРЕВІРЦІ",
-    DONE: "ВИКОНАНА",
-    CANCELED: "СКАСОВАНА"
-};
-
-const SERVICE_TYPE_LABELS = {
-    ELECTRICAL: "Електроживлення / електрика",
-    PC_PROBLEM: "Проблема з ПК",
-    PRINTER_PROBLEM: "Проблема з принтером",
-    SOFTWARE_BUG: "Проблема з ПЗ",
-    INTERNET: "Інтернет / мережа",
-    SEAL_DAMAGE: "Пошкодження пломби",
-    AUDIO_VIDEO: "Аудіо / відео",
-    OTHER: "Інше",
-    HEATING: "Опалення",
-    PLUMBING: "Сантехніка"
-};
-
-const DETAIL_REQUEST_STATUS_LABELS = {
+const BOSS_DETAIL_REQUEST_STATUS_LABELS = {
     CREATED: "Очікує деталей",
     APPROVED: "Деталі отримано",
     REJECTED: "Відхилено",
@@ -43,33 +15,7 @@ const DETAIL_REQUEST_STATUS_LABELS = {
     RECEIVED: "Деталі отримано"
 };
 
-function escapeHtml(value) {
-    if (value === null || value === undefined) return "";
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-}
-
-function formatDate(value) {
-    if (!value) return "—";
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return escapeHtml(value);
-
-    return date.toLocaleString();
-}
-
-function formatLocation(order) {
-    return `Цех ${order.productionWorkshopNumber ?? "—"}, Поверх ${order.floorNumber ?? "—"}, Кімната ${order.roomNumber ?? "—"}`;
-}
-
-function getOrderId(order) {
-    return order.id || order._id || null;
-}
+/* ===================== BASIC GETTERS ===================== */
 
 function getWorkerId(order) {
     return order.workerId || order.worker_id || null;
@@ -176,34 +122,34 @@ function getComplaintStatusLabel(order) {
 
 function getWorkerName(order) {
     const workerId = getWorkerId(order);
-    if (!workerId) return "—";
 
-    return bossWorkersMap[workerId] || workerId;
+    return order.workerFullName ||
+        order.workerName ||
+        order.worker_full_name ||
+        order.worker_name ||
+        bossWorkersMap[workerId] ||
+        workerId ||
+        "—";
 }
 
 function getSpecialistName(order) {
     const specialistId = getSpecialistId(order);
-    if (!specialistId) return "—";
 
-    return bossSpecialistsMap[specialistId] || specialistId;
-}
-
-function localizeStatus(status) {
-    const key = String(status || "").trim().toUpperCase();
-    return STATUS_LABELS[key] || status || "—";
-}
-
-function serviceTypeLabel(value) {
-    const key = String(value || "").trim().toUpperCase();
-    return SERVICE_TYPE_LABELS[key] || value || "—";
+    return order.specialistFullName ||
+        order.specialistName ||
+        order.specialist_full_name ||
+        order.specialist_name ||
+        bossSpecialistsMap[specialistId] ||
+        specialistId ||
+        "—";
 }
 
 function getStatusBadge(order) {
     const status = String(order.status || "UNKNOWN").trim().toUpperCase();
 
     return `
-        <span class="status-badge status-${escapeHtml(status)}">
-            ${escapeHtml(localizeStatus(status))}
+        <span class="status-badge status-${escapeHtml(normalizeStatusClass(status))}">
+            ${escapeHtml(formatStatusBadge(status))}
         </span>
     `;
 }
@@ -216,6 +162,8 @@ function shortText(value, max = 60) {
 
     return text.slice(0, max).trim() + "…";
 }
+
+/* ===================== PEOPLE CACHE ===================== */
 
 async function ensurePeopleLoaded() {
     if (bossPeopleLoaded) return;
@@ -252,6 +200,8 @@ async function ensurePeopleLoaded() {
     bossPeopleLoaded = true;
 }
 
+/* ===================== HTML HELPERS ===================== */
+
 function createDetailsField(label, value, options = {}) {
     const fullClass = options.full ? " full" : "";
     const valueClass = options.valueClass ? ` ${options.valueClass}` : "";
@@ -283,7 +233,7 @@ function normalizeDetailRequest(item) {
 
 function formatDetailRequestStatus(status) {
     const key = String(status || "").trim().toUpperCase();
-    return DETAIL_REQUEST_STATUS_LABELS[key] || status || "—";
+    return BOSS_DETAIL_REQUEST_STATUS_LABELS[key] || status || "—";
 }
 
 function getDetailRequestStatusClass(status) {
@@ -403,6 +353,277 @@ function buildReportsHtml(reports) {
         .join("");
 }
 
+/* ===================== FULL ORDER DETAILS CACHE ===================== */
+
+async function getFullOrderDetails(orderId) {
+    if (!orderId) {
+        throw new Error("Order id not found");
+    }
+
+    const cached = orderDetailsCache[orderId];
+
+    if (cached?.__reportsLoaded) {
+        return cached;
+    }
+
+    const [details, reports] = await Promise.all([
+        cached ? Promise.resolve(cached) : fetchOrderDetails(orderId),
+        fetchOrderReports(orderId)
+    ]);
+
+    const fullOrder = {
+        ...details,
+        id: details?.id || details?._id || orderId,
+        reports: reports || [],
+        __reportsLoaded: true
+    };
+
+    orderDetailsCache[orderId] = fullOrder;
+    return fullOrder;
+}
+
+async function fetchFullOrderDetailsFresh(orderId) {
+    if (!orderId) {
+        throw new Error("Order id not found");
+    }
+
+    const [details, reports] = await Promise.all([
+        fetchOrderDetails(orderId),
+        fetchOrderReports(orderId)
+    ]);
+
+    const fullOrder = {
+        ...details,
+        id: details?.id || details?._id || orderId,
+        reports: reports || [],
+        __reportsLoaded: true
+    };
+
+    orderDetailsCache[orderId] = fullOrder;
+    return fullOrder;
+}
+
+/* ===================== POINT UPDATE HELPERS ===================== */
+
+function getCurrentBossTbodyId() {
+    return activeTab === "complaints"
+        ? "complaintsOrders"
+        : "orders";
+}
+
+function findRenderedOrderPair(tbodyId, orderId) {
+    const tbody = document.getElementById(tbodyId);
+
+    if (!tbody) {
+        return null;
+    }
+
+    const mainRows = Array.from(tbody.querySelectorAll("tr.main-row"));
+    const mainRow = mainRows.find(row => row.dataset.orderId === String(orderId));
+
+    if (!mainRow) {
+        return null;
+    }
+
+    const detailsRow = mainRow.nextElementSibling;
+
+    if (!detailsRow || !detailsRow.classList.contains("details-row")) {
+        return null;
+    }
+
+    return {
+        mainRow,
+        detailsRow
+    };
+}
+
+function shouldOrderStayVisibleInTable(order, tbodyId) {
+    if (tbodyId === "complaintsOrders") {
+        return isComplaintOrder(order);
+    }
+
+    const statusFilter = document.getElementById("statusFilter")?.value || "";
+
+    if (!statusFilter) {
+        return true;
+    }
+
+    return String(order.status || "").trim().toUpperCase() ===
+        String(statusFilter).trim().toUpperCase();
+}
+
+function ensureBossTableEmptyState(tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+
+    if (!tbody) {
+        return;
+    }
+
+    const hasRows = tbody.querySelector("tr.main-row");
+
+    if (hasRows) {
+        return;
+    }
+
+    const message = tbodyId === "complaintsOrders"
+        ? "Немає заявок зі скаргами"
+        : "Немає заявок";
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8">
+                <div class="empty-box">${escapeHtml(message)}</div>
+            </td>
+        </tr>
+    `;
+}
+
+function adjustComplaintsBadge(delta) {
+    const badge = document.getElementById("complaintsBadge");
+    const tabComplaintsBtn = document.getElementById("tabComplaintsBtn");
+
+    if (!badge || !delta) {
+        return;
+    }
+
+    const currentValue = Number(badge.textContent || "0");
+    const nextValue = Math.max(0, currentValue + delta);
+
+    badge.textContent = String(nextValue);
+
+    if (nextValue <= 0) {
+        badge.classList.add("hidden");
+        tabComplaintsBtn?.classList.remove("has-complaints");
+        badge.title = "";
+    } else {
+        badge.classList.remove("hidden");
+        tabComplaintsBtn?.classList.add("has-complaints");
+        badge.title = `Активних скарг: ${nextValue}`;
+    }
+}
+
+function createRenderedOrderRows(order, tbodyId = "orders") {
+    const orderId = getOrderId(order);
+    const rowStateKey = `${tbodyId}_${orderId}`;
+
+    const mainRow = document.createElement("tr");
+    mainRow.className = "main-row";
+    mainRow.dataset.orderId = String(orderId);
+
+    if (ordersExpandedState[rowStateKey]) {
+        mainRow.classList.add("is-open");
+    }
+
+    const detailsRow = document.createElement("tr");
+    detailsRow.className = "details-row";
+    detailsRow.dataset.orderId = String(orderId);
+
+    if (!ordersExpandedState[rowStateKey]) {
+        detailsRow.classList.add("hidden");
+    }
+
+    const description = order.descriptionProblem || order.description_problem || "";
+    const complaintMark = getComplaintMarkHtml(order);
+
+    mainRow.innerHTML = `
+        <td class="cell-mono">
+            ${escapeHtml(orderId || "—")}
+            ${complaintMark}
+            <span class="expand-mark">⌄</span>
+        </td>
+
+        <td>${escapeHtml(getWorkerName(order))}</td>
+        <td>${escapeHtml(getSpecialistName(order))}</td>
+        <td>${getStatusBadge(order)}</td>
+        <td>${escapeHtml(formatServiceType(order.serviceType || order.service_type))}</td>
+
+        <td class="cell-truncate" title="${escapeHtml(description)}">
+            ${escapeHtml(shortText(description, 70))}
+        </td>
+
+        <td>${formatLocation(order)}</td>
+        <td class="cell-actions"></td>
+    `;
+
+    const assignCell = mainRow.lastElementChild;
+    assignCell.appendChild(createAssignControls(order));
+
+    if (ordersExpandedState[rowStateKey]) {
+        fillDetailsRow(order, detailsRow);
+    }
+
+    mainRow.addEventListener("click", async () => {
+        const willOpen = detailsRow.classList.contains("hidden");
+
+        if (willOpen) {
+            detailsRow.classList.remove("hidden");
+            mainRow.classList.add("is-open");
+            ordersExpandedState[rowStateKey] = true;
+            await fillDetailsRow(order, detailsRow);
+        } else {
+            detailsRow.classList.add("hidden");
+            mainRow.classList.remove("is-open");
+            delete ordersExpandedState[rowStateKey];
+        }
+    });
+
+    return {
+        mainRow,
+        detailsRow
+    };
+}
+
+async function updateRenderedOrderOnly(orderId, options = {}) {
+    if (!orderId) {
+        return;
+    }
+
+    const tbodyId = options.tbodyId || getCurrentBossTbodyId();
+    const pair = findRenderedOrderPair(tbodyId, orderId);
+
+    const freshOrder = await fetchFullOrderDetailsFresh(orderId);
+
+    if (!shouldOrderStayVisibleInTable(freshOrder, tbodyId)) {
+        if (pair) {
+            pair.mainRow.remove();
+            pair.detailsRow.remove();
+            ensureBossTableEmptyState(tbodyId);
+        }
+
+        if (options.activeComplaintDelta) {
+            adjustComplaintsBadge(options.activeComplaintDelta);
+        }
+
+        return;
+    }
+
+    if (!pair) {
+        if (options.activeComplaintDelta) {
+            adjustComplaintsBadge(options.activeComplaintDelta);
+        }
+
+        return;
+    }
+
+    const rowStateKey = `${tbodyId}_${orderId}`;
+    const wasOpen = !pair.detailsRow.classList.contains("hidden");
+
+    if (wasOpen) {
+        ordersExpandedState[rowStateKey] = true;
+    } else {
+        delete ordersExpandedState[rowStateKey];
+    }
+
+    const newPair = createRenderedOrderRows(freshOrder, tbodyId);
+
+    pair.mainRow.replaceWith(newPair.mainRow);
+    pair.detailsRow.replaceWith(newPair.detailsRow);
+
+    if (options.activeComplaintDelta) {
+        adjustComplaintsBadge(options.activeComplaintDelta);
+    }
+}
+
 /* ===================== COMPLAINT ACTIONS ===================== */
 
 function buildComplaintActionsHtml(order) {
@@ -486,7 +707,7 @@ function buildComplaintActionsHtml(order) {
     return "";
 }
 
-/* ===================== FULL ORDER DETAILS ===================== */
+/* ===================== FULL ORDER DETAILS HTML ===================== */
 
 function buildDetailsHtml(order) {
     const complaintSubmitted = getComplaintSubmitted(order);
@@ -498,14 +719,14 @@ function buildDetailsHtml(order) {
         <div class="order-details-grid">
             ${createDetailsField("ID заявки", escapeHtml(order.id || "—"), { valueClass: "mono" })}
             ${createDetailsField("Дата створення", formatDate(order.createdAt))}
-            ${createDetailsField("Статус", escapeHtml(localizeStatus(order.status || "—")))}
-            ${createDetailsField("Тип заявки", escapeHtml(serviceTypeLabel(order.serviceType)))}
+            ${createDetailsField("Статус", escapeHtml(formatStatus(order.status || "—")))}
+            ${createDetailsField("Тип заявки", escapeHtml(formatServiceType(order.serviceType)))}
 
-            ${createDetailsField("ПІБ працівника", escapeHtml(order.workerFullName || "—"))}
+            ${createDetailsField("ПІБ працівника", escapeHtml(order.workerFullName || order.workerName || "—"))}
             ${createDetailsField("Телефон працівника", escapeHtml(order.workerPhone || "—"))}
             ${createDetailsField("Посада працівника", escapeHtml(order.workerPosition || "—"))}
 
-            ${createDetailsField("ПІБ спеціаліста", escapeHtml(order.specialistFullName || "—"))}
+            ${createDetailsField("ПІБ спеціаліста", escapeHtml(order.specialistFullName || order.specialistName || "—"))}
             ${createDetailsField("Телефон спеціаліста", escapeHtml(order.specialistPhone || "—"))}
             ${createDetailsField("Посада спеціаліста", escapeHtml(order.specialistPosition || "—"))}
 
@@ -517,7 +738,6 @@ function buildDetailsHtml(order) {
             ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult || "—"), { full: true, valueClass: "long-text" })}
 
             ${createDetailsField("Історія запитів деталей", detailRequestsHtml, { full: true })}
-
             ${createDetailsField("Усі звіти", reportsHtml, { full: true, valueClass: "long-text" })}
 
             ${createDetailsField("Скарга подана", complaintSubmitted ? "Так" : "Ні")}
@@ -531,33 +751,12 @@ function buildDetailsHtml(order) {
 
 /* ===================== COMMON ACTION HELPERS ===================== */
 
-function setPendingButton(button, pendingText) {
-    if (!button) return null;
-
-    const original = button.textContent;
-
-    button.disabled = true;
-    button.dataset.originalText = original;
-    button.textContent = pendingText;
-
-    return () => {
-        button.disabled = false;
-        button.textContent = button.dataset.originalText || original;
-    };
-}
-
-async function refreshOrdersAfterAction() {
-    orderDetailsCache = {};
-
-    if (typeof updateComplaintsBadge === "function") {
-        await updateComplaintsBadge();
+async function refreshOrdersAfterAction(orderId, options = {}) {
+    if (!orderId) {
+        return;
     }
 
-    if (typeof activeTab !== "undefined" && activeTab === "complaints") {
-        await loadComplaintsOrders();
-    } else {
-        await loadOrders();
-    }
+    await updateRenderedOrderOnly(orderId, options);
 }
 
 /* ===================== COMPLAINT HANDLERS ===================== */
@@ -580,7 +779,7 @@ function attachComplaintActionHandlers(order, detailsRow) {
             try {
                 const result = await moveComplaintToRework(orderId);
                 setStatus(result?.message || "Заявку переведено на переробку");
-                await refreshOrdersAfterAction();
+                await refreshOrdersAfterAction(orderId);
             } catch (err) {
                 setStatus(err.message || "Не вдалося перевести заявку на переробку", true);
                 restore?.();
@@ -598,9 +797,16 @@ function attachComplaintActionHandlers(order, detailsRow) {
             const restore = setPendingButton(resolveBtn, "Закриття...");
 
             try {
-                const result = await resolveComplaint(orderId, "Скаргу закрито начальником після перевірки переробки");
+                const result = await resolveComplaint(
+                    orderId,
+                    "Скаргу закрито начальником після перевірки переробки"
+                );
+
                 setStatus(result?.message || "Скаргу закрито. Заявку остаточно виконано.");
-                await refreshOrdersAfterAction();
+
+                await refreshOrdersAfterAction(orderId, {
+                    activeComplaintDelta: -1
+                });
             } catch (err) {
                 setStatus(err.message || "Не вдалося закрити скаргу", true);
                 restore?.();
@@ -618,7 +824,10 @@ function attachComplaintActionHandlers(order, detailsRow) {
             try {
                 const result = await rejectComplaint(orderId, "Скаргу відхилено начальником");
                 setStatus(result?.message || "Скаргу відхилено");
-                await refreshOrdersAfterAction();
+
+                await refreshOrdersAfterAction(orderId, {
+                    activeComplaintDelta: -1
+                });
             } catch (err) {
                 setStatus(err.message || "Не вдалося відхилити скаргу", true);
                 restore?.();
@@ -711,7 +920,7 @@ function createAssignControls(order) {
         try {
             const result = await assignSpecialist(orderId, select.value);
             setStatus(result?.message || "Спеціаліста оновлено");
-            await refreshOrdersAfterAction();
+            await refreshOrdersAfterAction(orderId);
         } catch (err) {
             setStatus(err.message || "Не вдалося оновити спеціаліста", true);
             restore?.();
@@ -724,15 +933,6 @@ function createAssignControls(order) {
 }
 
 /* ===================== RENDER ORDERS ===================== */
-
-function sortOrders(orders) {
-    return [...orders].sort((a, b) => {
-        const dateA = new Date(a.createdAt || a.created_at || 0);
-        const dateB = new Date(b.createdAt || b.created_at || 0);
-
-        return dateB - dateA;
-    });
-}
 
 async function fillDetailsRow(order, detailsRow) {
     const orderId = getOrderId(order);
@@ -753,21 +953,7 @@ async function fillDetailsRow(order, detailsRow) {
     `;
 
     try {
-        let fullOrder = orderDetailsCache[orderId];
-
-        if (!fullOrder) {
-            const [details, reports] = await Promise.all([
-                fetchOrderDetails(orderId),
-                fetchOrderReports(orderId)
-            ]);
-
-            fullOrder = {
-                ...details,
-                reports: reports || []
-            };
-
-            orderDetailsCache[orderId] = fullOrder;
-        }
+        const fullOrder = await getFullOrderDetails(orderId);
 
         detailsRow.innerHTML = `
             <td colspan="8">
@@ -820,74 +1006,14 @@ function renderOrdersTable(orders, tbodyId = "orders") {
             : "Немає заявок";
 
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="8"><div class="empty-box">${message}</div></td>`;
+        tr.innerHTML = `<td colspan="8"><div class="empty-box">${escapeHtml(message)}</div></td>`;
         tbody.appendChild(tr);
         return;
     }
 
     for (const order of orders) {
-        const orderId = getOrderId(order);
-        const rowStateKey = `${tbodyId}_${orderId}`;
-
-        const mainRow = document.createElement("tr");
-        mainRow.className = "main-row";
-
-        if (ordersExpandedState[rowStateKey]) {
-            mainRow.classList.add("is-open");
-        }
-
-        const detailsRow = document.createElement("tr");
-        detailsRow.className = "details-row";
-
-        if (!ordersExpandedState[rowStateKey]) {
-            detailsRow.classList.add("hidden");
-        }
-
-        const complaintMark = getComplaintMarkHtml(order);
-
-        mainRow.innerHTML = `
-            <td class="cell-mono">
-                ${escapeHtml(orderId || "—")}
-                ${complaintMark}
-                <span class="expand-mark">⌄</span>
-            </td>
-
-            <td>${escapeHtml(getWorkerName(order))}</td>
-            <td>${escapeHtml(getSpecialistName(order))}</td>
-            <td>${getStatusBadge(order)}</td>
-            <td>${escapeHtml(serviceTypeLabel(order.serviceType || order.service_type))}</td>
-
-            <td class="cell-truncate" title="${escapeHtml(order.descriptionProblem || order.description_problem || "")}">
-                ${escapeHtml(shortText(order.descriptionProblem || order.description_problem || "", 70))}
-            </td>
-
-            <td>${escapeHtml(formatLocation(order))}</td>
-            <td class="cell-actions"></td>
-        `;
-
-        const assignCell = mainRow.lastElementChild;
-        assignCell.appendChild(createAssignControls(order));
-
-        if (ordersExpandedState[rowStateKey]) {
-            fillDetailsRow(order, detailsRow);
-        }
-
-        mainRow.addEventListener("click", async () => {
-            const willOpen = detailsRow.classList.contains("hidden");
-
-            if (willOpen) {
-                detailsRow.classList.remove("hidden");
-                mainRow.classList.add("is-open");
-                ordersExpandedState[rowStateKey] = true;
-                await fillDetailsRow(order, detailsRow);
-            } else {
-                detailsRow.classList.add("hidden");
-                mainRow.classList.remove("is-open");
-                delete ordersExpandedState[rowStateKey];
-            }
-        });
-
-        tbody.append(mainRow, detailsRow);
+        const pair = createRenderedOrderRows(order, tbodyId);
+        tbody.append(pair.mainRow, pair.detailsRow);
     }
 }
 
@@ -908,7 +1034,7 @@ async function loadOrders() {
         const status = statusFilter ? statusFilter.value : "";
 
         const orders = await fetchOrders(status);
-        const sorted = sortOrders(orders);
+        const sorted = sortOrdersNewFirst(orders);
 
         renderOrdersTable(sorted, "orders");
         setStatus(`Завантажено ${sorted.length} заявок`);
@@ -994,7 +1120,7 @@ async function loadComplaintsOrders() {
         await ensurePeopleLoaded();
 
         const detailedOrders = await getOrdersWithDetailsForComplaints();
-        const complaintOrders = sortOrders(detailedOrders.filter(isComplaintOrder));
+        const complaintOrders = sortOrdersNewFirst(detailedOrders.filter(isComplaintOrder));
 
         renderOrdersTable(complaintOrders, "complaintsOrders");
         setStatus(`Завантажено ${complaintOrders.length} заявок зі скаргами`);
