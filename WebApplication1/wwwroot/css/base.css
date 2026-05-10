@@ -197,7 +197,6 @@ button {
   font-family: inherit;
 }
 
-.btn-login,
 .btn-primary,
 .btn-primary-2,
 .btn-secondary,
@@ -216,8 +215,7 @@ button {
     border-color 0.2s ease,
     opacity 0.2s ease;
 }
-
-.btn-login:disabled,
+    
 .btn-primary:disabled,
 .btn-primary-2:disabled,
 .btn-secondary:disabled,
