@@ -1,18 +1,18 @@
 let openedOrderId = null;
 
 const STATUS_LABELS = {
-  NEW: "Нова",
-  ASSIGNED: "Призначена",
-  IN_PROGRESS: "У роботі",
-  INSPECTION: "На перевірці",
-  WAITING_DETAILS: "Очікує деталей",
-  DETAILS_RECEIVED: "Деталі отримано",
-  EXECUTION: "Виконується",
-  UNDER_COMPLAINT: "На оскарженні",
-  REWORK: "На переробці",
-  REWORK_REVIEW: "Переробку завершено",
-  DONE: "Виконана",
-  CANCELED: "Скасована"
+    NEW: "НОВА",
+    ASSIGNED: "ПРИЗНАЧЕНА",
+    IN_PROGRESS: "У РОБОТІ",
+    INSPECTION: "ОГЛЯД",
+    WAITING_DETAILS: "ОЧІКУЄ",
+    DETAILS_RECEIVED: "ОТРИМАНО",
+    EXECUTION: "ВИКОНАННЯ",
+    UNDER_COMPLAINT: "СКАРГА",
+    REWORK: "НА ПЕРЕРОБЦІ",
+    REWORK_REVIEW: "НА ПЕРЕВІРЦІ",
+    DONE: "ВИКОНАНА",
+    CANCELED: "СКАСОВАНА"
 };
 
 const SERVICE_TYPE_LABELS = {
