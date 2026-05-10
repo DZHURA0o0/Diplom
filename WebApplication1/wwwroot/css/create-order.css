@@ -1,3 +1,35 @@
+/* =========================================================
+   CREATE ORDER PAGE
+   ========================================================= */
+
+:root {
+  --co-bg: rgba(9, 18, 32, 0.82);
+  --co-bg-strong: rgba(9, 18, 32, 0.96);
+
+  --co-panel: rgba(255, 255, 255, 0.05);
+  --co-panel-hover: rgba(255, 255, 255, 0.06);
+  --co-panel-focus: rgba(255, 255, 255, 0.07);
+
+  --co-border: rgba(255, 255, 255, 0.08);
+  --co-border-control: rgba(255, 255, 255, 0.1);
+  --co-border-focus: rgba(255, 255, 255, 0.2);
+
+  --co-text: #ffffff;
+  --co-muted: rgba(255, 255, 255, 0.72);
+  --co-label: #aebed1;
+
+  --co-blue: #67b6ff;
+
+  --co-radius-sm: 10px;
+  --co-radius: 14px;
+  --co-radius-card: 18px;
+
+  --co-shadow-card: 0 16px 40px rgba(0, 0, 0, 0.2);
+  --co-shadow-dropdown: 0 14px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* ===================== LAYOUT ===================== */
+
 .create-order-main {
   display: flex;
   justify-content: center;
@@ -11,13 +43,17 @@
   max-width: 720px;
   padding: 20px;
   box-sizing: border-box;
-  background: rgba(9, 18, 32, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+
+  background: var(--co-bg);
+  border: 1px solid var(--co-border);
+  border-radius: var(--co-radius-card);
   backdrop-filter: blur(8px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
-  color: #ffffff;
+  box-shadow: var(--co-shadow-card);
+
+  color: var(--co-text);
 }
+
+/* ===================== HEADER BLOCK ===================== */
 
 .create-order-top {
   margin-bottom: 14px;
@@ -26,41 +62,52 @@
 .create-order-top h2 {
   margin: 0 0 6px;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--co-text);
 }
 
 .create-order-top p {
   margin: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.4;
+  color: var(--co-muted);
 }
+
+/* ===================== CREATED BY ===================== */
 
 .created-by-block {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+
+  border-radius: var(--co-radius-sm);
+  background: var(--co-panel);
 }
 
 .created-by-label {
   margin-right: 6px;
+
   font-size: 13px;
-  font-weight: 600;
-  color: #aebed1;
+  font-weight: 700;
+  color: var(--co-label);
 }
 
 .created-by-value {
   font-size: 13px;
-  color: #ffffff;
+  color: var(--co-text);
 }
+
+/* ===================== MESSAGE ===================== */
 
 .form-msg {
   min-height: 18px;
   margin: 0 0 12px;
+
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffb3b3;
 }
+
+/* ===================== FORM ===================== */
 
 .create-order-form {
   display: flex;
@@ -76,8 +123,8 @@
 
 .input-group label {
   font-size: 12px;
-  font-weight: 600;
-  color: #aebed1;
+  font-weight: 700;
+  color: var(--co-label);
 }
 
 .input-group input,
@@ -85,26 +132,30 @@
   width: 100%;
   padding: 10px 12px;
   box-sizing: border-box;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+
+  border: 1px solid var(--co-border-control);
+  border-radius: var(--co-radius-sm);
+
+  background: var(--co-panel);
+  color: var(--co-text);
+
   font-size: 13px;
   outline: none;
   box-shadow: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .input-group input:focus,
 .input-group textarea:focus,
 .input-group input:focus-visible,
-.input-group textarea:focus-visible,
-.input-group input:active,
-.input-group textarea:active {
+.input-group textarea:focus-visible {
   outline: none;
   box-shadow: none;
   border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--co-panel-hover);
 }
 
 .input-group textarea {
@@ -127,7 +178,7 @@
   grid-column: 1 / -1;
 }
 
-/* ===== CUSTOM SELECT ===== */
+/* ===================== CUSTOM SELECT ===================== */
 
 .custom-select {
   position: relative;
@@ -137,35 +188,44 @@
 .custom-select-trigger {
   height: 40px;
   padding: 0 36px 0 12px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+
+  border: 1px solid var(--co-border-control);
+  border-radius: var(--co-radius-sm);
+
+  background: var(--co-panel);
+  color: var(--co-text);
+
   font-size: 13px;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .custom-select-trigger:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--co-panel-hover);
 }
 
 .custom-select.open .custom-select-trigger {
-  border-color: rgba(255, 255, 255, 0.20);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--co-border-focus);
+  background: var(--co-panel-focus);
 }
 
 .arrow {
   width: 8px;
   height: 8px;
+  flex-shrink: 0;
+
   border-right: 2px solid rgba(255, 255, 255, 0.7);
   border-bottom: 2px solid rgba(255, 255, 255, 0.7);
+
   transform: rotate(45deg);
   transition: transform 0.2s ease;
-  flex-shrink: 0;
 }
 
 .custom-select.open .arrow {
@@ -177,13 +237,16 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: #0f1724;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  overflow: hidden;
-  display: none;
   z-index: 100;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25);
+
+  display: none;
+  overflow: hidden;
+
+  border: 1px solid var(--co-border);
+  border-radius: var(--co-radius-sm);
+
+  background: #0f1724;
+  box-shadow: var(--co-shadow-dropdown);
 }
 
 .custom-select.open .custom-options {
@@ -192,9 +255,12 @@
 
 .custom-option {
   padding: 10px 12px;
+
   font-size: 13px;
-  color: #ffffff;
+  color: var(--co-text);
+
   cursor: pointer;
+
   transition: background 0.15s ease;
 }
 
@@ -206,7 +272,7 @@
   background: rgba(103, 182, 255, 0.2);
 }
 
-/* ===== BUTTONS ===== */
+/* ===================== ACTIONS ===================== */
 
 .form-actions {
   display: flex;
@@ -215,49 +281,19 @@
   gap: 10px;
 }
 
-.btn-back,
-.btn-submit {
-  height: 40px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
+.create-order-btn {
+  min-height: 40px;
+  border-radius: var(--co-radius-sm);
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  font-weight: 700;
 }
 
-.btn-back {
-  background: rgba(255, 255, 255, 0.10);
-  color: #ffffff;
-}
+/* ===================== NUMBER INPUT CLEANUP ===================== */
 
-.btn-submit {
-  background: #67b6ff;
-  color: #08111d;
-}
-
-.btn-back:hover,
-.btn-submit:hover {
-  transform: translateY(-1px);
-  opacity: 0.96;
-}
-
-.btn-submit:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* прибираємо стрілки number */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
   margin: 0;
+  -webkit-appearance: none;
 }
 
 input[type="number"] {
@@ -265,7 +301,7 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* ===== SUCCESS MODAL ===== */
+/* ===================== SUCCESS MODAL ===================== */
 
 .custom-modal {
   position: fixed;
@@ -280,6 +316,7 @@ input[type="number"] {
 .custom-modal-backdrop {
   position: absolute;
   inset: 0;
+
   background: rgba(3, 10, 20, 0.68);
   backdrop-filter: blur(4px);
 }
@@ -287,40 +324,52 @@ input[type="number"] {
 .custom-modal-content {
   position: relative;
   z-index: 1;
+
   width: calc(100% - 32px);
   max-width: 420px;
   margin: 16vh auto 0;
   padding: 24px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 18px;
-  background: rgba(9, 18, 32, 0.96);
+  box-sizing: border-box;
+
+  border: 1px solid var(--co-border-control);
+  border-radius: var(--co-radius-card);
+
+  background: var(--co-bg-strong);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+
   text-align: center;
-  color: #ffffff;
+  color: var(--co-text);
 }
 
 .custom-modal-icon {
   width: 58px;
   height: 58px;
   margin: 0 auto 14px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border-radius: 50%;
+
   background: rgba(103, 182, 255, 0.18);
-  color: #67b6ff;
+  color: var(--co-blue);
+
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .custom-modal-title {
   margin: 0 0 8px;
+
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--co-text);
 }
 
 .custom-modal-text {
   margin: 0;
+
   font-size: 14px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.78);
@@ -334,11 +383,7 @@ input[type="number"] {
   min-width: 220px;
 }
 
-body.modal-open {
-  overflow: hidden;
-}
-
-/* ===== MOBILE ===== */
+/* ===================== MOBILE ===================== */
 
 @media (max-width: 760px) {
   .create-order-card {
@@ -363,8 +408,7 @@ body.modal-open {
     align-items: stretch;
   }
 
-  .btn-back,
-  .btn-submit {
+  .create-order-btn {
     width: 100%;
   }
 
@@ -378,6 +422,7 @@ body.modal-open {
   }
 
   .modal-btn {
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
   }
 }

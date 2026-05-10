@@ -5,8 +5,8 @@
   <title>Реєстрація</title>
 
   <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/register.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/register.css">
 </head>
 
 <body>
@@ -14,7 +14,7 @@
 
     <header class="site-header">
       <div class="header-left">
-        <img src="img/logohader.png" alt="logo" class="logo-img">
+        <img src="/img/logohader.png" alt="logo" class="logo-img">
       </div>
 
       <div class="header-center">
@@ -27,7 +27,7 @@
       </div>
     </header>
 
-    <main class="main">
+    <main class="main register-main">
       <div class="register-card">
         <h2>Створення акаунта</h2>
 
@@ -91,13 +91,13 @@
 
           </div>
 
-          <button type="submit" id="btnRegister" class="btn-register">
+          <button type="submit" id="btnRegister" class="btn-primary register-btn">
             Зареєструватися
           </button>
 
           <div class="form-footer">
             <span>Є акаунт?</span>
-            <a href="index.html">Увійти</a>
+            <a href="/index.html">Увійти</a>
           </div>
 
           <pre id="result"></pre>
@@ -115,13 +115,19 @@
 
     <div class="modal-dialog">
       <div class="modal-icon">✓</div>
-      <div class="modal-title">Реєстрація успішна</div>
+
+      <div class="modal-title">
+        Реєстрація успішна
+      </div>
+
       <div class="modal-text">
         Акаунт створено. Зараз буде виконано перехід на сторінку входу.
       </div>
 
       <div class="modal-actions">
-        <button type="button" id="modalOkBtn" class="btn-register">Добре</button>
+        <button type="button" id="modalOkBtn" class="btn-primary-2 register-modal-btn">
+          Добре
+        </button>
       </div>
     </div>
   </div>

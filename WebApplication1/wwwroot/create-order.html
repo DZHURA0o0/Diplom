@@ -3,32 +3,33 @@
 <head>
   <meta charset="utf-8">
   <title>Create Order</title>
+
   <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/create-order.css">
-  <link rel="stylesheet" href="/css/components.css">
 </head>
-<body>
 
+<body>
   <div class="page">
 
-<header class="app-header">
-  <div class="app-header-left">
-    <img src="/img/logohader.png" alt="logo" class="app-logo">
-  </div>
+    <header class="app-header">
+      <div class="app-header-left">
+        <img src="/img/logohader.png" alt="logo" class="app-logo">
+      </div>
 
-  <div class="app-header-center">
-    <div class="app-title-main">Відділ системного адміністрування</div>
-    <div class="app-title-sub">Подання нової заявки</div>
-  </div>
+      <div class="app-header-center">
+        <div class="app-title-main">Відділ системного адміністрування</div>
+        <div class="app-title-sub">Подання нової заявки</div>
+      </div>
 
-  <div class="app-header-right">
-    <div class="app-user-box">
-      <div class="app-user-role" id="headerUserRole"></div>
-      <div class="app-user-name" id="headerUserName"></div>
-    </div>
-  </div>
-</header>
+      <div class="app-header-right">
+        <div class="app-user-box">
+          <div class="app-user-role" id="headerUserRole"></div>
+          <div class="app-user-name" id="headerUserName"></div>
+        </div>
+      </div>
+    </header>
 
     <main class="main create-order-main">
       <div class="create-order-card">
@@ -120,8 +121,11 @@
           </div>
 
           <div class="form-actions">
-            <a href="/workerPage.html" class="btn-back">Назад</a>
-            <button id="btnCreateOrder" type="button" class="btn-submit">
+            <a href="/workerPage.html" class="btn-secondary create-order-btn">
+              Назад
+            </a>
+
+            <button id="btnCreateOrder" type="button" class="btn-primary create-order-btn">
               Створити заявку
             </button>
           </div>
@@ -142,23 +146,25 @@
 
     <div class="custom-modal-content">
       <div class="custom-modal-icon">✔</div>
+
       <h3 class="custom-modal-title">Заявка подана</h3>
+
       <p class="custom-modal-text">
         Вашу заявку успішно створено та передано в систему.
       </p>
 
       <div class="custom-modal-actions">
-        <button id="successModalOk" type="button" class="btn-submit modal-btn">
+        <button id="successModalOk" type="button" class="btn-primary-2 modal-btn">
           Повернутися до заявок
         </button>
       </div>
     </div>
   </div>
 
-<script src="/js/guard.js"></script>
-<script src="/js/shared.js"></script>
-<script src="/js/js_create_order/create-order-ui.js"></script>
-<script src="/js/js_create_order/create-order-service.js"></script>
-<script src="/js/js_create_order/create-order.js"></script>
+  <script src="/js/guard.js"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/js/js_create_order/create-order-ui.js"></script>
+  <script src="/js/js_create_order/create-order-service.js"></script>
+  <script src="/js/js_create_order/create-order.js"></script>
 </body>
 </html>

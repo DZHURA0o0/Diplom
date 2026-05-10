@@ -1,50 +1,124 @@
-/* ===================== LOGIN CARD ===================== */
+/* =========================================================
+   LOGIN PAGE
+   ========================================================= */
+
+:root {
+  --login-card-bg: #ffffff;
+  --login-text: #222222;
+  --login-muted: #555555;
+  --login-link: #3a7bd5;
+
+  --login-radius: 10px;
+  --login-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* ===================== LAYOUT ===================== */
+
+.login-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+/* ===================== CARD ===================== */
 
 .login-card {
-  width: 320px;
+  width: 100%;
+  max-width: 320px;
   padding: 30px;
+  box-sizing: border-box;
 
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  background: var(--login-card-bg);
+  border-radius: var(--login-radius);
+  box-shadow: var(--login-shadow);
 }
 
 .login-card h2 {
   margin: 0 0 20px;
+
   text-align: center;
-  color: #222222;
+  color: var(--login-text);
+
+  font-size: 24px;
+  font-weight: 800;
 }
 
-/* ===================== LOGIN BUTTON ===================== */
+/* ===================== FORM ===================== */
 
-.btn-login {
-  width: 100%;
-  padding: 10px;
-
-  background: #3a7bd5;
-  color: #ffffff;
-
-  border: none;
-  border-radius: 6px;
+.login-card .input-group {
+  margin-bottom: 15px;
 }
 
-.btn-login:hover {
-  background: #2f63b3;
+.login-card .input-group label {
+  color: var(--login-text);
+  font-weight: 700;
 }
 
-/* ===================== LOGIN FOOTER ===================== */
-
-.form-footer {
-  margin-top: 15px;
-  text-align: center;
+.login-card .input-group input {
+  height: 42px;
   font-size: 14px;
 }
 
+/* ===================== BUTTON ===================== */
+
+.login-btn {
+  width: 100%;
+  min-height: 42px;
+
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ===================== FOOTER LINK ===================== */
+
+.form-footer {
+  margin-top: 15px;
+
+  text-align: center;
+  font-size: 14px;
+
+  color: var(--login-muted);
+}
+
 .form-footer a {
-  color: #3a7bd5;
+  margin-left: 5px;
+
+  color: var(--login-link);
   text-decoration: none;
+
+  font-weight: 700;
 }
 
 .form-footer a:hover {
   text-decoration: underline;
+}
+
+/* ===================== RESULT ===================== */
+
+#result {
+  min-height: 20px;
+  margin: 12px 0 0;
+
+  white-space: pre-wrap;
+
+  color: #c0392b;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 480px) {
+  .login-card {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .login-card h2 {
+    font-size: 22px;
+  }
 }

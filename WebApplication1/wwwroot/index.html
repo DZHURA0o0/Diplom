@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <title>Login</title>
+
   <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/login.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/login.css">
 </head>
 
 <body>
   <div class="page">
 
-    <!-- HEADER -->
     <header class="site-header">
       <div class="header-left">
-        <img src="img/logohader.png" alt="logo" class="logo-img">
+        <img src="/img/logohader.png" alt="logo" class="logo-img">
       </div>
 
       <div class="header-center">
@@ -27,29 +27,38 @@
       </div>
     </header>
 
-    <!-- CENTER -->
-    <main class="main">
+    <main class="main login-main">
       <div class="login-card">
         <h2>Вхід в систему</h2>
 
         <form id="loginForm">
           <div class="input-group">
             <label for="login">Логін</label>
-            <input id="login" type="text" placeholder="Введіть логін" autocomplete="username">
+            <input
+              id="login"
+              type="text"
+              placeholder="Введіть логін"
+              autocomplete="username"
+            >
           </div>
 
           <div class="input-group">
             <label for="password">Пароль</label>
-            <input id="password" type="password" placeholder="Введіть пароль" autocomplete="current-password">
+            <input
+              id="password"
+              type="password"
+              placeholder="Введіть пароль"
+              autocomplete="current-password"
+            >
           </div>
 
-          <button type="submit" id="btnLogin" class="btn-login">
+          <button type="submit" id="btnLogin" class="btn-primary login-btn">
             Увійти
           </button>
 
           <div class="form-footer">
             <span>Немає акаунта?</span>
-            <a href="register.html">Зареєструватися</a>
+            <a href="/register.html">Зареєструватися</a>
           </div>
 
           <pre id="result"></pre>
@@ -57,7 +66,6 @@
       </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="site-footer">
       © 2026 Support System
     </footer>
