@@ -5,9 +5,9 @@
   <title>Specialist</title>
 
   <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/specialist.css">
-  <link rel="stylesheet" href="/css/components.css">
 </head>
 
 <body>
@@ -53,11 +53,11 @@
               ← До списку заявок
             </button>
 
-            <button type="button" class="btn-outline" onclick="handleRefresh()">
+            <button type="button" class="btn-primary-2" onclick="handleRefresh()">
               Оновити
             </button>
 
-            <button type="button" class="btn-danger-soft" onclick="logout()">
+            <button type="button" class="btn-secondary" onclick="logout()">
               Вийти
             </button>
           </div>
@@ -170,11 +170,11 @@
                   <input type="date" id="specialistAnalyticsTo">
                 </label>
 
-                <button type="button" class="btn-outline" onclick="loadSpecialistAnalytics()">
+                <button type="button" class="btn-primary-2" onclick="loadSpecialistAnalytics()">
                   Оновити аналітику
                 </button>
 
-                <button type="button" class="btn-outline" onclick="resetSpecialistAnalyticsFilters()">
+                <button type="button" class="btn-secondary" onclick="resetSpecialistAnalyticsFilters()">
                   Скинути
                 </button>
               </div>
@@ -243,7 +243,7 @@
                 </div>
               </div>
 
-              <button type="button" class="btn-outline" onclick="renderSpecialistReworksTab()">
+              <button type="button" class="btn-primary-2" onclick="renderSpecialistReworksTab()">
                 Оновити
               </button>
             </div>
@@ -267,7 +267,7 @@
                 </div>
               </div>
 
-              <button type="button" class="btn-outline" onclick="renderSpecialistDetailRequestsTab()">
+              <button type="button" class="btn-primary-2" onclick="renderSpecialistDetailRequestsTab()">
                 Оновити
               </button>
             </div>
@@ -322,16 +322,16 @@
     </footer>
   </div>
 
-<script src="/js/guard.js"></script>
-<script>requireRole(["SPECIALIST"]);</script>
-<script src="/js/shared.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <script src="/js/guard.js"></script>
+  <script>requireRole(["SPECIALIST"]);</script>
+  <script src="/js/shared.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
-<script src="/js/js_specialist/specialist-api.js"></script>
-<script src="/js/js_specialist/specialist-analytics.js"></script>
-<script src="/js/js_specialist/specialist-actions.js"></script>
-<script src="/js/js_specialist/specialist-render.js"></script>
-<script src="/js/js_specialist/specialist-page.js"></script>
-<script src="/js/js_specialist/specialist-realtime.js"></script>
+  <script src="/js/js_specialist/specialist-api.js"></script>
+  <script src="/js/js_specialist/specialist-analytics.js"></script>
+  <script src="/js/js_specialist/specialist-actions.js"></script>
+  <script src="/js/js_specialist/specialist-render.js"></script>
+  <script src="/js/js_specialist/specialist-page.js"></script>
+  <script src="/js/js_specialist/specialist-realtime.js"></script>
 </body>
 </html>
