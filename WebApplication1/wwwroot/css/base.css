@@ -1,0 +1,258 @@
+/* ===================== BASE / RESET ===================== */
+
+:root {
+  --bg-main-a: #3a7bd5;
+  --bg-main-b: #00d2ff;
+
+  --dark-panel: rgba(9, 18, 32, 0.82);
+  --dark-panel-strong: rgba(9, 18, 32, 0.96);
+
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.14);
+
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.72);
+  --text-soft: rgba(255, 255, 255, 0.58);
+
+  --blue-main: #3a7bd5;
+  --blue-hover: #2f63b3;
+
+  --danger-main: #e74c3c;
+  --danger-hover: #c0392b;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.2);
+  --shadow-button: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-main-a), var(--bg-main-b));
+}
+
+/* ===================== PAGE LAYOUT ===================== */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, var(--bg-main-a), var(--bg-main-b));
+}
+
+.hidden {
+  display: none !important;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ===================== AUTH HEADER ===================== */
+
+.site-header {
+  height: 70px;
+  background: #1e1e2f;
+  color: #ffffff;
+
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  height: 50px;
+  object-fit: contain;
+}
+
+.header-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title-main {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.title-sub {
+  margin-top: 3px;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ===================== FOOTER ===================== */
+
+.site-footer {
+  height: 50px;
+  background: #f1f1f1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 13px;
+  color: #222222;
+}
+
+/* ===================== FORM BASE ===================== */
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  width: 100%;
+  padding: 10px;
+
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+
+  outline: none;
+}
+
+.input-group input:focus,
+.input-group textarea:focus,
+.input-group select:focus {
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.14);
+}
+
+/* ===================== BASIC STATES ===================== */
+
+.empty,
+.error-box {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.empty {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--border-soft);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.error-box {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #ffb4b4;
+}
+
+.status-text {
+  margin: 10px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.status-text.error {
+  color: #ffb4b4;
+}
+
+/* ===================== LINKS ===================== */
+
+.action-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===================== COMMON BUTTON BASE ===================== */
+
+button {
+  font-family: inherit;
+}
+
+.btn-login,
+.btn-primary,
+.btn-primary-2,
+.btn-secondary,
+.btn-outline,
+.btn-danger,
+.btn-danger-soft,
+.btn-success,
+.btn-main,
+.btn-complaint {
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.btn-login:disabled,
+.btn-primary:disabled,
+.btn-primary-2:disabled,
+.btn-secondary:disabled,
+.btn-outline:disabled,
+.btn-danger:disabled,
+.btn-danger-soft:disabled,
+.btn-success:disabled,
+.btn-main:disabled,
+.btn-complaint:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+/* ===================== RESPONSIVE BASE ===================== */
+
+@media (max-width: 760px) {
+  .site-header {
+    height: auto;
+    min-height: 70px;
+    padding: 12px 16px;
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .site-footer {
+    min-height: 50px;
+    height: auto;
+    padding: 12px;
+    text-align: center;
+  }
+}
