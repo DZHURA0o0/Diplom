@@ -25,10 +25,10 @@ function openWorkerComplaintModal(orderId) {
   const order = getWorkerOrderById(orderId);
   const { modal, text } = getWorkerComplaintModalElements();
 
-  if (!modal || !text) {
-    window.location.href = `/create-complaint.html?orderId=${encodeURIComponent(orderId)}`;
-    return;
-  }
+ if (!modal || !text) {
+  console.error("Worker complaint modal is not found in workerPage.html.");
+  return;
+}
 
   if (!order || !isDoneStatus(order.status)) {
     setWorkerComplaintError("Скаргу можна подати тільки після виконання заявки.");

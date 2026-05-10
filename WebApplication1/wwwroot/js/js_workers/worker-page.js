@@ -61,7 +61,7 @@ function goToComplaintPage(orderId, status) {
     return;
   }
 
-  window.location.href = `/create-complaint.html?orderId=${encodeURIComponent(orderId)}`;
+  console.error("Worker complaint modal is not loaded.");
 }
 
 async function initWorkerPage() {
