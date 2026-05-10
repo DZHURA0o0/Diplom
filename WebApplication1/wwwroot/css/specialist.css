@@ -159,8 +159,6 @@
    ========================================================= */
 
 .btn-action,
-.btn-outline,
-.btn-danger-soft,
 .specialist-tab,
 .specialist-mini-filter {
   cursor: pointer;
@@ -175,24 +173,18 @@
 }
 
 .btn-action:hover,
-.btn-outline:hover,
-.btn-danger-soft:hover,
 .specialist-tab:hover,
 .specialist-mini-filter:hover {
   transform: translateY(-1px);
 }
 
 .btn-action:active,
-.btn-outline:active,
-.btn-danger-soft:active,
 .specialist-tab:active,
 .specialist-mini-filter:active {
   transform: translateY(0);
 }
 
-.btn-action:disabled,
-.btn-outline:disabled,
-.btn-danger-soft:disabled {
+.btn-action:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   pointer-events: none;
@@ -219,54 +211,6 @@
 
 .btn-action.secondary:hover {
   background: rgba(255, 255, 255, 0.18);
-}
-
-.btn-outline,
-.btn-danger-soft {
-  min-height: 44px;
-  padding: 0 20px;
-  border-radius: var(--sp-radius);
-  border: 1px solid transparent;
-  box-shadow: var(--sp-shadow-sm);
-}
-
-.btn-outline {
-  color: var(--sp-text);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.14),
-    rgba(255, 255, 255, 0.08)
-  );
-  border-color: var(--sp-border-light);
-}
-
-.btn-outline:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.11)
-  );
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-}
-
-.btn-danger-soft {
-  color: #ffd4d4;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 96, 96, 0.2),
-    rgba(255, 96, 96, 0.1)
-  );
-  border-color: rgba(255, 96, 96, 0.2);
-}
-
-.btn-danger-soft:hover {
-  color: var(--sp-text);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 96, 96, 0.3),
-    rgba(255, 96, 96, 0.14)
-  );
-  box-shadow: 0 10px 22px rgba(255, 96, 96, 0.18);
 }
 
 /* =========================================================
@@ -1492,15 +1436,8 @@
     width: 100%;
   }
 
-  .btn-outline,
-  .btn-danger-soft {
-    flex: 1 1 auto;
-    min-width: 140px;
-  }
-
   .specialist-analytics-filter label,
-  .specialist-analytics-filter input,
-  .specialist-analytics-filter .btn-outline {
+  .specialist-analytics-filter input {
     width: 100%;
   }
 
@@ -1566,9 +1503,7 @@
   }
 
   .specialist-filter,
-  .specialist-filter select,
-  .btn-outline,
-  .btn-danger-soft {
+  .specialist-filter select {
     width: 100%;
   }
 
