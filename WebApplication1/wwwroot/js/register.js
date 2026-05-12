@@ -18,9 +18,7 @@ const officeInput = document.getElementById("officeNumber");
 const successModal = document.getElementById("successModal");
 const modalOkBtn = document.getElementById("modalOkBtn");
 
-form.addEventListener("submit", doRegister);
-
-[
+const inputs = [
   fullNameInput,
   loginInput,
   passwordInput,
@@ -32,41 +30,58 @@ form.addEventListener("submit", doRegister);
   workshopInput,
   floorInput,
   officeInput
-].forEach(x => x?.addEventListener("input", checkFields));
+];
+
+form?.addEventListener("submit", doRegister);
+
+inputs.forEach(input => {
+  input?.addEventListener("input", checkFields);
+});
 
 modalOkBtn?.addEventListener("click", () => {
   window.location.href = "/index.html";
 });
 
-btn.disabled = true;
+checkFields();
+
+function getFormData() {
+  return {
+    fullName: fullNameInput.value.trim(),
+    login: loginInput.value.trim(),
+    password: passwordInput.value,
+    confirmPassword: confirmPasswordInput.value,
+    position: positionInput.value.trim(),
+    phone: phoneInput.value.trim(),
+    email: emailInput.value.trim(),
+
+    passNumberRaw: passNumberInput.value.trim(),
+    workshopNumberRaw: workshopInput.value.trim(),
+    floorNumberRaw: floorInput.value.trim(),
+    officeNumberRaw: officeInput.value.trim()
+  };
+}
 
 function checkFields() {
-  const fullName = fullNameInput.value.trim();
-  const login = loginInput.value.trim();
-  const password = passwordInput.value;
-  const confirmPassword = confirmPasswordInput.value;
-  const position = positionInput.value.trim();
-  const phone = phoneInput.value.trim();
-  const email = emailInput.value.trim();
+  const data = getFormData();
 
-  const passNumber = passNumberInput.value.trim();
-  const workshopNumber = workshopInput.value.trim();
-  const floorNumber = floorInput.value.trim();
-  const officeNumber = officeInput.value.trim();
+  const allFilled =
+    data.fullName &&
+    data.login &&
+    data.password &&
+    data.confirmPassword &&
+    data.position &&
+    data.phone &&
+    data.email &&
+    data.passNumberRaw &&
+    data.workshopNumberRaw &&
+    data.floorNumberRaw &&
+    data.officeNumberRaw;
 
-  btn.disabled = !(
-    fullName &&
-    login &&
-    password &&
-    confirmPassword &&
-    position &&
-    phone &&
-    email &&
-    passNumber &&
-    workshopNumber &&
-    floorNumber &&
-    officeNumber
-  );
+  btn.disabled = !allFilled;
+}
+
+function showMessage(message) {
+  out.textContent = message || "";
 }
 
 function showSuccessModal() {
@@ -77,60 +92,115 @@ function showSuccessModal() {
   }, 1500);
 }
 
+function isValidNumber(value) {
+  if (!value) return false;
+
+  const number = Number(value);
+
+  return Number.isInteger(number) && number > 0;
+}
+
+function buildErrorMessage(status, data) {
+  if (typeof data === "string" && data.trim()) {
+    return `Помилка ${status}: ${data}`;
+  }
+
+  if (data?.message) {
+    return `Помилка ${status}: ${data.message}`;
+  }
+
+  if (data?.title && data?.errors) {
+    const errors = Object.values(data.errors)
+      .flat()
+      .join("\n");
+
+    return `Помилка ${status}: ${data.title}\n${errors}`;
+  }
+
+  if (data?.title) {
+    return `Помилка ${status}: ${data.title}`;
+  }
+
+  return `Помилка ${status}: не вдалося виконати реєстрацію`;
+}
+
+async function parseResponse(res) {
+  const text = await res.text();
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 async function doRegister(e) {
   e.preventDefault();
 
-  const fullName = fullNameInput.value.trim();
-  const login = loginInput.value.trim();
-  const password = passwordInput.value;
-  const confirmPassword = confirmPasswordInput.value;
-  const position = positionInput.value.trim();
-  const phone = phoneInput.value.trim();
-  const email = emailInput.value.trim();
-
-  const passNumber = Number(passNumberInput.value);
-  const workshopNumber = Number(workshopInput.value);
-  const floorNumber = Number(floorInput.value);
-  const officeNumber = Number(officeInput.value);
+  const data = getFormData();
 
   if (
-    !fullName ||
-    !login ||
-    !password ||
-    !confirmPassword ||
-    !position ||
-    !phone ||
-    !email ||
-    !passNumberInput.value.trim() ||
-    !workshopInput.value.trim() ||
-    !floorInput.value.trim() ||
-    !officeInput.value.trim()
+    !data.fullName ||
+    !data.login ||
+    !data.password ||
+    !data.confirmPassword ||
+    !data.position ||
+    !data.phone ||
+    !data.email ||
+    !data.passNumberRaw ||
+    !data.workshopNumberRaw ||
+    !data.floorNumberRaw ||
+    !data.officeNumberRaw
   ) {
-    out.textContent = "Заповніть усі поля";
+    showMessage("Заповніть усі поля");
+    checkFields();
     return;
   }
 
-  if (password.length < 4) {
-    out.textContent = "Пароль занадто короткий";
+  if (data.password.length < 4) {
+    showMessage("Пароль занадто короткий");
     return;
   }
 
-  if (password !== confirmPassword) {
-    out.textContent = "Паролі не співпадають";
+  if (data.password !== data.confirmPassword) {
+    showMessage("Паролі не співпадають");
     return;
   }
 
   if (
-    Number.isNaN(passNumber) ||
-    Number.isNaN(workshopNumber) ||
-    Number.isNaN(floorNumber) ||
-    Number.isNaN(officeNumber)
+    !isValidNumber(data.passNumberRaw) ||
+    !isValidNumber(data.workshopNumberRaw) ||
+    !isValidNumber(data.floorNumberRaw) ||
+    !isValidNumber(data.officeNumberRaw)
   ) {
-    out.textContent = "Числові поля заповнені некоректно";
+    showMessage("Числові поля повинні бути додатними цілими числами");
     return;
   }
 
-  out.textContent = "Реєстрація...";
+  const passNumber = Number(data.passNumberRaw);
+  const workshopNumber = Number(data.workshopNumberRaw);
+  const floorNumber = Number(data.floorNumberRaw);
+  const officeNumber = Number(data.officeNumberRaw);
+
+  const requestBody = {
+    FullName: data.fullName,
+    PassNumber: passNumber,
+    RoleInSystem: "WORKER",
+    Login: data.login,
+    Password: data.password,
+    Position: data.position,
+    Phone: data.phone,
+    Email: data.email,
+    FloorNumber: floorNumber,
+    OfficeNumber: officeNumber,
+    WorkshopNumber: workshopNumber
+  };
+
+  showMessage("Реєстрація...");
   btn.disabled = true;
 
   try {
@@ -139,49 +209,32 @@ async function doRegister(e) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        FullName: fullName,
-        PassNumber: passNumber,
-        RoleInSystem: "WORKER",
-        Login: login,
-        Password: password,
-        Position: position,
-        Phone: phone,
-        Email: email,
-        FloorNumber: floorNumber,
-        OfficeNumber: officeNumber,
-        WorkshopNumber: workshopNumber
-      })
+      body: JSON.stringify(requestBody)
     });
 
-    const text = await res.text();
-    let data = null;
+    const responseData = await parseResponse(res);
 
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
-    }
+    console.log("REGISTER STATUS:", res.status);
+    console.log("REGISTER RESPONSE:", responseData);
 
     if (res.status === 409) {
-      out.textContent = "Користувач з таким логіном вже існує";
+      showMessage("Користувач з таким логіном вже існує");
       btn.disabled = false;
       return;
     }
 
     if (!res.ok) {
-      out.textContent =
-        (typeof data === "string" && data) ||
-        data?.message ||
-        "Помилка реєстрації";
+      showMessage(buildErrorMessage(res.status, responseData));
       btn.disabled = false;
       return;
     }
 
-    out.textContent = "";
+    showMessage("");
     showSuccessModal();
-  } catch (e) {
-    out.textContent = "Сервер недоступний";
+
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
+    showMessage("Сервер недоступний");
     btn.disabled = false;
   }
 }
