@@ -7,6 +7,11 @@ function analyticsNumber(value) {
     return Number.isFinite(number) ? String(number) : "0";
 }
 
+function analyticsRawNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+}
+
 function analyticsPercent(value) {
     const number = Number(value);
     return Number.isFinite(number) ? `${number.toFixed(1)}%` : "0%";
@@ -20,6 +25,34 @@ function analyticsClampPercent(value) {
     if (number > 100) return 100;
 
     return number;
+}
+
+function analyticsNormalizeId(value) {
+    if (value === null || value === undefined) return "";
+
+    if (typeof value === "string") {
+        return value.trim();
+    }
+
+    if (typeof value === "object") {
+        return String(
+            value.id ||
+            value.Id ||
+            value._id ||
+            value.$oid ||
+            ""
+        ).trim();
+    }
+
+    return String(value).trim();
+}
+
+function analyticsSetText(id, text) {
+    const el = document.getElementById(id);
+
+    if (el) {
+        el.textContent = text;
+    }
 }
 
 function getTodayInputValue() {
@@ -81,6 +114,46 @@ function analyticsKpi(value) {
     `;
 }
 
+function analyticsBadKpiClass(value) {
+    const number = Number(value);
+
+    if (number <= 10) return "analytics-kpi-good";
+    if (number <= 30) return "analytics-kpi-medium";
+
+    return "analytics-kpi-bad";
+}
+
+function analyticsBadKpi(value) {
+    return `
+        <span class="analytics-kpi ${analyticsBadKpiClass(value)}">
+            ${escapeHtml(analyticsPercent(value))}
+        </span>
+    `;
+}
+
+function analyticsFormatServiceType(value) {
+    if (typeof formatServiceType === "function") {
+        return formatServiceType(value);
+    }
+
+    const key = String(value || "").trim().toUpperCase();
+
+    const labels = {
+        ELECTRICAL: "Електроживлення / електрика",
+        PC_PROBLEM: "Проблема з комп’ютером",
+        PRINTER_PROBLEM: "Проблема з принтером",
+        SOFTWARE_BUG: "Баг програмного забезпечення",
+        INTERNET: "Інтернет / мережа",
+        SEAL_DAMAGE: "Відсутня пломба / пошкоджена",
+        AUDIO_VIDEO: "Проблема з відео/аудіо обладнанням",
+        PLUMBING: "Сантехніка",
+        HEATING: "Опалення",
+        OTHER: "Інше"
+    };
+
+    return labels[key] || value || "—";
+}
+
 /* ===================== FILTERS ===================== */
 
 function initBossAnalyticsFilters() {
@@ -104,8 +177,30 @@ function getAnalyticsFilters() {
     return {
         from: document.getElementById("analyticsFrom")?.value || "",
         to: document.getElementById("analyticsTo")?.value || "",
-        specialistId: document.getElementById("analyticsSpecialistFilter")?.value || ""
+        specialistId: analyticsNormalizeId(
+            document.getElementById("analyticsSpecialistFilter")?.value || ""
+        )
     };
+}
+
+function getSelectedAnalyticsSpecialistId() {
+    return analyticsNormalizeId(
+        document.getElementById("analyticsSpecialistFilter")?.value || ""
+    );
+}
+
+function getSelectedSpecialistNameById(specialistId) {
+    const select = document.getElementById("analyticsSpecialistFilter");
+
+    if (!select || !specialistId) {
+        return "—";
+    }
+
+    const option = Array.from(select.options).find(x =>
+        analyticsNormalizeId(x.value) === analyticsNormalizeId(specialistId)
+    );
+
+    return option?.textContent || specialistId;
 }
 
 async function fillAnalyticsSpecialistsFilter() {
@@ -128,9 +223,22 @@ async function fillAnalyticsSpecialistsFilter() {
 
         specialists
             .map(specialist => ({
-                id: specialist.id || specialist._id || "",
-                fullName: specialist.fullName || specialist.full_name || specialist.login || "—",
-                accountStatus: specialist.accountStatus || specialist.account_status || ""
+                id: analyticsNormalizeId(
+                    specialist.id ||
+                    specialist.Id ||
+                    specialist._id
+                ),
+                fullName:
+                    specialist.fullName ||
+                    specialist.FullName ||
+                    specialist.full_name ||
+                    specialist.login ||
+                    specialist.Login ||
+                    "—",
+                accountStatus:
+                    specialist.accountStatus ||
+                    specialist.account_status ||
+                    ""
             }))
             .filter(specialist => specialist.id)
             .sort((a, b) => String(a.fullName).localeCompare(String(b.fullName), "uk"))
@@ -147,6 +255,234 @@ async function fillAnalyticsSpecialistsFilter() {
         console.error(e);
         setStatus("Не вдалося завантажити список спеціалістів: " + e.message, true);
     }
+}
+
+/* ===================== MODE TITLES ===================== */
+
+function setAnalyticsModeTitles(selectedSpecialist = null) {
+    if (selectedSpecialist) {
+        analyticsSetText(
+            "analyticsChartsTitle",
+            "Графічне представлення аналітики спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsChartsSubtitle",
+            "Візуалізація показників по вибраному спеціалісту за обраний період"
+        );
+
+        analyticsSetText(
+            "chartOrdersStatusTitle",
+            "Стан заявок спеціаліста"
+        );
+
+        analyticsSetText(
+            "chartOrdersStatusSubtitle",
+            "Розподіл заявок вибраного спеціаліста за основними показниками"
+        );
+
+        analyticsSetText(
+            "chartSpecialistShareTitle",
+            "Частка вибраного спеціаліста"
+        );
+
+        analyticsSetText(
+            "chartSpecialistShareSubtitle",
+            "Внесок спеціаліста у виконані заявки відділу"
+        );
+
+        analyticsSetText(
+            "chartServiceTypesTitle",
+            "Типи звернень спеціаліста"
+        );
+
+        analyticsSetText(
+            "chartServiceTypesSubtitle",
+            "Категорії заявок, які були призначені вибраному спеціалісту"
+        );
+
+        analyticsSetText(
+            "chartLocationsTitle",
+            "Локації заявок спеціаліста"
+        );
+
+        analyticsSetText(
+            "chartLocationsSubtitle",
+            "Де знаходились заявки вибраного спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsBonusTitle",
+            "Оцінка вибраного спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsBonusSubtitle",
+            "Показує індивідуальний рейтинг, виконання, скарги та частку вибраного спеціаліста серед усіх виконаних заявок"
+        );
+
+        analyticsSetText(
+            "analyticsSpecialistsTitle",
+            "Показники вибраного спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsSpecialistsSubtitle",
+            "У таблиці відображено тільки вибраного спеціаліста за обраний період"
+        );
+
+        analyticsSetText(
+            "analyticsComplainersTitle",
+            "Хто подавав скарги по цьому спеціалісту"
+        );
+
+        analyticsSetText(
+            "analyticsComplainersSubtitle",
+            "Показує скарги працівників по заявках, які були призначені вибраному спеціалісту"
+        );
+
+        analyticsSetText(
+            "analyticsServiceTypesTitle",
+            "Типи звернень спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsServiceTypesSubtitle",
+            "Які типи заявок найчастіше обробляв вибраний спеціаліст"
+        );
+
+        analyticsSetText(
+            "analyticsRequestersTitle",
+            "Хто створював заявки для цього спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsRequestersSubtitle",
+            "Працівники, заявки яких були призначені вибраному спеціалісту"
+        );
+
+        analyticsSetText(
+            "analyticsLocationsTitle",
+            "Локації заявок спеціаліста"
+        );
+
+        analyticsSetText(
+            "analyticsLocationsSubtitle",
+            "Де знаходились заявки, які обробляв вибраний спеціаліст"
+        );
+
+        return;
+    }
+
+    analyticsSetText(
+        "analyticsChartsTitle",
+        "Графічне представлення аналітики"
+    );
+
+    analyticsSetText(
+        "analyticsChartsSubtitle",
+        "Візуалізація основних показників для швидкого аналізу стану заявок"
+    );
+
+    analyticsSetText(
+        "chartOrdersStatusTitle",
+        "Стан заявок"
+    );
+
+    analyticsSetText(
+        "chartOrdersStatusSubtitle",
+        "Розподіл заявок за основними показниками"
+    );
+
+    analyticsSetText(
+        "chartSpecialistShareTitle",
+        "Частка спеціалістів"
+    );
+
+    analyticsSetText(
+        "chartSpecialistShareSubtitle",
+        "Внесок спеціалістів у виконані заявки"
+    );
+
+    analyticsSetText(
+        "chartServiceTypesTitle",
+        "Типи звернень"
+    );
+
+    analyticsSetText(
+        "chartServiceTypesSubtitle",
+        "Найпопулярніші категорії заявок"
+    );
+
+    analyticsSetText(
+        "chartLocationsTitle",
+        "Проблемні локації"
+    );
+
+    analyticsSetText(
+        "chartLocationsSubtitle",
+        "Де найчастіше створюються заявки"
+    );
+
+    analyticsSetText(
+        "analyticsBonusTitle",
+        "Рекомендація на премію"
+    );
+
+    analyticsSetText(
+        "analyticsBonusSubtitle",
+        "Система пропонує кандидата на основі частки виконаних заявок, відсотка виконання та рівня скарг"
+    );
+
+    analyticsSetText(
+        "analyticsSpecialistsTitle",
+        "Ефективність спеціалістів"
+    );
+
+    analyticsSetText(
+        "analyticsSpecialistsSubtitle",
+        "Частка показує, який відсоток від усіх виконаних заявок за період виконав конкретний спеціаліст"
+    );
+
+    analyticsSetText(
+        "analyticsComplainersTitle",
+        "Хто найчастіше подає скарги"
+    );
+
+    analyticsSetText(
+        "analyticsComplainersSubtitle",
+        "Показує частоту скарг працівника відносно його заявок та його частку серед усіх скарг за період"
+    );
+
+    analyticsSetText(
+        "analyticsServiceTypesTitle",
+        "Типи звернень"
+    );
+
+    analyticsSetText(
+        "analyticsServiceTypesSubtitle",
+        "Які послуги найчастіше замовляють працівники"
+    );
+
+    analyticsSetText(
+        "analyticsRequestersTitle",
+        "Хто найчастіше подає заявки"
+    );
+
+    analyticsSetText(
+        "analyticsRequestersSubtitle",
+        "Частка показує, який відсоток від усіх заявок за період створив конкретний працівник"
+    );
+
+    analyticsSetText(
+        "analyticsLocationsTitle",
+        "Де найчастіше трапляються поломки"
+    );
+
+    analyticsSetText(
+        "analyticsLocationsSubtitle",
+        "Частка показує, який відсоток від усіх заявок припадає на конкретну локацію"
+    );
 }
 
 /* ===================== NORMALIZATION ===================== */
@@ -171,8 +507,22 @@ function normalizeAnalytics(data = {}) {
 
 function normalizeSpecialistAnalytics(item = {}) {
     return {
-        specialistId: item.specialistId || item.specialist_id || "",
-        fullName: item.fullName || item.full_name || item.specialistName || item.specialist_name || "—",
+        specialistId: analyticsNormalizeId(
+            item.specialistId ||
+            item.SpecialistId ||
+            item.specialist_id ||
+            item.id ||
+            item.Id ||
+            item._id ||
+            ""
+        ),
+        fullName:
+            item.fullName ||
+            item.FullName ||
+            item.full_name ||
+            item.specialistName ||
+            item.specialist_name ||
+            "—",
         assignedCount: item.assignedCount ?? item.assigned_count ?? 0,
         completedCount: item.completedCount ?? item.completed_count ?? 0,
         activeCount: item.activeCount ?? item.active_count ?? 0,
@@ -180,7 +530,7 @@ function normalizeSpecialistAnalytics(item = {}) {
         reworkCount: item.reworkCount ?? item.rework_count ?? 0,
         completionRatePercent: item.completionRatePercent ?? item.completion_rate_percent ?? 0,
         complaintRatePercent: item.complaintRatePercent ?? item.complaint_rate_percent ?? 0,
-        efficiencyPercent: item.efficiencyPercent ?? item.efficiency_percent ?? 0
+        efficiencyPercent: item.efficiencyPercent ?? item.efficiency_percent ?? item.sharePercent ?? item.share_percent ?? 0
     };
 }
 
@@ -238,7 +588,7 @@ function normalizeBonusRecommendation(item) {
 
     return {
         hasCandidate: item.hasCandidate ?? item.has_candidate ?? false,
-        specialistId: item.specialistId || item.specialist_id || "",
+        specialistId: analyticsNormalizeId(item.specialistId || item.specialist_id || ""),
         fullName: item.fullName || item.full_name || "—",
         ratingPercent: item.ratingPercent ?? item.rating_percent ?? 0,
         completedCount: item.completedCount ?? item.completed_count ?? 0,
@@ -249,6 +599,109 @@ function normalizeBonusRecommendation(item) {
         complaintRatePercent: item.complaintRatePercent ?? item.complaint_rate_percent ?? 0,
         reason: item.reason || "Немає пояснення рекомендації."
     };
+}
+
+/* ===================== SELECTED SPECIALIST LOGIC ===================== */
+
+function findSpecialistInAnalytics(analytics, specialistId) {
+    const selectedId = analyticsNormalizeId(specialistId);
+
+    if (!selectedId) {
+        return null;
+    }
+
+    const rows = Array.isArray(analytics.specialists)
+        ? analytics.specialists.map(normalizeSpecialistAnalytics)
+        : [];
+
+    return rows.find(x =>
+        analyticsNormalizeId(x.specialistId) === selectedId
+    ) || null;
+}
+
+function buildSelectedSpecialistAnalytics(personalAnalytics, overallAnalytics, specialistId) {
+    const selectedId = analyticsNormalizeId(specialistId);
+
+    const personalRow = findSpecialistInAnalytics(personalAnalytics, selectedId);
+    const overallRow = findSpecialistInAnalytics(overallAnalytics, selectedId);
+
+    const assignedCount =
+        personalRow?.assignedCount ??
+        personalAnalytics.totalOrders ??
+        0;
+
+    const completedCount =
+        personalRow?.completedCount ??
+        personalAnalytics.completedOrders ??
+        0;
+
+    const activeCount =
+        personalRow?.activeCount ??
+        personalAnalytics.activeOrders ??
+        0;
+
+    const complaintsCount =
+        personalRow?.complaintsCount ??
+        personalAnalytics.complaintsCount ??
+        0;
+
+    const reworkCount =
+        personalRow?.reworkCount ??
+        personalAnalytics.reworkCount ??
+        0;
+
+    const completionRatePercent =
+        personalRow?.completionRatePercent ??
+        (
+            Number(assignedCount) > 0
+                ? Number(completedCount) / Number(assignedCount) * 100
+                : 0
+        );
+
+    const complaintRatePercent =
+        personalRow?.complaintRatePercent ??
+        (
+            Number(assignedCount) > 0
+                ? Number(complaintsCount) / Number(assignedCount) * 100
+                : 0
+        );
+
+    const efficiencyPercent =
+        overallRow?.efficiencyPercent ??
+        0;
+
+    return {
+        specialistId: selectedId,
+        fullName:
+            overallRow?.fullName ||
+            personalRow?.fullName ||
+            getSelectedSpecialistNameById(selectedId),
+
+        assignedCount,
+        completedCount,
+        activeCount,
+        complaintsCount,
+        reworkCount,
+        completionRatePercent,
+        complaintRatePercent,
+        efficiencyPercent
+    };
+}
+
+function calculateSelectedSpecialistRating(item) {
+    const efficiency = analyticsRawNumber(item.efficiencyPercent);
+    const completionRate = analyticsRawNumber(item.completionRatePercent);
+    const complaintRate = analyticsRawNumber(item.complaintRatePercent);
+
+    return 0.4 * efficiency + 0.4 * completionRate + 0.2 * (100 - complaintRate);
+}
+
+function isSpecialistBonusEligible(item) {
+    return (
+        analyticsRawNumber(item.assignedCount) > 0 &&
+        analyticsRawNumber(item.completedCount) > 0 &&
+        analyticsRawNumber(item.complaintRatePercent) <= 30
+    );
 }
 
 /* ===================== SUMMARY ===================== */
@@ -262,9 +715,22 @@ function getAnalyticsSummaryCard(label, value) {
     `;
 }
 
-function renderAnalyticsSummary(data) {
+function renderAnalyticsSummary(data, selectedSpecialist = null) {
     const container = document.getElementById("analyticsSummary");
     if (!container) return;
+
+    if (selectedSpecialist) {
+        container.innerHTML = [
+            getAnalyticsSummaryCard("Заявки спеціаліста", analyticsNumber(selectedSpecialist.assignedCount)),
+            getAnalyticsSummaryCard("Виконано", analyticsNumber(selectedSpecialist.completedCount)),
+            getAnalyticsSummaryCard("Активні", analyticsNumber(selectedSpecialist.activeCount)),
+            getAnalyticsSummaryCard("Скарги", analyticsNumber(selectedSpecialist.complaintsCount)),
+            getAnalyticsSummaryCard("Переробки", analyticsNumber(selectedSpecialist.reworkCount)),
+            getAnalyticsSummaryCard("Частка серед виконаних", analyticsPercent(selectedSpecialist.efficiencyPercent))
+        ].join("");
+
+        return;
+    }
 
     container.innerHTML = [
         getAnalyticsSummaryCard("Усього заявок", analyticsNumber(data.totalOrders)),
@@ -329,7 +795,23 @@ function renderOrdersStatusChart(analytics) {
     );
 }
 
-function renderSpecialistShareChart(analytics) {
+function renderSpecialistShareChart(analytics, selectedSpecialist = null) {
+    if (selectedSpecialist) {
+        renderHorizontalBarChart(
+            "chartSpecialistShare",
+            [
+                {
+                    label: selectedSpecialist.fullName,
+                    value: selectedSpecialist.completedCount,
+                    percent: selectedSpecialist.efficiencyPercent
+                }
+            ],
+            "Немає виконаних заявок по вибраному спеціалісту"
+        );
+
+        return;
+    }
+
     const rows = (Array.isArray(analytics.specialists) ? analytics.specialists : [])
         .map(normalizeSpecialistAnalytics)
         .filter(item => Number(item.completedCount) > 0)
@@ -353,7 +835,7 @@ function renderServiceTypesChart(analytics) {
         .sort((a, b) => Number(b.count) - Number(a.count))
         .slice(0, 5)
         .map(item => ({
-            label: formatServiceType(item.serviceType),
+            label: analyticsFormatServiceType(item.serviceType),
             value: item.count,
             percent: total > 0 ? item.count / total * 100 : 0
         }));
@@ -376,9 +858,9 @@ function renderLocationsChart(analytics) {
     renderHorizontalBarChart("chartLocations", rows, "Немає даних по локаціях");
 }
 
-function renderAnalyticsCharts(analytics) {
+function renderAnalyticsCharts(analytics, selectedSpecialist = null) {
     renderOrdersStatusChart(analytics);
-    renderSpecialistShareChart(analytics);
+    renderSpecialistShareChart(analytics, selectedSpecialist);
     renderServiceTypesChart(analytics);
     renderLocationsChart(analytics);
 }
@@ -388,6 +870,17 @@ function renderAnalyticsCharts(analytics) {
 function renderBonusRecommendation(item) {
     const container = document.getElementById("analyticsBonusRecommendation");
     if (!container) return;
+
+    const selectedSpecialistId = getSelectedAnalyticsSpecialistId();
+
+    if (selectedSpecialistId) {
+        container.innerHTML = `
+            <div class="empty-box">
+                Завантаження індивідуальної оцінки спеціаліста...
+            </div>
+        `;
+        return;
+    }
 
     const recommendation = normalizeBonusRecommendation(item);
 
@@ -446,13 +939,88 @@ function renderBonusRecommendation(item) {
     `;
 }
 
+function renderSelectedSpecialistBonusBlock(item) {
+    const container = document.getElementById("analyticsBonusRecommendation");
+    if (!container) return;
+
+    const ratingPercent = calculateSelectedSpecialistRating(item);
+    const eligible = isSpecialistBonusEligible(item);
+
+    const reason = eligible
+        ? "Спеціаліст проходить базові умови преміювання: має призначені та виконані заявки, а рівень скарг не перевищує 30%."
+        : "Спеціаліст не проходить базові умови преміювання або має недостатньо даних за вибраний період.";
+
+    container.innerHTML = `
+        <div class="order-details-grid">
+            <div class="order-detail-field">
+                <div class="order-detail-label">Оцінка вибраного спеціаліста</div>
+                <div class="order-detail-value">${escapeHtml(item.fullName)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Індивідуальний рейтинг</div>
+                <div class="order-detail-value">${analyticsKpi(ratingPercent)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Призначено</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(item.assignedCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Виконано</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(item.completedCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Активні</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(item.activeCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Переробки</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(item.reworkCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Скарги</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(item.complaintsCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Частка серед виконаних</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(item.efficiencyPercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">% виконання</div>
+                <div class="order-detail-value">${analyticsKpi(item.completionRatePercent)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">% скарг</div>
+                <div class="order-detail-value">${analyticsBadKpi(item.complaintRatePercent)}</div>
+            </div>
+
+            <div class="order-detail-field full">
+                <div class="order-detail-label">Пояснення</div>
+                <div class="order-detail-value long-text">${escapeHtml(reason)}</div>
+            </div>
+        </div>
+    `;
+}
+
 /* ===================== TABLE RENDERERS ===================== */
 
-function renderSpecialistsAnalytics(items) {
+function renderSpecialistsAnalytics(items, selectedSpecialist = null) {
     const body = document.getElementById("analyticsSpecialists");
     if (!body) return;
 
-    const rows = Array.isArray(items) ? items.map(normalizeSpecialistAnalytics) : [];
+    let rows = Array.isArray(items) ? items.map(normalizeSpecialistAnalytics) : [];
+
+    if (selectedSpecialist) {
+        rows = [selectedSpecialist];
+    }
 
     if (rows.length === 0) {
         setTableEmpty(body, 9, "Немає даних по спеціалістах");
@@ -595,7 +1163,7 @@ function renderServiceTypes(items) {
             tr.className = "main-row";
 
             tr.innerHTML = `
-                <td>${escapeHtml(formatServiceType(item.serviceType))}</td>
+                <td>${escapeHtml(analyticsFormatServiceType(item.serviceType))}</td>
                 <td>${escapeHtml(analyticsNumber(item.count))}</td>
                 <td>${escapeHtml(analyticsNumber(item.completedCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.complaintsCount))}</td>
@@ -607,13 +1175,22 @@ function renderServiceTypes(items) {
 
 /* ===================== MAIN RENDER ===================== */
 
-function renderAnalytics(data) {
+function renderAnalytics(data, context = {}) {
     const analytics = normalizeAnalytics(data || {});
+    const selectedSpecialist = context.selectedSpecialist || null;
 
-    renderAnalyticsSummary(analytics);
-    renderAnalyticsCharts(analytics);
-    renderBonusRecommendation(analytics.bonusRecommendation);
-    renderSpecialistsAnalytics(analytics.specialists);
+    setAnalyticsModeTitles(selectedSpecialist);
+
+    renderAnalyticsSummary(analytics, selectedSpecialist);
+    renderAnalyticsCharts(analytics, selectedSpecialist);
+
+    if (selectedSpecialist) {
+        renderSelectedSpecialistBonusBlock(selectedSpecialist);
+    } else {
+        renderBonusRecommendation(analytics.bonusRecommendation);
+    }
+
+    renderSpecialistsAnalytics(analytics.specialists, selectedSpecialist);
     renderTopComplainers(analytics.topComplainers);
     renderTopRequesters(analytics.topRequesters);
     renderTopLocations(analytics.topLocations);
@@ -638,10 +1215,33 @@ async function loadAnalytics() {
             return;
         }
 
+        if (filters.specialistId) {
+            const [overallRaw, personalRaw] = await Promise.all([
+                fetchBossAnalytics(filters.from, filters.to, ""),
+                fetchBossAnalytics(filters.from, filters.to, filters.specialistId)
+            ]);
+
+            const overallAnalytics = normalizeAnalytics(overallRaw || {});
+            const personalAnalytics = normalizeAnalytics(personalRaw || {});
+
+            const selectedSpecialist = buildSelectedSpecialistAnalytics(
+                personalAnalytics,
+                overallAnalytics,
+                filters.specialistId
+            );
+
+            renderAnalytics(personalRaw, {
+                selectedSpecialist
+            });
+
+            setStatus("Аналітику вибраного спеціаліста завантажено");
+            return;
+        }
+
         const data = await fetchBossAnalytics(
             filters.from,
             filters.to,
-            filters.specialistId
+            ""
         );
 
         renderAnalytics(data);
@@ -653,3 +1253,10 @@ async function loadAnalytics() {
         setStatus("Помилка завантаження аналітики: " + e.message, true);
     }
 }
+
+/* ===================== GLOBAL EXPORTS ===================== */
+
+window.initBossAnalyticsFilters = initBossAnalyticsFilters;
+window.resetAnalyticsFilters = resetAnalyticsFilters;
+window.loadAnalytics = loadAnalytics;
+window.fillAnalyticsSpecialistsFilter = fillAnalyticsSpecialistsFilter;
