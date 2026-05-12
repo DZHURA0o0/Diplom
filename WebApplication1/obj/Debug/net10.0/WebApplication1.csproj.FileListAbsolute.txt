@@ -104,7 +104,6 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\WebAppl
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\ref\WebApplication1.dll
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\k8c6j29xnq-{0}-4mu6etl7vx-4mu6etl7vx.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\j3ixr6gvk7-{0}-qr38xcg2dk-qr38xcg2dk.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zrd2kf6j2u-{0}-u6vx5xdzpa-u6vx5xdzpa.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\bin\Debug\net10.0\BouncyCastle.Cryptography.dll
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\bin\Debug\net10.0\MailKit.dll
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\bin\Debug\net10.0\MimeKit.dll
@@ -202,7 +201,6 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compres
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zrsdb4yqjm-{0}-jmkbs99z41-jmkbs99z41.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2pneo29zqs-{0}-f86bdnidoa-f86bdnidoa.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\xuzwmtajel-{0}-pyewd81jan-pyewd81jan.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\sm9b745sgc-{0}-ppj4c5hbhq-ppj4c5hbhq.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\tr0lrx5ftn-{0}-8jn70viiq9-8jn70viiq9.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\vwsu3rborw-{0}-5nptsjfwyk-5nptsjfwyk.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\cqofq8abw3-{0}-7ngrqjxkic-7ngrqjxkic.gz
@@ -215,7 +213,6 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compres
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\086cdi85mw-{0}-bsbj83q5ua-bsbj83q5ua.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2ofne2yakf-{0}-70kusym5l5-70kusym5l5.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\axne3uqopo-{0}-ucpdjygtks-ucpdjygtks.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\x8llxo5xoj-{0}-hz6bcl4si6-hz6bcl4si6.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\9cprdz3sqb-{0}-d62h3cvjlv-d62h3cvjlv.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\h64sk8przr-{0}-ct6c6b4nd1-ct6c6b4nd1.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\rxmunsaplp-{0}-xbb7woawqr-xbb7woawqr.gz
@@ -225,8 +222,11 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compres
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\r9jiz4i3dd-{0}-985uditgsp-985uditgsp.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\2vla5gdojf-{0}-sjp8oocbu8-sjp8oocbu8.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\3eifqrg5dj-{0}-636slfjbeg-636slfjbeg.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-byigq97jar-byigq97jar.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\f5h83a2j14-{0}-tuw6o9mmvt-tuw6o9mmvt.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\wnys8u41kp-{0}-jsux6nwcmf-jsux6nwcmf.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zg7bzm2pp1-{0}-5k6p5i0m45-5k6p5i0m45.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\0hpzxnbmqn-{0}-1mzf9qic1w-1mzf9qic1w.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-9f1chyrurc-9f1chyrurc.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\f5h83a2j14-{0}-4d0sjvlkgn-4d0sjvlkgn.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\sm9b745sgc-{0}-5l74e5vws4-5l74e5vws4.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zrd2kf6j2u-{0}-sy5wwvkjay-sy5wwvkjay.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\x8llxo5xoj-{0}-4cuqs5fs0a-4cuqs5fs0a.gz
