@@ -1,11 +1,12 @@
 using WebApplication1.Domain;
 using WebApplication1.Models;
+using DomainOrder = WebApplication1.Domain.Order;
 
-namespace WebApplication1.Repositories;
+namespace WebApplication1.Application.Services.Order;
 
 public static class OrderMapper
 {
-    public static OrderDto ToDto(Order order)
+    public static OrderDto ToDto(DomainOrder order)
     {
         return new OrderDto
         {
@@ -46,7 +47,7 @@ public static class OrderMapper
         };
     }
 
-    public static List<string> GetAllDetailRequestIds(Order order)
+    public static List<string> GetAllDetailRequestIds(DomainOrder order)
     {
         var ids = new List<string>();
 

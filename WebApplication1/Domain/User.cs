@@ -1,6 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
+namespace WebApplication1.Domain;
+
+[BsonIgnoreExtraElements]
 public class User
 {
     [BsonId]

@@ -1,7 +1,7 @@
 using MongoDB.Driver;
 using WebApplication1.Domain;
 
-namespace WebApplication1.Repositories;
+namespace WebApplication1.Infrastructure.Repositories;
 
 public class DetailRequestRepository
 {

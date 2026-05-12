@@ -1,6 +1,7 @@
 using WebApplication1.Application.Services.Order;
+using WebApplication1.Domain;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
+using WebApplication1.Infrastructure.Repositories;
 
 namespace WebApplication1.Application.Services.Users;
 
@@ -10,12 +11,12 @@ public class UserService
     private static readonly string[] AllowedStatuses = { "ACTIVE", "INACTIVE" };
 
     private readonly UserRepository _users;
-    private readonly OrderCommandService _orderCommandService;
+    private readonly OrderService _orderService;
 
-    public UserService(UserRepository users, OrderCommandService orderCommandService)
+    public UserService(UserRepository users, OrderService orderService)
     {
         _users = users;
-        _orderCommandService = orderCommandService;
+        _orderService = orderService;
     }
 
     public Task<List<User>> GetWorkersAsync()
@@ -99,7 +100,7 @@ public class UserService
         var currentRole = Normalize(user.RoleInSystem);
 
         if (newStatus == "INACTIVE" && currentRole == "SPECIALIST")
-            await _orderCommandService.HandleSpecialistDeactivationAsync(userId);
+            await _orderService.HandleSpecialistDeactivationAsync(userId);
 
         await _users.UpdateAccountStatusAsync(userId, newStatus);
         return (true, "Status updated");

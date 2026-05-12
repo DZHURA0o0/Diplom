@@ -241,6 +241,11 @@
             </div>
 
             <div class="analytics-card">
+              <div class="analytics-card-label">Скасовано</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card">
               <div class="analytics-card-label">Скарги</div>
               <div class="analytics-card-value">—</div>
             </div>
@@ -250,8 +255,18 @@
               <div class="analytics-card-value">—</div>
             </div>
 
-            <div class="analytics-card">
-              <div class="analytics-card-label">Найбільша частка</div>
+            <div class="analytics-card analytics-card-wide">
+              <div class="analytics-card-label">Середня частка виконаних</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card analytics-card-wide">
+              <div class="analytics-card-label">Найбільша частка виконаних</div>
+              <div class="analytics-card-value">—</div>
+            </div>
+
+            <div class="analytics-card analytics-card-wide">
+              <div class="analytics-card-label">Найнижча частка виконаних</div>
               <div class="analytics-card-value">—</div>
             </div>
           </div>
@@ -273,7 +288,7 @@
                 <div id="chartOrdersStatus" class="analytics-chart-bars"></div>
               </div>
 
-              <div class="analytics-chart-card">
+              <div class="analytics-chart-card" id="specialistShareChartCard">
                 <div class="analytics-chart-title">Частка спеціалістів</div>
                 <div class="analytics-chart-subtitle">Внесок спеціалістів у виконані заявки</div>
                 <div id="chartSpecialistShare" class="analytics-chart-bars"></div>
@@ -293,12 +308,37 @@
             </div>
           </div>
 
+          <details class="formula-note">
+            <summary>Пам'ятка: як система визначає кандидата на премію</summary>
+            <div class="formula-note-body">
+              <div class="formula-note-subtitle">Позначення</div>
+              <p><strong>V</strong> — кількість виконаних заявок спеціаліста.</p>
+              <p><strong>A</strong> — кількість заявок, призначених спеціалісту.</p>
+              <p><strong>T</strong> — усі виконані заявки відділу за вибраний період.</p>
+              <p><strong>S</strong> — кількість скарг по виконаних заявках спеціаліста.</p>
+
+              <div class="formula-note-subtitle">Формули</div>
+              <p><code>Частка серед виконаних = V / T × 100%</code></p>
+              <p>Показує внесок спеціаліста у загальний обсяг виконаних робіт відділу.</p>
+
+              <p><code>Відсоток виконання = V / A × 100%</code></p>
+              <p>Показує, яку частину призначених заявок спеціаліст уже виконав.</p>
+
+              <p><code>% скарг від виконаних = S / V × 100%</code></p>
+              <p>Скарги рахуються від виконаних заявок, бо працівник може подати скаргу після завершення роботи.</p>
+
+              <p><code>Якість = 100% - % скарг, але не менше 0%</code></p>
+              <p><code>Рейтинг = 0.4 × частка + 0.4 × відсоток виконання + 0.2 × якість</code></p>
+              <p>Кандидат обирається серед спеціалістів, які мають призначені та виконані заявки, а рівень скарг не перевищує 30%.</p>
+            </div>
+          </details>
+
           <div class="analytics-section">
             <div class="analytics-section-head">
               <div>
-                <div class="analytics-section-title">Рекомендація на премію</div>
-                <div class="analytics-section-subtitle">
-                  Система пропонує кандидата на основі частки виконаних заявок, відсотка виконання та рівня скарг
+                <div class="analytics-section-title" id="bonusRecommendationTitle">Рекомендація на премію</div>
+                <div class="analytics-section-subtitle" id="bonusRecommendationSubtitle">
+                  Система пропонує кандидата на основі внеску у виконані заявки, відсотка виконання та скарг від виконаних робіт
                 </div>
               </div>
             </div>
@@ -310,12 +350,28 @@
             </div>
           </div>
 
-          <div class="analytics-section">
+          <details class="formula-note" id="specialistContributionNote">
+            <summary>Пам'ятка: як читати внесок спеціалістів</summary>
+            <div class="formula-note-body">
+              <div class="formula-note-subtitle">Що означають колонки</div>
+              <p><strong>Призначено</strong> — скільки заявок отримав спеціаліст за період.</p>
+              <p><strong>Виконано</strong> — скільки з них завершено зі статусом <code>DONE</code>.</p>
+              <p><strong>Активні</strong> — заявки, які ще не <code>DONE</code> і не <code>CANCELED</code>.</p>
+              <p><strong>Переробки</strong> — заявки у статусах <code>REWORK</code>, <code>REWORK_REVIEW</code> або заявки зі звітом після скарги.</p>
+
+              <div class="formula-note-subtitle">Ключові формули</div>
+              <p><code>Частка серед виконаних = виконано спеціалістом / виконано всім відділом × 100%</code></p>
+              <p><code>Відсоток виконання = виконано спеціалістом / призначено спеціалісту × 100%</code></p>
+              <p><code>% скарг від виконаних = скарги спеціаліста / виконано спеціалістом × 100%</code></p>
+            </div>
+          </details>
+
+          <div class="analytics-section" id="specialistContributionSection">
             <div class="analytics-section-head">
               <div>
-                <div class="analytics-section-title">Ефективність спеціалістів</div>
+                <div class="analytics-section-title">Внесок спеціалістів у виконані заявки</div>
                 <div class="analytics-section-subtitle">
-                  Частка показує, який відсоток від усіх виконаних заявок за період виконав конкретний спеціаліст
+                  Частка показує, який відсоток від усіх виконаних заявок за період виконав конкретний спеціаліст; % скарг рахується від виконаних заявок
                 </div>
               </div>
             </div>
@@ -332,8 +388,8 @@
                       <th>Скарги</th>
                       <th>Переробки</th>
                       <th>% виконання</th>
-                      <th>% скарг</th>
-                      <th>Частка</th>
+                      <th>% скарг від виконаних</th>
+                      <th>Частка серед виконаних</th>
                     </tr>
                   </thead>
                   <tbody id="analyticsSpecialists"></tbody>
@@ -346,8 +402,8 @@
             <div class="analytics-section">
               <div class="analytics-section-head">
                 <div>
-                  <div class="analytics-section-title">Хто найчастіше подає скарги</div>
-                  <div class="analytics-section-subtitle">
+                  <div class="analytics-section-title" id="complainersAnalyticsTitle">Хто найчастіше подає скарги</div>
+                  <div class="analytics-section-subtitle" id="complainersAnalyticsSubtitle">
                     Показує частоту скарг працівника відносно його заявок та його частку серед усіх скарг за період
                   </div>
                 </div>
@@ -374,8 +430,8 @@
             <div class="analytics-section">
               <div class="analytics-section-head">
                 <div>
-                  <div class="analytics-section-title">Типи звернень</div>
-                  <div class="analytics-section-subtitle">
+                  <div class="analytics-section-title" id="serviceTypesAnalyticsTitle">Типи звернень</div>
+                  <div class="analytics-section-subtitle" id="serviceTypesAnalyticsSubtitle">
                     Які послуги найчастіше замовляють працівники
                   </div>
                 </div>
@@ -388,6 +444,7 @@
                       <tr>
                         <th>Тип послуги</th>
                         <th>Кількість</th>
+                        <th>Частка</th>
                         <th>Виконано</th>
                         <th>Скарги</th>
                       </tr>
@@ -403,8 +460,8 @@
             <div class="analytics-section">
               <div class="analytics-section-head">
                 <div>
-                  <div class="analytics-section-title">Хто найчастіше подає заявки</div>
-                  <div class="analytics-section-subtitle">
+                  <div class="analytics-section-title" id="requestersAnalyticsTitle">Хто найчастіше подає заявки</div>
+                  <div class="analytics-section-subtitle" id="requestersAnalyticsSubtitle">
                     Частка показує, який відсоток від усіх заявок за період створив конкретний працівник
                   </div>
                 </div>
@@ -432,8 +489,8 @@
             <div class="analytics-section">
               <div class="analytics-section-head">
                 <div>
-                  <div class="analytics-section-title">Де найчастіше трапляються поломки</div>
-                  <div class="analytics-section-subtitle">
+                  <div class="analytics-section-title" id="locationsAnalyticsTitle">Де найчастіше трапляються поломки</div>
+                  <div class="analytics-section-subtitle" id="locationsAnalyticsSubtitle">
                     Частка показує, який відсоток від усіх заявок припадає на конкретну локацію
                   </div>
                 </div>

@@ -3,8 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using WebApplication1.Domain;
+using WebApplication1.Infrastructure.Repositories;
 using WebApplication1.Models;
-using WebApplication1.Repositories;
 
 namespace WebApplication1.Application.Services.Auth;
 

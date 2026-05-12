@@ -158,7 +158,6 @@
    BUTTONS
    ========================================================= */
 
-.btn-action,
 .specialist-tab,
 .specialist-mini-filter {
   cursor: pointer;
@@ -172,22 +171,14 @@
     border-color 0.2s ease;
 }
 
-.btn-action:hover,
 .specialist-tab:hover,
 .specialist-mini-filter:hover {
   transform: translateY(-1px);
 }
 
-.btn-action:active,
 .specialist-tab:active,
 .specialist-mini-filter:active {
   transform: translateY(0);
-}
-
-.btn-action:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  pointer-events: none;
 }
 
 .btn-action {
@@ -280,10 +271,12 @@
 }
 
 .specialist-filter select,
-.specialist-analytics-filter input,
-.action-textarea,
-.action-input {
-  width: 100%;
+.specialist-analytics-filter input {
+  width: auto;
+  min-width: 220px;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
   border-radius: var(--sp-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: var(--sp-panel-input);
@@ -295,28 +288,21 @@
     box-shadow 0.2s ease;
 }
 
-.specialist-filter select {
-  width: auto;
-  min-width: 220px;
-  height: 44px;
-  padding: 0 14px;
-  font-size: 14px;
-}
-
 .specialist-filter select option {
   color: #000000;
 }
 
-.action-input {
+.action-input,
+.action-textarea {
   min-height: 44px;
   padding: 0 14px;
   font-size: 14px;
+  background: var(--sp-panel-input);
+  color: var(--sp-text);
 }
 
 .action-textarea {
   min-height: 120px;
-  padding: 12px 14px;
-  font-size: 14px;
   line-height: 1.45;
   resize: vertical;
 }
@@ -327,15 +313,11 @@
 }
 
 .specialist-filter select:hover,
-.action-textarea:hover,
-.action-input:hover,
 .specialist-analytics-filter input:hover {
   background: rgba(255, 255, 255, 0.075);
 }
 
 .specialist-filter select:focus,
-.action-textarea:focus,
-.action-input:focus,
 .specialist-analytics-filter input:focus {
   background: var(--sp-panel-input-focus);
   border-color: var(--sp-border-strong);
@@ -1113,8 +1095,36 @@
 
 .specialist-analytics-cards {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
   gap: 10px;
+}
+
+.specialist-formula-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.specialist-formula-note summary {
+  cursor: pointer;
+  color: var(--sp-text);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.specialist-formula-note-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.specialist-formula-note-body strong {
+  color: var(--sp-text);
 }
 
 .specialist-analytics-card,

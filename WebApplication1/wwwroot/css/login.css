@@ -47,10 +47,6 @@
 
 /* ===================== FORM ===================== */
 
-.login-card .input-group {
-  margin-bottom: 15px;
-}
-
 .login-card .input-group label {
   color: var(--login-text);
   font-weight: 700;
@@ -59,6 +55,9 @@
 .login-card .input-group input {
   height: 42px;
   font-size: 14px;
+  border: 1px solid #cccccc;
+  background: #ffffff;
+  color: var(--login-text);
 }
 
 /* ===================== BUTTON ===================== */

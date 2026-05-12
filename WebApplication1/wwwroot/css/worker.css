@@ -55,39 +55,7 @@
   flex-wrap: wrap;
 }
 
-.worker-filter select {
-  min-width: 220px;
-  height: 42px;
-  padding: 0 14px;
-  box-sizing: border-box;
-
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-
-  outline: none;
-  font-size: 14px;
-
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.worker-filter select:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.worker-filter select:focus {
-  border-color: rgba(121, 224, 255, 0.35);
-  box-shadow: 0 0 0 3px rgba(121, 224, 255, 0.08);
-}
-
-.worker-filter select option {
-  color: #000000;
-}
+/* worker-filter select styles are now shared in components.css */
 
 /* ===================== ORDERS LIST ===================== */
 

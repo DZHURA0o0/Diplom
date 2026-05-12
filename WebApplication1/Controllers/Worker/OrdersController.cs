@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Application.Services.Order;
 
-namespace WebApplication1.Controllers.WorkerPageControllers;
+namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/orders")]

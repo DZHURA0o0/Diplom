@@ -129,31 +129,17 @@
 
 .input-group input,
 .input-group textarea {
-  width: 100%;
-  padding: 10px 12px;
-  box-sizing: border-box;
-
   border: 1px solid var(--co-border-control);
   border-radius: var(--co-radius-sm);
-
   background: var(--co-panel);
   color: var(--co-text);
-
   font-size: 13px;
-  outline: none;
-  box-shadow: none;
-
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
 }
 
 .input-group input:focus,
 .input-group textarea:focus,
 .input-group input:focus-visible,
 .input-group textarea:focus-visible {
-  outline: none;
-  box-shadow: none;
   border-color: rgba(255, 255, 255, 0.18);
   background: var(--co-panel-hover);
 }

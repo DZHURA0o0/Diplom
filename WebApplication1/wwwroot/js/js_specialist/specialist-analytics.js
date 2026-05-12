@@ -65,6 +65,7 @@ function normalizeSpecialistAnalyticsSummary(item) {
     totalOrders: item.totalOrders ?? 0,
     completedOrders: item.completedOrders ?? 0,
     activeOrders: item.activeOrders ?? 0,
+    canceledOrders: item.canceledOrders ?? 0,
     complaintsCount: item.complaintsCount ?? 0,
     reworkCount: item.reworkCount ?? 0,
     completionRatePercent: item.completionRatePercent ?? 0,
@@ -149,7 +150,8 @@ function renderSpecialistAnalyticsSummary(containerId, summary) {
     getSpecialistAnalyticsCard("Усього", specialistAnalyticsFormatNumber(summary.totalOrders), "заявок за період"),
     getSpecialistAnalyticsCard("Виконано", specialistAnalyticsFormatNumber(summary.completedOrders), specialistAnalyticsFormatPercent(summary.completionRatePercent)),
     getSpecialistAnalyticsCard("Активні", specialistAnalyticsFormatNumber(summary.activeOrders), "ще в роботі"),
-    getSpecialistAnalyticsCard("Скарги", specialistAnalyticsFormatNumber(summary.complaintsCount), specialistAnalyticsFormatPercent(summary.complaintRatePercent)),
+    getSpecialistAnalyticsCard("Скасовано", specialistAnalyticsFormatNumber(summary.canceledOrders), "закриті без виконання"),
+    getSpecialistAnalyticsCard("Скарги", specialistAnalyticsFormatNumber(summary.complaintsCount), `${specialistAnalyticsFormatPercent(summary.complaintRatePercent)} від виконаних`),
     getSpecialistAnalyticsCard("Переробки", specialistAnalyticsFormatNumber(summary.reworkCount), specialistAnalyticsFormatPercent(summary.reworkRatePercent))
   ].join("");
 }
@@ -198,7 +200,7 @@ function renderSpecialistAnalyticsComparison(comparison) {
     </div>
 
     <div class="specialist-comparison-card">
-      <div class="specialist-comparison-label">Різниця % скарг з відділом</div>
+      <div class="specialist-comparison-label">Різниця % скарг від виконаних з відділом</div>
       <div class="specialist-comparison-value ${specialistAnalyticsCompareClass(comparison.complaintRateDifferencePercent, true)}">
         ${escapeHtml(specialistAnalyticsSignedPercent(comparison.complaintRateDifferencePercent))}
       </div>
@@ -303,7 +305,7 @@ function getWorkerActivityCard(title, item, emptyText, mode) {
       </div>
 
       <div class="specialist-worker-activity-footer muted">
-        <span>% скарг по заявках працівника</span>
+        <span>% скарг від виконаних заявок</span>
         <strong>${escapeHtml(specialistAnalyticsFormatPercent(item.complaintRatePercent))}</strong>
       </div>
     </div>

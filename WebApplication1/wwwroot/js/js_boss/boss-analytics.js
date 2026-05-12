@@ -155,10 +155,18 @@ function normalizeAnalytics(data = {}) {
     return {
         totalOrders: data.totalOrders ?? data.total_orders ?? 0,
         completedOrders: data.completedOrders ?? data.completed_orders ?? 0,
+        canceledOrders: data.canceledOrders ?? data.canceled_orders ?? 0,
         activeOrders: data.activeOrders ?? data.active_orders ?? 0,
         complaintsCount: data.complaintsCount ?? data.complaints_count ?? 0,
         reworkCount: data.reworkCount ?? data.rework_count ?? 0,
+        isPersonalized: data.isPersonalized ?? data.is_personalized ?? false,
+        selectedSpecialistId: data.selectedSpecialistId ?? data.selected_specialist_id ?? "",
+        selectedSpecialistName: data.selectedSpecialistName ?? data.selected_specialist_name ?? "",
         averageEfficiencyPercent: data.averageEfficiencyPercent ?? data.average_efficiency_percent ?? 0,
+        leaderEfficiencyPercent: data.leaderEfficiencyPercent ?? data.leader_efficiency_percent ?? 0,
+        leaderSpecialistName: data.leaderSpecialistName ?? data.leader_specialist_name ?? "",
+        lowestEfficiencyPercent: data.lowestEfficiencyPercent ?? data.lowest_efficiency_percent ?? 0,
+        lowestSpecialistName: data.lowestSpecialistName ?? data.lowest_specialist_name ?? "",
 
         specialists: data.specialists ?? data.specialistAnalytics ?? data.specialist_analytics ?? [],
         topComplainers: data.topComplainers ?? data.top_complainers ?? [],
@@ -223,6 +231,7 @@ function normalizeServiceType(item = {}) {
     return {
         serviceType: item.serviceType || item.service_type || "—",
         count: item.count ?? item.ordersCount ?? item.orders_count ?? 0,
+        sharePercent: item.sharePercent ?? item.share_percent ?? 0,
         completedCount: item.completedCount ?? item.completed_count ?? 0,
         complaintsCount: item.complaintsCount ?? item.complaints_count ?? 0
     };
@@ -253,11 +262,17 @@ function normalizeBonusRecommendation(item) {
 
 /* ===================== SUMMARY ===================== */
 
-function getAnalyticsSummaryCard(label, value) {
+function getAnalyticsSummaryCard(label, value, options = {}) {
+    const className = options.wide ? "analytics-card analytics-card-wide" : "analytics-card";
+    const hint = options.hint
+        ? `<div class="analytics-card-hint">${escapeHtml(options.hint)}</div>`
+        : "";
+
     return `
-        <div class="analytics-card">
+        <div class="${className}">
             <div class="analytics-card-label">${escapeHtml(label)}</div>
             <div class="analytics-card-value">${escapeHtml(value)}</div>
+            ${hint}
         </div>
     `;
 }
@@ -266,13 +281,76 @@ function renderAnalyticsSummary(data) {
     const container = document.getElementById("analyticsSummary");
     if (!container) return;
 
+    const specialists = Array.isArray(data.specialists)
+        ? data.specialists.map(normalizeSpecialistAnalytics)
+        : [];
+
+    const selected = data.isPersonalized
+        ? specialists[0] || null
+        : null;
+
+    const secondRowCards = selected
+        ? [
+            getAnalyticsSummaryCard(
+                "Частка спеціаліста",
+                analyticsPercent(selected.efficiencyPercent),
+                {
+                    wide: true,
+                    hint: selected.fullName
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "Відсоток виконання",
+                analyticsPercent(selected.completionRatePercent),
+                {
+                    wide: true,
+                    hint: `${analyticsNumber(selected.completedCount)} з ${analyticsNumber(selected.assignedCount)} призначених`
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "% скарг від виконаних",
+                analyticsPercent(selected.complaintRatePercent),
+                {
+                    wide: true,
+                    hint: `${analyticsNumber(selected.complaintsCount)} скарг`
+                }
+            )
+        ]
+        : [
+            getAnalyticsSummaryCard(
+                "Середня частка виконаних",
+                analyticsPercent(data.averageEfficiencyPercent),
+                {
+                    wide: true,
+                    hint: "Серед спеціалістів із призначеними заявками"
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "Найбільша частка виконаних",
+                analyticsPercent(data.leaderEfficiencyPercent),
+                {
+                    wide: true,
+                    hint: data.leaderSpecialistName || "—"
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "Найнижча частка виконаних",
+                analyticsPercent(data.lowestEfficiencyPercent),
+                {
+                    wide: true,
+                    hint: data.lowestSpecialistName || "—"
+                }
+            )
+        ];
+
     container.innerHTML = [
         getAnalyticsSummaryCard("Усього заявок", analyticsNumber(data.totalOrders)),
         getAnalyticsSummaryCard("Виконано", analyticsNumber(data.completedOrders)),
         getAnalyticsSummaryCard("Активні", analyticsNumber(data.activeOrders)),
+        getAnalyticsSummaryCard("Скасовано", analyticsNumber(data.canceledOrders)),
         getAnalyticsSummaryCard("Скарги", analyticsNumber(data.complaintsCount)),
         getAnalyticsSummaryCard("Переробки", analyticsNumber(data.reworkCount)),
-        getAnalyticsSummaryCard("Середня ефективність", analyticsPercent(data.averageEfficiencyPercent))
+        ...secondRowCards
     ].join("");
 }
 
@@ -322,6 +400,7 @@ function renderOrdersStatusChart(analytics) {
             { label: "Усього заявок", value: analytics.totalOrders, percent: total > 0 ? 100 : 0 },
             { label: "Виконано", value: analytics.completedOrders, percent: total > 0 ? analytics.completedOrders / total * 100 : 0 },
             { label: "Активні", value: analytics.activeOrders, percent: total > 0 ? analytics.activeOrders / total * 100 : 0 },
+            { label: "Скасовано", value: analytics.canceledOrders, percent: total > 0 ? analytics.canceledOrders / total * 100 : 0 },
             { label: "Скарги", value: analytics.complaintsCount, percent: total > 0 ? analytics.complaintsCount / total * 100 : 0 },
             { label: "Переробки", value: analytics.reworkCount, percent: total > 0 ? analytics.reworkCount / total * 100 : 0 }
         ],
@@ -383,6 +462,74 @@ function renderAnalyticsCharts(analytics) {
     renderLocationsChart(analytics);
 }
 
+function setText(id, text) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = text;
+}
+
+function setAnalyticsPersonalMode(analytics) {
+    const isPersonalized = !!analytics.isPersonalized;
+    const selectedName = analytics.selectedSpecialistName || "вибраного спеціаліста";
+
+    ["specialistShareChartCard", "specialistContributionNote", "specialistContributionSection"]
+        .forEach(id => document.getElementById(id)?.classList.toggle("hidden", isPersonalized));
+
+    setText(
+        "bonusRecommendationTitle",
+        isPersonalized ? "Оцінка вибраного спеціаліста для премії" : "Рекомендація на премію"
+    );
+    setText(
+        "bonusRecommendationSubtitle",
+        isPersonalized
+            ? `Показує, чи відповідає ${selectedName} умовам рекомендації на премію за обраний період`
+            : "Система пропонує кандидата на основі внеску у виконані заявки, відсотка виконання та скарг від виконаних робіт"
+    );
+
+    setText(
+        "complainersAnalyticsTitle",
+        isPersonalized ? "Хто подає скарги по заявках спеціаліста" : "Хто найчастіше подає скарги"
+    );
+    setText(
+        "complainersAnalyticsSubtitle",
+        isPersonalized
+            ? `Працівники, які подавали скарги по заявках, призначених спеціалісту ${selectedName}`
+            : "Показує частоту скарг працівника відносно його заявок та його частку серед усіх скарг за період"
+    );
+
+    setText(
+        "serviceTypesAnalyticsTitle",
+        isPersonalized ? "Типи звернень спеціаліста" : "Типи звернень"
+    );
+    setText(
+        "serviceTypesAnalyticsSubtitle",
+        isPersonalized
+            ? `Категорії заявок, які виконував або виконує ${selectedName}`
+            : "Які послуги найчастіше замовляють працівники"
+    );
+
+    setText(
+        "requestersAnalyticsTitle",
+        isPersonalized ? "Хто створює заявки для спеціаліста" : "Хто найчастіше подає заявки"
+    );
+    setText(
+        "requestersAnalyticsSubtitle",
+        isPersonalized
+            ? `Працівники, чиї заявки були призначені спеціалісту ${selectedName}`
+            : "Частка показує, який відсоток від усіх заявок за період створив конкретний працівник"
+    );
+
+    setText(
+        "locationsAnalyticsTitle",
+        isPersonalized ? "Проблемні локації спеціаліста" : "Де найчастіше трапляються поломки"
+    );
+    setText(
+        "locationsAnalyticsSubtitle",
+        isPersonalized
+            ? `Локації заявок, призначених спеціалісту ${selectedName}`
+            : "Частка показує, який відсоток від усіх заявок припадає на конкретну локацію"
+    );
+}
+
 /* ===================== BONUS ===================== */
 
 function renderBonusRecommendation(item) {
@@ -424,7 +571,7 @@ function renderBonusRecommendation(item) {
             </div>
 
             <div class="order-detail-field">
-                <div class="order-detail-label">Частка</div>
+                <div class="order-detail-label">Частка серед виконаних</div>
                 <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.sharePercent))}</div>
             </div>
 
@@ -434,7 +581,7 @@ function renderBonusRecommendation(item) {
             </div>
 
             <div class="order-detail-field">
-                <div class="order-detail-label">% скарг</div>
+                <div class="order-detail-label">% скарг від виконаних</div>
                 <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.complaintRatePercent))}</div>
             </div>
 
@@ -582,7 +729,7 @@ function renderServiceTypes(items) {
     const rows = Array.isArray(items) ? items.map(normalizeServiceType) : [];
 
     if (rows.length === 0) {
-        setTableEmpty(body, 4, "Немає даних по типах звернень");
+        setTableEmpty(body, 5, "Немає даних по типах звернень");
         return;
     }
 
@@ -597,6 +744,7 @@ function renderServiceTypes(items) {
             tr.innerHTML = `
                 <td>${escapeHtml(formatServiceType(item.serviceType))}</td>
                 <td>${escapeHtml(analyticsNumber(item.count))}</td>
+                <td>${escapeHtml(analyticsPercent(item.sharePercent))}</td>
                 <td>${escapeHtml(analyticsNumber(item.completedCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.complaintsCount))}</td>
             `;
@@ -610,6 +758,7 @@ function renderServiceTypes(items) {
 function renderAnalytics(data) {
     const analytics = normalizeAnalytics(data || {});
 
+    setAnalyticsPersonalMode(analytics);
     renderAnalyticsSummary(analytics);
     renderAnalyticsCharts(analytics);
     renderBonusRecommendation(analytics.bonusRecommendation);

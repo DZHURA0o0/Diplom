@@ -40,39 +40,28 @@ function resetOrdersCache() {
     }
 }
 
+function bindBossFilterChange(id, handler) {
+    document.getElementById(id)?.addEventListener("change", handler);
+}
+
 function initBossFilters() {
-    const statusFilter = document.getElementById("statusFilter");
+    bindBossFilterChange("statusFilter", async () => {
+        if (typeof loadOrders !== "function") return;
 
-    if (statusFilter) {
-        statusFilter.addEventListener("change", async () => {
-            if (typeof loadOrders !== "function") return;
+        resetOrdersCache();
+        await loadOrders();
 
-            resetOrdersCache();
-            await loadOrders();
+        if (typeof updateComplaintsBadge === "function") {
+            await updateComplaintsBadge();
+        }
+    });
 
-            if (typeof updateComplaintsBadge === "function") {
-                await updateComplaintsBadge();
-            }
-        });
-    }
-
-    const roleFilter = document.getElementById("roleFilter");
-
-    if (roleFilter) {
-        roleFilter.addEventListener("change", async () => {
+    ["roleFilter", "accountStatusFilter"].forEach(id => {
+        bindBossFilterChange(id, async () => {
             if (typeof loadUsers !== "function") return;
             await loadUsers();
         });
-    }
-
-    const accountStatusFilter = document.getElementById("accountStatusFilter");
-
-    if (accountStatusFilter) {
-        accountStatusFilter.addEventListener("change", async () => {
-            if (typeof loadUsers !== "function") return;
-            await loadUsers();
-        });
-    }
+    });
 
     if (typeof initBossAnalyticsFilters === "function") {
         initBossAnalyticsFilters();

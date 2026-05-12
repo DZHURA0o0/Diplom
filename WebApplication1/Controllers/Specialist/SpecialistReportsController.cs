@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Contracts;
-using WebApplication1.Repositories;
+using WebApplication1.Application.Services.Reports;
+using WebApplication1.Models;
 
 namespace WebApplication1.Controllers;
 
