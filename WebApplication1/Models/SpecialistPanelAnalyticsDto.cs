@@ -38,6 +38,13 @@ public class SpecialistAnalyticsComparisonDto
     public double PersonalCompletedSharePercent { get; set; }
     public double PersonalOrdersSharePercent { get; set; }
 
+    public double RatingPercent { get; set; }
+    public double WorkloadPercent { get; set; }
+    public double CompletionRatePercent { get; set; }
+    public double ComplaintRatePercent { get; set; }
+    public double AdjustedCompletionRatePercent { get; set; }
+    public double AdjustedComplaintRatePercent { get; set; }
+
     public double CompletionRateDifferencePercent { get; set; }
     public double ComplaintRateDifferencePercent { get; set; }
 

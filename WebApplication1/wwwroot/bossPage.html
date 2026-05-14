@@ -17,7 +17,7 @@
 <script src="/js/js_boss/boss-data.js?v=3" defer></script>
 <script src="/js/js_boss/boss-orders.js" defer></script>
 <script src="/js/js_boss/boss-users.js?v=7" defer></script>
-<script src="/js/js_boss/boss-analytics.js" defer></script>
+<script src="/js/js_boss/boss-analytics.js?v=9" defer></script>
 <script src="/js/js_boss/boss-page.js?v=2" defer></script>
 <script src="/js/js_boss/boss-realtime.js" defer></script>
 </head>
@@ -281,17 +281,17 @@
             </div>
 
             <div class="analytics-card analytics-card-wide">
-              <div class="analytics-card-label">Середня частка виконаних</div>
+              <div class="analytics-card-label">Середній рейтинг</div>
               <div class="analytics-card-value">—</div>
             </div>
 
             <div class="analytics-card analytics-card-wide">
-              <div class="analytics-card-label">Найбільша частка виконаних</div>
+              <div class="analytics-card-label">Найвищий рейтинг</div>
               <div class="analytics-card-value">—</div>
             </div>
 
             <div class="analytics-card analytics-card-wide">
-              <div class="analytics-card-label">Найнижча частка виконаних</div>
+              <div class="analytics-card-label">Найнижчий рейтинг</div>
               <div class="analytics-card-value">—</div>
             </div>
           </div>
@@ -314,8 +314,8 @@
               </div>
 
               <div class="analytics-chart-card" id="specialistShareChartCard">
-                <div class="analytics-chart-title">Частка спеціалістів</div>
-                <div class="analytics-chart-subtitle">Внесок спеціалістів у виконані заявки</div>
+                <div class="analytics-chart-title">Рейтинг спеціалістів</div>
+                <div class="analytics-chart-subtitle">З урахуванням обсягу, виконання та скарг</div>
                 <div id="chartSpecialistShare" class="analytics-chart-bars"></div>
               </div>
 
@@ -340,21 +340,28 @@
               <p><strong>V</strong> — кількість виконаних заявок спеціаліста.</p>
               <p><strong>A</strong> — кількість заявок, призначених спеціалісту.</p>
               <p><strong>T</strong> — усі виконані заявки відділу за вибраний період.</p>
-              <p><strong>S</strong> — кількість скарг по виконаних заявках спеціаліста.</p>
+              <p><strong>S</strong> — кількість скарг по заявках спеціаліста.</p>
+              <p><strong>AvgA</strong> — середня кількість заявок на спеціаліста за період.</p>
+              <p><strong>DeptDone%</strong> — виконані заявки відділу / усі заявки відділу.</p>
+              <p><strong>DeptComplaint%</strong> — скарги відділу / усі заявки відділу.</p>
 
               <div class="formula-note-subtitle">Формули</div>
-              <p><code>Частка серед виконаних = V / T × 100%</code></p>
+              <p><code>Внесок у виконані заявки = V / T × 100%</code></p>
               <p>Показує внесок спеціаліста у загальний обсяг виконаних робіт відділу.</p>
 
-              <p><code>Відсоток виконання = V / A × 100%</code></p>
-              <p>Показує, яку частину призначених заявок спеціаліст уже виконав.</p>
+              <p><code>Навантаження = A / усі заявки відділу × 100%</code></p>
+              <p>Показує, яку частку всіх заявок відділу отримав спеціаліст.</p>
 
-              <p><code>% скарг від виконаних = S / V × 100%</code></p>
-              <p>Скарги рахуються від виконаних заявок, бо працівник може подати скаргу після завершення роботи.</p>
+              <p><code>% виконання своїх заявок = V / A × 100%</code></p>
+              <p>Показує простий факт: яку частину власних призначених заявок спеціаліст виконав.</p>
 
-              <p><code>Якість = 100% - % скарг, але не менше 0%</code></p>
-              <p><code>Рейтинг = 0.4 × частка + 0.4 × відсоток виконання + 0.2 × якість</code></p>
-              <p>Кандидат обирається серед спеціалістів, які мають призначені та виконані заявки, а рівень скарг не перевищує 30%.</p>
+              <p><code>ВУЗУН = відносна успішність з урахуванням навантаження = (V + DeptDone% × AvgA) / (A + AvgA) × 100%</code></p>
+              <p>Згладжує малу вибірку середнім відділу, щоб 2 з 3 заявок не виглядали сильніше за 7 з 17 тільки через малу кількість.</p>
+
+              <p><code>Скарги з урахуванням обсягу = (S + DeptComplaint% × AvgA) / (A + AvgA) × 100%</code></p>
+              <p><code>Якість = 100% - скарги з урахуванням обсягу, але не менше 0%</code></p>
+              <p><code>Рейтинг = 0.4 × внесок у виконані заявки + 0.4 × ВУЗУН + 0.2 × якість</code></p>
+              <p>Кандидат обирається серед спеціалістів, які мають призначені та виконані заявки, а рівень скарг з урахуванням обсягу не перевищує 30%.</p>
             </div>
           </details>
 
@@ -363,7 +370,7 @@
               <div>
                 <div class="analytics-section-title" id="bonusRecommendationTitle">Рекомендація на премію</div>
                 <div class="analytics-section-subtitle" id="bonusRecommendationSubtitle">
-                  Система пропонує кандидата на основі внеску у виконані заявки, відсотка виконання та скарг від виконаних робіт
+                  Система пропонує кандидата на основі рейтингу, навантаження, виконання своїх заявок та скарг
                 </div>
               </div>
             </div>
@@ -376,7 +383,7 @@
           </div>
 
           <details class="formula-note" id="specialistContributionNote">
-            <summary>Пам'ятка: як читати внесок спеціалістів</summary>
+            <summary>Пам'ятка: як читати рейтинг спеціалістів</summary>
             <div class="formula-note-body">
               <div class="formula-note-subtitle">Що означають колонки</div>
               <p><strong>Призначено</strong> — скільки заявок отримав спеціаліст за період.</p>
@@ -385,18 +392,20 @@
               <p><strong>Переробки</strong> — заявки у статусах <code>REWORK</code>, <code>REWORK_REVIEW</code> або заявки зі звітом після скарги.</p>
 
               <div class="formula-note-subtitle">Ключові формули</div>
-              <p><code>Частка серед виконаних = виконано спеціалістом / виконано всім відділом × 100%</code></p>
-              <p><code>Відсоток виконання = виконано спеціалістом / призначено спеціалісту × 100%</code></p>
-              <p><code>% скарг від виконаних = скарги спеціаліста / виконано спеціалістом × 100%</code></p>
+              <p><code>Внесок у виконані заявки = виконано спеціалістом / виконано всім відділом × 100%</code></p>
+              <p><code>Навантаження = призначено спеціалісту / усі заявки відділу × 100%</code></p>
+              <p><code>% виконання своїх заявок = виконано спеціалістом / призначено спеціалісту × 100%</code></p>
+              <p><code>ВУЗУН = відносна успішність з урахуванням навантаження = (виконано спеціалістом + середній % виконання відділу × середня кількість заявок на спеціаліста) / (призначено спеціалісту + середня кількість заявок на спеціаліста) × 100%</code></p>
+              <p><code>Скарги з урахуванням = (скарги спеціаліста + середній % скарг відділу × середня кількість заявок на спеціаліста) / (призначено спеціалісту + середня кількість заявок на спеціаліста) × 100%</code></p>
             </div>
           </details>
 
           <div class="analytics-section" id="specialistContributionSection">
             <div class="analytics-section-head">
               <div>
-                <div class="analytics-section-title">Внесок спеціалістів у виконані заявки</div>
+                <div class="analytics-section-title">Рейтинг спеціалістів</div>
                 <div class="analytics-section-subtitle">
-                  Частка показує, який відсоток від усіх виконаних заявок за період виконав конкретний спеціаліст; % скарг рахується від виконаних заявок
+                  Рейтинг враховує обсяг роботи, виконання своїх заявок та скарги, тому малі вибірки не завищують результат
                 </div>
               </div>
             </div>
@@ -412,9 +421,11 @@
                       <th>Активні</th>
                       <th>Скарги</th>
                       <th>Переробки</th>
-                      <th>% виконання</th>
-                      <th>% скарг від виконаних</th>
-                      <th>Частка серед виконаних</th>
+                      <th>Рейтинг</th>
+                      <th>Навантаження</th>
+                      <th>% виконання своїх</th>
+                      <th>ВУЗУН</th>
+                      <th>Скарги з урахуванням</th>
                     </tr>
                   </thead>
                   <tbody id="analyticsSpecialists"></tbody>

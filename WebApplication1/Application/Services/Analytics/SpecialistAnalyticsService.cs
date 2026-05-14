@@ -67,6 +67,48 @@ public class SpecialistAnalyticsService
             .Distinct()
             .Count();
 
+        var averageOrdersPerSpecialist = Average(
+            departmentSummary.TotalOrders,
+            Math.Max(specialistsWithOrdersCount, 1)
+        );
+
+        var averageCompletedPerSpecialist = Average(
+            departmentSummary.CompletedOrders,
+            Math.Max(specialistsWithOrdersCount, 1)
+        );
+
+        var personalOrdersSharePercent = Percent(
+            personalSummary.TotalOrders,
+            departmentSummary.TotalOrders
+        );
+
+        var personalCompletedSharePercent = Percent(
+            personalSummary.CompletedOrders,
+            departmentSummary.CompletedOrders
+        );
+
+        var adjustedCompletionRate = AdjustedRatePercent(
+            personalSummary.CompletedOrders,
+            personalSummary.TotalOrders,
+            departmentSummary.CompletedOrders,
+            departmentSummary.TotalOrders,
+            averageOrdersPerSpecialist
+        );
+
+        var adjustedComplaintRate = AdjustedRatePercent(
+            personalSummary.ComplaintsCount,
+            personalSummary.TotalOrders,
+            departmentSummary.ComplaintsCount,
+            departmentSummary.TotalOrders,
+            averageOrdersPerSpecialist
+        );
+
+        var rating = Round(
+            0.4 * personalCompletedSharePercent +
+            0.4 * adjustedCompletionRate +
+            0.2 * Math.Max(0, 100 - adjustedComplaintRate)
+        );
+
         return new SpecialistPanelAnalyticsDto
         {
             PeriodFrom = periodFrom,
@@ -77,36 +119,31 @@ public class SpecialistAnalyticsService
 
             Comparison = new SpecialistAnalyticsComparisonDto
             {
-                PersonalCompletedSharePercent = Percent(
-                    personalSummary.CompletedOrders,
-                    departmentSummary.CompletedOrders
-                ),
+                PersonalCompletedSharePercent = personalCompletedSharePercent,
 
-                PersonalOrdersSharePercent = Percent(
-                    personalSummary.TotalOrders,
-                    departmentSummary.TotalOrders
-                ),
+                PersonalOrdersSharePercent = personalOrdersSharePercent,
+
+                RatingPercent = rating,
+                WorkloadPercent = personalOrdersSharePercent,
+                CompletionRatePercent = personalSummary.CompletionRatePercent,
+                ComplaintRatePercent = personalSummary.ComplaintRatePercent,
+                AdjustedCompletionRatePercent = adjustedCompletionRate,
+                AdjustedComplaintRatePercent = adjustedComplaintRate,
 
                 CompletionRateDifferencePercent = Round(
-                    personalSummary.CompletionRatePercent - departmentSummary.CompletionRatePercent
+                    adjustedCompletionRate - departmentSummary.CompletionRatePercent
                 ),
 
                 ComplaintRateDifferencePercent = Round(
-                    personalSummary.ComplaintRatePercent - departmentSummary.ComplaintRatePercent
+                    adjustedComplaintRate - departmentSummary.ComplaintRatePercent
                 ),
 
                 DepartmentSpecialistsCount = activeSpecialistsCount,
                 DepartmentSpecialistsWithOrdersCount = specialistsWithOrdersCount,
 
-                AverageOrdersPerSpecialist = Average(
-                    departmentSummary.TotalOrders,
-                    Math.Max(specialistsWithOrdersCount, 1)
-                ),
+                AverageOrdersPerSpecialist = averageOrdersPerSpecialist,
 
-                AverageCompletedPerSpecialist = Average(
-                    departmentSummary.CompletedOrders,
-                    Math.Max(specialistsWithOrdersCount, 1)
-                )
+                AverageCompletedPerSpecialist = averageCompletedPerSpecialist
             },
 
             PersonalStatuses = BuildStatusAnalytics(personalOrders),
@@ -341,6 +378,25 @@ public class SpecialistAnalyticsService
             return 0;
 
         return Round((double)value / total);
+    }
+
+    private static double AdjustedRatePercent(
+        int personalValue,
+        int personalTotal,
+        int departmentValue,
+        int departmentTotal,
+        double averageOrdersPerSpecialist)
+    {
+        if (personalTotal <= 0 && departmentTotal <= 0)
+            return 0;
+
+        var priorRate = departmentTotal <= 0
+            ? 0
+            : (double)departmentValue / departmentTotal;
+
+        var priorWeight = Math.Max(1, averageOrdersPerSpecialist);
+
+        return Round((personalValue + priorRate * priorWeight) / (personalTotal + priorWeight) * 100);
     }
 
     private static double Round(double value)

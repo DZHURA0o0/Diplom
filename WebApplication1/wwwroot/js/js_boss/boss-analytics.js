@@ -12,6 +12,17 @@ function analyticsPercent(value) {
     return Number.isFinite(number) ? `${number.toFixed(1)}%` : "0%";
 }
 
+function analyticsSignedPercent(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "0%";
+    }
+
+    const sign = number > 0 ? "+" : "";
+    return `${sign}${number.toFixed(1)}%`;
+}
+
 function analyticsClampPercent(value) {
     const number = Number(value);
 
@@ -188,7 +199,13 @@ function normalizeSpecialistAnalytics(item = {}) {
         reworkCount: item.reworkCount ?? item.rework_count ?? 0,
         completionRatePercent: item.completionRatePercent ?? item.completion_rate_percent ?? 0,
         complaintRatePercent: item.complaintRatePercent ?? item.complaint_rate_percent ?? 0,
-        efficiencyPercent: item.efficiencyPercent ?? item.efficiency_percent ?? 0
+        efficiencyPercent: item.efficiencyPercent ?? item.efficiency_percent ?? 0,
+        workloadPercent: item.workloadPercent ?? item.workload_percent ?? 0,
+        adjustedCompletionRatePercent: item.adjustedCompletionRatePercent ?? item.adjusted_completion_rate_percent ?? 0,
+        adjustedComplaintRatePercent: item.adjustedComplaintRatePercent ?? item.adjusted_complaint_rate_percent ?? 0,
+        completionRateDifferencePercent: item.completionRateDifferencePercent ?? item.completion_rate_difference_percent ?? 0,
+        complaintRateAdvantagePercent: item.complaintRateAdvantagePercent ?? item.complaint_rate_advantage_percent ?? 0,
+        ratingPercent: item.ratingPercent ?? item.rating_percent ?? 0
     };
 }
 
@@ -256,6 +273,9 @@ function normalizeBonusRecommendation(item) {
         sharePercent: item.sharePercent ?? item.share_percent ?? 0,
         completionRatePercent: item.completionRatePercent ?? item.completion_rate_percent ?? 0,
         complaintRatePercent: item.complaintRatePercent ?? item.complaint_rate_percent ?? 0,
+        workloadPercent: item.workloadPercent ?? item.workload_percent ?? 0,
+        adjustedCompletionRatePercent: item.adjustedCompletionRatePercent ?? item.adjusted_completion_rate_percent ?? 0,
+        adjustedComplaintRatePercent: item.adjustedComplaintRatePercent ?? item.adjusted_complaint_rate_percent ?? 0,
         reason: item.reason || "Немає пояснення рекомендації."
     };
 }
@@ -292,15 +312,15 @@ function renderAnalyticsSummary(data) {
     const secondRowCards = selected
         ? [
             getAnalyticsSummaryCard(
-                "Частка спеціаліста",
-                analyticsPercent(selected.efficiencyPercent),
+                "Рейтинг спеціаліста",
+                analyticsPercent(selected.ratingPercent),
                 {
                     wide: true,
                     hint: selected.fullName
                 }
             ),
             getAnalyticsSummaryCard(
-                "Відсоток виконання",
+                "% виконання своїх заявок",
                 analyticsPercent(selected.completionRatePercent),
                 {
                     wide: true,
@@ -308,25 +328,49 @@ function renderAnalyticsSummary(data) {
                 }
             ),
             getAnalyticsSummaryCard(
-                "% скарг від виконаних",
-                analyticsPercent(selected.complaintRatePercent),
+                "ВУЗУН",
+                analyticsPercent(selected.adjustedCompletionRatePercent),
+                {
+                    wide: true,
+                    hint: "Відносна успішність з урахуванням навантаження"
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "Скарги з урахуванням обсягу",
+                analyticsPercent(selected.adjustedComplaintRatePercent),
                 {
                     wide: true,
                     hint: `${analyticsNumber(selected.complaintsCount)} скарг`
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "Виконання vs відділ",
+                analyticsSignedPercent(selected.completionRateDifferencePercent),
+                {
+                    wide: true,
+                    hint: "+ означає вище середнього відділу"
+                }
+            ),
+            getAnalyticsSummaryCard(
+                "% скарг по заявкам спеца",
+                analyticsPercent(selected.complaintRatePercent),
+                {
+                    wide: true,
+                    hint: `${analyticsNumber(selected.complaintsCount)} скарг на ${analyticsNumber(selected.completedCount)} виконані`
                 }
             )
         ]
         : [
             getAnalyticsSummaryCard(
-                "Середня частка виконаних",
+                "Середній рейтинг",
                 analyticsPercent(data.averageEfficiencyPercent),
                 {
                     wide: true,
-                    hint: "Серед спеціалістів із призначеними заявками"
+                    hint: "З урахуванням обсягу, виконання та скарг"
                 }
             ),
             getAnalyticsSummaryCard(
-                "Найбільша частка виконаних",
+                "Найвищий рейтинг",
                 analyticsPercent(data.leaderEfficiencyPercent),
                 {
                     wide: true,
@@ -334,7 +378,7 @@ function renderAnalyticsSummary(data) {
                 }
             ),
             getAnalyticsSummaryCard(
-                "Найнижча частка виконаних",
+                "Найнижчий рейтинг",
                 analyticsPercent(data.lowestEfficiencyPercent),
                 {
                     wide: true,
@@ -411,16 +455,16 @@ function renderOrdersStatusChart(analytics) {
 function renderSpecialistShareChart(analytics) {
     const rows = (Array.isArray(analytics.specialists) ? analytics.specialists : [])
         .map(normalizeSpecialistAnalytics)
-        .filter(item => Number(item.completedCount) > 0)
-        .sort((a, b) => Number(b.efficiencyPercent) - Number(a.efficiencyPercent))
+        .filter(item => Number(item.assignedCount) > 0)
+        .sort((a, b) => Number(b.ratingPercent) - Number(a.ratingPercent))
         .slice(0, 5)
         .map(item => ({
             label: item.fullName,
             value: item.completedCount,
-            percent: item.efficiencyPercent
+            percent: item.ratingPercent
         }));
 
-    renderHorizontalBarChart("chartSpecialistShare", rows, "Немає виконаних заявок по спеціалістах");
+    renderHorizontalBarChart("chartSpecialistShare", rows, "Немає заявок по спеціалістах");
 }
 
 function renderServiceTypesChart(analytics) {
@@ -571,18 +615,23 @@ function renderBonusRecommendation(item) {
             </div>
 
             <div class="order-detail-field">
-                <div class="order-detail-label">Частка серед виконаних</div>
-                <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.sharePercent))}</div>
+                <div class="order-detail-label">Навантаження</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.workloadPercent))}</div>
             </div>
 
             <div class="order-detail-field">
-                <div class="order-detail-label">% виконання</div>
+                <div class="order-detail-label">% виконання своїх заявок</div>
                 <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.completionRatePercent))}</div>
             </div>
 
             <div class="order-detail-field">
-                <div class="order-detail-label">% скарг від виконаних</div>
-                <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.complaintRatePercent))}</div>
+                <div class="order-detail-label">ВУЗУН</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.adjustedCompletionRatePercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Скарги з урахуванням обсягу</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(recommendation.adjustedComplaintRatePercent))}</div>
             </div>
 
             <div class="order-detail-field full">
@@ -602,14 +651,14 @@ function renderSpecialistsAnalytics(items) {
     const rows = Array.isArray(items) ? items.map(normalizeSpecialistAnalytics) : [];
 
     if (rows.length === 0) {
-        setTableEmpty(body, 9, "Немає даних по спеціалістах");
+        setTableEmpty(body, 11, "Немає даних по спеціалістах");
         return;
     }
 
     body.innerHTML = "";
 
     rows
-        .sort((a, b) => Number(b.efficiencyPercent) - Number(a.efficiencyPercent))
+        .sort((a, b) => Number(b.ratingPercent) - Number(a.ratingPercent))
         .forEach(item => {
             const tr = document.createElement("tr");
             tr.className = "main-row";
@@ -621,9 +670,11 @@ function renderSpecialistsAnalytics(items) {
                 <td>${escapeHtml(analyticsNumber(item.activeCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.complaintsCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.reworkCount))}</td>
+                <td>${analyticsKpi(item.ratingPercent)}</td>
+                <td>${escapeHtml(analyticsPercent(item.workloadPercent))}</td>
                 <td>${escapeHtml(analyticsPercent(item.completionRatePercent))}</td>
-                <td>${escapeHtml(analyticsPercent(item.complaintRatePercent))}</td>
-                <td>${analyticsKpi(item.efficiencyPercent)}</td>
+                <td>${escapeHtml(analyticsPercent(item.adjustedCompletionRatePercent))}</td>
+                <td>${escapeHtml(analyticsPercent(item.adjustedComplaintRatePercent))}</td>
             `;
 
             body.appendChild(tr);

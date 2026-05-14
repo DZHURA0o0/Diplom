@@ -80,7 +80,8 @@ public class BossAnalyticsService
             allPeriodOrders,
             specialists,
             selectedSpecialistId,
-            totalCompletedInPeriod
+            totalCompletedInPeriod,
+            allPeriodOrders.Count
         );
 
         var shareSummary = BuildSpecialistShareSummary(specialistAnalytics);
@@ -124,9 +125,22 @@ public class BossAnalyticsService
         List<DomainOrder> allPeriodOrders,
         List<User> specialists,
         string? selectedSpecialistId,
-        int totalCompletedInPeriod)
+        int totalCompletedInPeriod,
+        int totalOrdersInPeriod)
     {
         var result = new List<SpecialistAnalyticsDto>();
+        var specialistsWithOrdersCount = allPeriodOrders
+            .Where(order => !string.IsNullOrWhiteSpace(order.SpecialistId))
+            .Select(order => Normalize(order.SpecialistId))
+            .Distinct()
+            .Count();
+        var averageOrdersPerSpecialist = Average(
+            totalOrdersInPeriod,
+            Math.Max(specialistsWithOrdersCount, 1)
+        );
+        var totalComplaintsInPeriod = allPeriodOrders.Count(HasComplaint);
+        var departmentCompletionRate = Percent(totalCompletedInPeriod, totalOrdersInPeriod);
+        var departmentComplaintRate = Percent(totalComplaintsInPeriod, totalCompletedInPeriod);
 
         foreach (var specialist in specialists)
         {
@@ -148,6 +162,26 @@ public class BossAnalyticsService
             var completionRate = Percent(completedCount, assignedCount);
             var complaintRate = Percent(complaintsCount, completedCount);
             var specialistShare = Percent(completedCount, totalCompletedInPeriod);
+            var workloadPercent = Percent(assignedCount, totalOrdersInPeriod);
+            var adjustedCompletionRate = AdjustedRatePercent(
+                completedCount,
+                assignedCount,
+                totalCompletedInPeriod,
+                totalOrdersInPeriod,
+                averageOrdersPerSpecialist
+            );
+            var adjustedComplaintRate = AdjustedRatePercent(
+                complaintsCount,
+                assignedCount,
+                totalComplaintsInPeriod,
+                totalOrdersInPeriod,
+                averageOrdersPerSpecialist
+            );
+            var rating = CalculateRating(
+                specialistShare,
+                adjustedCompletionRate,
+                adjustedComplaintRate
+            );
 
             result.Add(new SpecialistAnalyticsDto
             {
@@ -164,12 +198,18 @@ public class BossAnalyticsService
                 CompletionRatePercent = completionRate,
                 ComplaintRatePercent = complaintRate,
 
-                EfficiencyPercent = specialistShare
+                EfficiencyPercent = specialistShare,
+                WorkloadPercent = workloadPercent,
+                AdjustedCompletionRatePercent = adjustedCompletionRate,
+                AdjustedComplaintRatePercent = adjustedComplaintRate,
+                CompletionRateDifferencePercent = Math.Round(completionRate - departmentCompletionRate, 1),
+                ComplaintRateAdvantagePercent = Math.Round(departmentComplaintRate - complaintRate, 1),
+                RatingPercent = rating
             });
         }
 
         return result
-            .OrderByDescending(item => item.EfficiencyPercent)
+            .OrderByDescending(item => item.RatingPercent)
             .ThenByDescending(item => item.CompletedCount)
             .ToList();
     }
@@ -318,7 +358,7 @@ public class BossAnalyticsService
         }
 
         var qualityCandidates = candidates
-            .Where(item => item.ComplaintRatePercent <= 30)
+            .Where(item => item.AdjustedComplaintRatePercent <= 30)
             .ToList();
 
         if (qualityCandidates.Count == 0)
@@ -335,12 +375,7 @@ public class BossAnalyticsService
             {
                 Specialist = item,
 
-                QualityScore = Math.Max(0, 100 - item.ComplaintRatePercent),
-
-                Rating =
-                    0.4 * item.EfficiencyPercent +
-                    0.4 * item.CompletionRatePercent +
-                    0.2 * Math.Max(0, 100 - item.ComplaintRatePercent)
+                Rating = item.RatingPercent
             })
             .OrderByDescending(item => item.Rating)
             .ThenByDescending(item => item.Specialist.CompletedCount)
@@ -351,8 +386,9 @@ public class BossAnalyticsService
 
         var reason =
             $"Рекомендовано на премію, оскільки спеціаліст має рейтинг {rating}%, " +
-            $"виконав {specialist.CompletedCount} заявок, має частку {specialist.EfficiencyPercent}% " +
-            $"від усіх виконаних заявок відділу та рівень скарг {specialist.ComplaintRatePercent}%.";
+            $"виконав {specialist.CompletedCount} із {specialist.AssignedCount} призначених заявок, " +
+            $"має навантаження {specialist.WorkloadPercent}% та рівень скарг з урахуванням обсягу " +
+            $"{specialist.AdjustedComplaintRatePercent}%.";
 
         return new BonusRecommendationDto
         {
@@ -370,6 +406,9 @@ public class BossAnalyticsService
             SharePercent = specialist.EfficiencyPercent,
             CompletionRatePercent = specialist.CompletionRatePercent,
             ComplaintRatePercent = specialist.ComplaintRatePercent,
+            WorkloadPercent = specialist.WorkloadPercent,
+            AdjustedCompletionRatePercent = specialist.AdjustedCompletionRatePercent,
+            AdjustedComplaintRatePercent = specialist.AdjustedComplaintRatePercent,
 
             Reason = reason
         };
@@ -419,20 +458,20 @@ public class BossAnalyticsService
         }
 
         var leader = rows
-            .OrderByDescending(item => item.EfficiencyPercent)
+            .OrderByDescending(item => item.RatingPercent)
             .ThenByDescending(item => item.CompletedCount)
             .First();
 
         var lowest = rows
-            .OrderBy(item => item.EfficiencyPercent)
+            .OrderBy(item => item.RatingPercent)
             .ThenBy(item => item.CompletedCount)
             .First();
 
         return (
-            Math.Round(rows.Average(item => item.EfficiencyPercent), 1),
-            leader.EfficiencyPercent,
+            Math.Round(rows.Average(item => item.RatingPercent), 1),
+            leader.RatingPercent,
             leader.FullName,
-            lowest.EfficiencyPercent,
+            lowest.RatingPercent,
             lowest.FullName
         );
     }
@@ -445,6 +484,50 @@ public class BossAnalyticsService
         }
 
         return Math.Round((double)value / total * 100, 1);
+    }
+
+    private static double Average(int value, int total)
+    {
+        if (total <= 0)
+        {
+            return 0;
+        }
+
+        return Math.Round((double)value / total, 1);
+    }
+
+    private static double AdjustedRatePercent(
+        int personalValue,
+        int personalTotal,
+        int departmentValue,
+        int departmentTotal,
+        double averageOrdersPerSpecialist)
+    {
+        if (personalTotal <= 0 && departmentTotal <= 0)
+        {
+            return 0;
+        }
+
+        var priorRate = departmentTotal <= 0
+            ? 0
+            : (double)departmentValue / departmentTotal;
+
+        var priorWeight = Math.Max(1, averageOrdersPerSpecialist);
+
+        return Math.Round((personalValue + priorRate * priorWeight) / (personalTotal + priorWeight) * 100, 1);
+    }
+
+    private static double CalculateRating(
+        double completedSharePercent,
+        double adjustedCompletionRatePercent,
+        double adjustedComplaintRatePercent)
+    {
+        return Math.Round(
+            0.4 * completedSharePercent +
+            0.4 * adjustedCompletionRatePercent +
+            0.2 * Math.Max(0, 100 - adjustedComplaintRatePercent),
+            1
+        );
     }
 
     private static bool IsCompleted(DomainOrder order)

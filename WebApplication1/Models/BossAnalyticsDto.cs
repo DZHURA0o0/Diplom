@@ -53,6 +53,13 @@ public class SpecialistAnalyticsDto
 
     // CompletedCount specialist / all DONE orders in period * 100
     public double EfficiencyPercent { get; set; }
+
+    public double WorkloadPercent { get; set; }
+    public double AdjustedCompletionRatePercent { get; set; }
+    public double AdjustedComplaintRatePercent { get; set; }
+    public double CompletionRateDifferencePercent { get; set; }
+    public double ComplaintRateAdvantagePercent { get; set; }
+    public double RatingPercent { get; set; }
 }
 
 public class ComplainerAnalyticsDto
@@ -122,6 +129,9 @@ public class BonusRecommendationDto
     public double SharePercent { get; set; }
     public double CompletionRatePercent { get; set; }
     public double ComplaintRatePercent { get; set; }
+    public double WorkloadPercent { get; set; }
+    public double AdjustedCompletionRatePercent { get; set; }
+    public double AdjustedComplaintRatePercent { get; set; }
 
     public string Reason { get; set; } = "Немає достатніх підстав для автоматичної рекомендації на премію за обраний період.";
 }

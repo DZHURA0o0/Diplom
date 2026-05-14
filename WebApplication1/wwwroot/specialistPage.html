@@ -211,10 +211,18 @@
             </div>
 
             <details class="specialist-formula-note">
-              <summary>Як читати порівняння з відділом</summary>
+              <summary>Як читати рейтинг</summary>
               <div class="specialist-formula-note-body">
-                <div><strong>Моя частка у виконаних</strong> = мої виконані заявки / усі виконані заявки відділу × 100%.</div>
-                <div><strong>Різниця показника</strong> = відхилення мого відсотка від відсотка відділу.</div>
+                <div><strong>Рейтинг</strong> = 0.4 × внесок у виконані заявки відділу + 0.4 × ВУЗУН + 0.2 × (100 − відносний % скарг щодо відділу).</div>
+                <div><strong>Частка виконаних відділу</strong> = мої виконані заявки / усі виконані заявки відділу × 100%.</div>
+                <div><strong>Моя частка від усіх заявок</strong> = мої заявки / усі заявки відділу × 100%.</div>
+                <div><strong>% виконання своїх заявок</strong> = мої виконані / мої заявки × 100%.</div>
+                <div><strong>ВУЗУН</strong> = відносна успішність з урахуванням навантаження = (мої виконані + середній % виконання відділу × середня кількість заявок на спеціаліста) / (мої заявки + середня кількість заявок на спеціаліста) × 100%.</div>
+                <div><strong>% скарг по заявкам спеца</strong> = мої скарги / мої виконані заявки × 100%.</div>
+                <div><strong>Відносний % скарг щодо відділу</strong> = (мої скарги + середній % скарг відділу × середня кількість заявок на спеціаліста) / (мої заявки + середня кількість заявок на спеціаліста) × 100%.</div>
+                <div><strong>ВУЗУН vs відділ</strong> = мій ВУЗУН − % виконання заявок відділу.</div>
+                <div><strong>Скарги vs відділ</strong> = мій відносний % скарг щодо відділу − % скарг відділу; від'ємне значення краще, бо скарг менше.</div>
+                <div><strong>Навіщо це потрібно</strong> = мала кількість заявок згладжується середнім відділу, щоб 2 з 3 заявок не виглядали сильніше за 7 з 17 тільки через малу вибірку.</div>
               </div>
             </details>
 
@@ -365,7 +373,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
   <script src="/js/js_specialist/specialist-api.js"></script>
-  <script src="/js/js_specialist/specialist-analytics.js"></script>
+  <script src="/js/js_specialist/specialist-analytics.js?v=10"></script>
   <script src="/js/js_specialist/specialist-actions.js"></script>
   <script src="/js/js_specialist/specialist-render.js"></script>
   <script src="/js/js_specialist/specialist-page.js"></script>

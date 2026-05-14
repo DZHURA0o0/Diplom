@@ -80,6 +80,12 @@ function normalizeSpecialistComparison(item) {
   return {
     personalCompletedSharePercent: item.personalCompletedSharePercent ?? 0,
     personalOrdersSharePercent: item.personalOrdersSharePercent ?? 0,
+    ratingPercent: item.ratingPercent ?? 0,
+    workloadPercent: item.workloadPercent ?? item.personalOrdersSharePercent ?? 0,
+    completionRatePercent: item.completionRatePercent ?? 0,
+    complaintRatePercent: item.complaintRatePercent ?? 0,
+    adjustedCompletionRatePercent: item.adjustedCompletionRatePercent ?? 0,
+    adjustedComplaintRatePercent: item.adjustedComplaintRatePercent ?? 0,
     completionRateDifferencePercent: item.completionRateDifferencePercent ?? 0,
     complaintRateDifferencePercent: item.complaintRateDifferencePercent ?? 0,
     departmentSpecialistsCount: item.departmentSpecialistsCount ?? 0,
@@ -187,35 +193,70 @@ function specialistAnalyticsCompareClass(value, inverse = false) {
   return good ? "good" : "bad";
 }
 
+function getSpecialistComparisonCard(label, value, hint = "", valueClass = "") {
+  const className = valueClass
+    ? `specialist-comparison-value ${valueClass}`
+    : "specialist-comparison-value";
+
+  return `
+    <div class="specialist-comparison-card">
+      <div class="specialist-comparison-label">${escapeHtml(label)}</div>
+      <div class="${className}">${escapeHtml(value)}</div>
+      ${hint ? `<div class="specialist-comparison-hint">${escapeHtml(hint)}</div>` : ""}
+    </div>
+  `;
+}
+
 function renderSpecialistAnalyticsComparison(comparison) {
   const container = document.getElementById("specialistAnalyticsComparison");
   if (!container) return;
 
-  container.innerHTML = `
-    <div class="specialist-comparison-card">
-      <div class="specialist-comparison-label">Моя частка у виконаних заявках відділу</div>
-      <div class="specialist-comparison-value">${escapeHtml(specialistAnalyticsFormatPercent(comparison.personalCompletedSharePercent))}</div>
-    </div>
-
-    <div class="specialist-comparison-card">
-      <div class="specialist-comparison-label">Моя частка від усіх заявок відділу</div>
-      <div class="specialist-comparison-value">${escapeHtml(specialistAnalyticsFormatPercent(comparison.personalOrdersSharePercent))}</div>
-    </div>
-
-    <div class="specialist-comparison-card">
-      <div class="specialist-comparison-label">Різниця % виконання з відділом</div>
-      <div class="specialist-comparison-value ${specialistAnalyticsCompareClass(comparison.completionRateDifferencePercent)}">
-        ${escapeHtml(specialistAnalyticsSignedPercent(comparison.completionRateDifferencePercent))}
-      </div>
-    </div>
-
-    <div class="specialist-comparison-card">
-      <div class="specialist-comparison-label">Різниця % скарг від виконаних з відділом</div>
-      <div class="specialist-comparison-value ${specialistAnalyticsCompareClass(comparison.complaintRateDifferencePercent, true)}">
-        ${escapeHtml(specialistAnalyticsAbsolutePercent(comparison.complaintRateDifferencePercent))}
-      </div>
-    </div>
-  `;
+  container.innerHTML = [
+    getSpecialistComparisonCard(
+      "Рейтинг спеціаліста",
+      specialistAnalyticsFormatPercent(comparison.ratingPercent),
+      "Загальна оцінка: внесок, ВУЗУН та скарги"
+    ),
+    getSpecialistComparisonCard(
+      "Моя частка від усіх заявок відділу",
+      specialistAnalyticsFormatPercent(comparison.workloadPercent),
+      "Скільки заявок відділу припало на мене"
+    ),
+    getSpecialistComparisonCard(
+      "% виконання своїх заявок",
+      specialistAnalyticsFormatPercent(comparison.completionRatePercent),
+      "Мої виконані / мої заявки"
+    ),
+    getSpecialistComparisonCard(
+      "ВУЗУН",
+      specialistAnalyticsFormatPercent(comparison.adjustedCompletionRatePercent),
+      "Відносна успішність з урахуванням навантаження"
+    ),
+    getSpecialistComparisonCard(
+      "% скарг по заявкам спеца",
+      specialistAnalyticsFormatPercent(comparison.complaintRatePercent),
+      "Мої скарги / мої виконані заявки",
+      Number(comparison.complaintRatePercent) > 30 ? "bad" : "good"
+    ),
+    getSpecialistComparisonCard(
+      "Відносний % скарг щодо відділу",
+      specialistAnalyticsFormatPercent(comparison.adjustedComplaintRatePercent),
+      "Скарги з поправкою на навантаження відділу",
+      Number(comparison.adjustedComplaintRatePercent) > 30 ? "bad" : "good"
+    ),
+    getSpecialistComparisonCard(
+      "ВУЗУН vs відділ",
+      specialistAnalyticsSignedPercent(comparison.completionRateDifferencePercent),
+      "+ означає ВУЗУН вище % виконання відділу",
+      specialistAnalyticsCompareClass(comparison.completionRateDifferencePercent)
+    ),
+    getSpecialistComparisonCard(
+      "Скарги vs відділ",
+      specialistAnalyticsSignedPercent(comparison.complaintRateDifferencePercent),
+      "- означає відносний % скарг нижче відділу",
+      specialistAnalyticsCompareClass(comparison.complaintRateDifferencePercent, true)
+    )
+  ].join("");
 }
 
 function clampSpecialistAnalyticsPercent(value) {
