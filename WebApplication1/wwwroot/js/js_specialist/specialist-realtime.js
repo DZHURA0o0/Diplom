@@ -2,8 +2,6 @@ let specialistRealtimeConnection = null;
 let specialistToastTimer = null;
 let specialistRealtimeStarted = false;
 
-/* ===================== REALTIME HELPERS ===================== */
-
 function canUseSpecialistRealtime() {
   if (typeof signalR === "undefined") {
     console.warn("SignalR client library not loaded.");
@@ -25,62 +23,45 @@ function isRealtimeConnected() {
 function normalizeRealtimePayload(payload = {}) {
   return {
     orderId: payload.orderId || payload.OrderId || payload.id || payload.Id || "",
+    workerId: payload.workerId || payload.WorkerId || "",
+    specialistId: payload.specialistId || payload.SpecialistId || "",
     status: payload.status || payload.Status || "",
-    message: payload.message || payload.Message || "Статус заявки змінено."
+    eventType: payload.eventType || payload.EventType || "orderChanged",
+    message: payload.message || payload.Message || "Заявку оновлено."
   };
 }
 
 function getRealtimeStatusMessage(status) {
   if (!status) {
-    return "Статус заявки змінено.";
+    return "Дані заявки оновлено.";
   }
 
   return `Новий статус: ${formatStatus(status)}`;
 }
 
 async function refreshSpecialistPageAfterRealtime(orderId) {
-  if (!orderId) {
-    return;
-  }
-
-  if (typeof refreshSpecialistOrderOnly === "function") {
+  if (orderId && typeof refreshSpecialistOrderOnly === "function") {
     await refreshSpecialistOrderOnly(orderId);
-    return;
   }
 
-  if (
-    typeof focusedOrderId !== "undefined" &&
-    focusedOrderId &&
-    String(focusedOrderId) === String(orderId) &&
-    typeof refreshFocusedOrder === "function"
-  ) {
-    await refreshFocusedOrder(orderId);
-    return;
-  }
+  if (typeof activeSpecialistTab !== "undefined") {
+    if (activeSpecialistTab === "details" && typeof renderSpecialistDetailRequestsTab === "function") {
+      renderSpecialistDetailRequestsTab();
+    }
 
-  if (
-    typeof activeSpecialistTab !== "undefined" &&
-    activeSpecialistTab === "orders" &&
-    typeof loadOrders === "function"
-  ) {
-    await loadOrders({
-      render: true,
-      silent: true
-    });
+    if (activeSpecialistTab === "reworks" && typeof renderSpecialistReworksTab === "function") {
+      renderSpecialistReworksTab();
+    }
 
-    return;
-  }
-
-  if (typeof ensureSpecialistAllOrdersLoaded === "function") {
-    await ensureSpecialistAllOrdersLoaded(true);
+    if (activeSpecialistTab === "analytics" && typeof loadSpecialistAnalytics === "function") {
+      await loadSpecialistAnalytics();
+    }
   }
 }
 
-/* ===================== CONNECTION ===================== */
-
 function buildSpecialistRealtimeConnection() {
   return new signalR.HubConnectionBuilder()
-    .withUrl("/hubs/specialist", {
+    .withUrl("/hubs/realtime", {
       accessTokenFactory: () => getToken()
     })
     .withAutomaticReconnect()
@@ -88,10 +69,10 @@ function buildSpecialistRealtimeConnection() {
 }
 
 function registerSpecialistRealtimeHandlers(connection) {
-  connection.on("orderStatusChanged", async payload => {
+  connection.on("orderChanged", async payload => {
     const data = normalizeRealtimePayload(payload);
 
-    console.log("SignalR orderStatusChanged:", data);
+    console.log("SignalR orderChanged:", data);
 
     if (typeof setPageStatus === "function") {
       setPageStatus(data.message);
@@ -103,25 +84,38 @@ function registerSpecialistRealtimeHandlers(connection) {
       console.error("Realtime refresh error:", e);
     }
 
-    showSpecialistToast(
-      "Статус заявки змінено",
-      getRealtimeStatusMessage(data.status)
-    );
+    showSpecialistToast("Заявку оновлено", getRealtimeStatusMessage(data.status));
+  });
+
+  connection.on("orderStatusChanged", async payload => {
+    const data = normalizeRealtimePayload(payload);
+    await refreshSpecialistPageAfterRealtime(data.orderId);
   });
 
   connection.onreconnecting(error => {
     console.warn("SignalR reconnecting:", error);
 
     if (typeof setPageStatus === "function") {
-      setPageStatus("Відновлення realtime-з’єднання...");
+      setPageStatus("Відновлення realtime-з'єднання...");
     }
   });
 
-  connection.onreconnected(() => {
+  connection.onreconnected(async () => {
     console.log("SignalR reconnected.");
 
     if (typeof setPageStatus === "function") {
-      setPageStatus("Realtime-з’єднання відновлено.");
+      setPageStatus("Realtime-з'єднання відновлено.");
+    }
+
+    if (typeof loadOrders === "function") {
+      await loadOrders({
+        render: typeof activeSpecialistTab === "undefined" || activeSpecialistTab === "orders",
+        silent: true
+      });
+    }
+
+    if (typeof ensureSpecialistAllOrdersLoaded === "function") {
+      await ensureSpecialistAllOrdersLoaded(true);
     }
   });
 
@@ -168,8 +162,6 @@ async function stopSpecialistRealtime() {
   }
 }
 
-/* ===================== TOAST ===================== */
-
 function getOrCreateSpecialistToast() {
   let toast = document.getElementById("specialistToast");
 
@@ -190,7 +182,7 @@ function showSpecialistToast(title, message) {
   const toast = getOrCreateSpecialistToast();
 
   toast.innerHTML = `
-    <div class="specialist-toast-title">🔔 ${escapeHtml(title)}</div>
+    <div class="specialist-toast-title">${escapeHtml(title)}</div>
     <div class="specialist-toast-message">${escapeHtml(message)}</div>
   `;
 
@@ -202,8 +194,6 @@ function showSpecialistToast(title, message) {
     toast.classList.remove("visible");
   }, 4000);
 }
-
-/* ===================== GLOBAL EXPORTS ===================== */
 
 window.startSpecialistRealtime = startSpecialistRealtime;
 window.stopSpecialistRealtime = stopSpecialistRealtime;

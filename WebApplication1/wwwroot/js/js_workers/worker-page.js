@@ -47,6 +47,61 @@ function updateWorkerOrderInCache(orderId, patch) {
   return list[index];
 }
 
+function removeWorkerOrderFromCache(orderId) {
+  const id = String(orderId);
+  const list = window.workerOrdersState?.orders || [];
+  window.workerOrdersState.orders = list.filter(order => getOrderId(order) !== id);
+}
+
+function workerOrderMatchesCurrentFilter(order) {
+  const currentStatus = statusElement?.value?.trim().toUpperCase() ?? "";
+
+  if (!currentStatus) {
+    return true;
+  }
+
+  return String(order?.status || "").trim().toUpperCase() === currentStatus;
+}
+
+async function refreshWorkerOrderOnly(orderId) {
+  if (!orderId || typeof fetchMyOrderById !== "function") {
+    return null;
+  }
+
+  try {
+    const order = await fetchMyOrderById(orderId);
+
+    if (!workerOrderMatchesCurrentFilter(order)) {
+      removeWorkerOrderFromCache(orderId);
+
+      if (typeof removeWorkerRenderedOrder === "function") {
+        removeWorkerRenderedOrder(orderId);
+      }
+
+      return order;
+    }
+
+    const list = window.workerOrdersState?.orders || [];
+    const index = list.findIndex(item => getOrderId(item) === String(orderId));
+
+    if (index >= 0) {
+      list[index] = order;
+
+      if (typeof replaceWorkerRenderedOrder === "function") {
+        replaceWorkerRenderedOrder(order);
+      }
+    } else {
+      window.workerOrdersState.orders = sortOrdersNewFirst([order, ...list]);
+      renderOrders(window.workerOrdersState.orders);
+    }
+
+    return order;
+  } catch (e) {
+    console.error("refreshWorkerOrderOnly error:", e);
+    return null;
+  }
+}
+
 function goToComplaintPage(orderId, status) {
   if (!orderId) {
     return;
@@ -127,6 +182,7 @@ async function loadHeaderUser() {
 
 window.loadOrders = loadOrders;
 window.updateWorkerOrderInCache = updateWorkerOrderInCache;
+window.refreshWorkerOrderOnly = refreshWorkerOrderOnly;
 window.goToComplaintPage = goToComplaintPage;
 
 document.addEventListener("DOMContentLoaded", initWorkerPage);

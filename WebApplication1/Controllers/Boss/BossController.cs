@@ -4,6 +4,7 @@ using System.Security.Claims;
 using WebApplication1.Application.Services.Analytics;
 using WebApplication1.Application.Services.Boss;
 using WebApplication1.Application.Services.Order;
+using WebApplication1.Application.Services.Realtime;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Domain;
 using WebApplication1.Models;
@@ -19,17 +20,20 @@ public class BossController : ControllerBase
     private readonly UserService _userService;
     private readonly BossOrderDetailsService _detailsService;
     private readonly BossAnalyticsService _analyticsService;
+    private readonly RealtimeNotificationService _realtime;
 
     public BossController(
         OrderService orderService,
         UserService userService,
         BossOrderDetailsService detailsService,
-        BossAnalyticsService analyticsService)
+        BossAnalyticsService analyticsService,
+        RealtimeNotificationService realtime)
     {
         _orderService = orderService;
         _userService = userService;
         _detailsService = detailsService;
         _analyticsService = analyticsService;
+        _realtime = realtime;
     }
 
     [HttpGet]
@@ -74,10 +78,20 @@ public class BossController : ControllerBase
         string orderId,
         [FromBody] AssignSpecialistRequest req)
     {
+        var previousOrder = await _orderService.GetByIdAsync(orderId);
+        var previousSpecialistId = previousOrder?.SpecialistId;
+
         var (ok, message, order) = await _orderService.AssignSpecialistAsync(orderId, req);
 
         if (!ok || order == null)
             return BadRequest(new { message });
+
+        await _realtime.NotifyOrderChangedAsync(
+            order,
+            "specialistAssigned",
+            message,
+            new[] { previousSpecialistId }
+        );
 
         return Ok(new
         {
@@ -128,13 +142,44 @@ public class BossController : ControllerBase
         {
             id = u.Id,
             fullName = u.FullName,
+            passNumber = u.PassNumber,
             login = u.Login,
             role = u.RoleInSystem,
             position = u.Position,
-            accountStatus = u.AccountStatus
+            phone = u.Phone,
+            email = u.Email,
+            accountStatus = u.AccountStatus,
+            floorNumber = u.FloorNumber,
+            officeNumber = u.OfficeNumber,
+            workshopNumber = u.WorkshopNumber,
+            createdAt = u.CreatedAt
         });
 
         return Ok(result);
+    }
+
+    [HttpPut("/api/boss/users/{id}")]
+    public async Task<ActionResult> UpdateUserDetails(string id, [FromBody] UpdateUserDetailsRequest req)
+    {
+        var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var (ok, msg) = await _userService.UpdateDetailsAsync(id, req, bossId);
+
+        if (!ok)
+            return BadRequest(new { message = msg });
+
+        return Ok(new { message = msg });
+    }
+
+    [HttpPut("/api/boss/users/{id}/password")]
+    public async Task<ActionResult> UpdateUserPassword(string id, [FromBody] UpdateUserPasswordRequest req)
+    {
+        var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var (ok, msg) = await _userService.UpdatePasswordAsync(id, req.NewPassword, bossId);
+
+        if (!ok)
+            return BadRequest(new { message = msg });
+
+        return Ok(new { message = msg });
     }
 
     [HttpPut("/api/boss/users/{id}/role")]
@@ -190,6 +235,8 @@ public class BossController : ControllerBase
         if (!ok || order == null)
             return BadRequest(new { message });
 
+        await _realtime.NotifyOrderChangedAsync(order, "complaintMovedToRework", message);
+
         return Ok(BuildComplaintResponse(message, order));
     }
 
@@ -202,6 +249,8 @@ public class BossController : ControllerBase
         if (!ok || order == null)
             return BadRequest(new { message });
 
+        await _realtime.NotifyOrderChangedAsync(order, "complaintResolved", message);
+
         return Ok(BuildComplaintResponse(message, order));
     }
 
@@ -213,6 +262,8 @@ public class BossController : ControllerBase
 
         if (!ok || order == null)
             return BadRequest(new { message });
+
+        await _realtime.NotifyOrderChangedAsync(order, "complaintRejected", message);
 
         return Ok(BuildComplaintResponse(message, order));
     }

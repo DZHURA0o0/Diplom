@@ -74,6 +74,17 @@ function getActionErrorMessage(error, fallback) {
   return error?.message || fallback || "Невідома помилка";
 }
 
+function hasActiveDetailRequests(order) {
+  if (typeof getDetailRequests !== "function") {
+    return false;
+  }
+
+  return getDetailRequests(order).some(request => {
+    const status = String(request?.status ?? "").trim().toUpperCase();
+    return status === "CREATED" || status === "WAITING";
+  });
+}
+
 async function runSpecialistAction(config) {
   const {
     busyText = "Збереження...",
@@ -194,7 +205,7 @@ async function handleMoveToExecution(orderId) {
 
   const status = getCachedOrderStatus(orderId);
 
-  if (isWaitingDetailsStatus(status)) {
+  if (isWaitingDetailsStatus(status) && hasActiveDetailRequests(getCachedOrder(orderId))) {
     setPageStatus("Заявка ще очікує деталей. Перехід до виконання заблоковано.", true);
     return;
   }
@@ -261,7 +272,7 @@ async function handleRework(orderId) {
 
   await runSpecialistAction({
     busyText: "Збереження повторного звіту...",
-    successText: "Переробку завершено. Заявку передано начальнику на перевірку.",
+    successText: "Перероблено. Заявку передано начальнику на перевірку.",
     errorPrefix: "Помилка переробки",
     action: async () => {
       return await sendReworkReport(orderId, reportText);

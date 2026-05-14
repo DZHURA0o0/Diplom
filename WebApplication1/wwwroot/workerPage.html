@@ -63,7 +63,7 @@
             <option value="EXECUTION">На виконанні</option>
             <option value="UNDER_COMPLAINT">На оскарженні</option>
             <option value="REWORK">На переробці</option>
-            <option value="REWORK_REVIEW">Переробку завершено</option>
+            <option value="REWORK_REVIEW">Перероблено</option>
             <option value="DONE">Виконана</option>
             <option value="CANCELED">Скасована</option>
           </select>
@@ -145,9 +145,11 @@
 
   <script src="/js/guard.js"></script>
   <script src="/js/shared.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
   <script src="/js/js_workers/worker-api.js"></script>
   <script src="/js/js_workers/worker-render.js"></script>
   <script src="/js/js_workers/worker-page.js"></script>
   <script src="/js/js_workers/worker-complaint-modal.js"></script>
+  <script src="/js/js_workers/worker-realtime.js"></script>
 </body>
 </html>

@@ -12,12 +12,14 @@
 <script src="/js/guard.js"></script>
 <script>requireRole(["BOSS"]);</script>
 
-<script src="/js/shared.js" defer></script>
-<script src="/js/js_boss/boss-data.js" defer></script>
+<script src="/js/shared.js?v=2" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" defer></script>
+<script src="/js/js_boss/boss-data.js?v=3" defer></script>
 <script src="/js/js_boss/boss-orders.js" defer></script>
-<script src="/js/js_boss/boss-users.js" defer></script>
+<script src="/js/js_boss/boss-users.js?v=7" defer></script>
 <script src="/js/js_boss/boss-analytics.js" defer></script>
-<script src="/js/js_boss/boss-page.js" defer></script>
+<script src="/js/js_boss/boss-page.js?v=2" defer></script>
+<script src="/js/js_boss/boss-realtime.js" defer></script>
 </head>
 
 <body>
@@ -90,10 +92,25 @@
                 <option value="IN_PROGRESS">У роботі</option>
                 <option value="INSPECTION">На огляді</option>
                 <option value="WAITING_DETAILS">Очікує деталей</option>
+                <option value="DETAILS_RECEIVED">Деталі отримано</option>
                 <option value="EXECUTION">На виконанні</option>
+                <option value="UNDER_COMPLAINT">На оскарженні</option>
                 <option value="REWORK">На переробці</option>
+                <option value="REWORK_REVIEW">Перероблено</option>
                 <option value="DONE">Виконана</option>
                 <option value="CANCELED">Скасована</option>
+              </select>
+
+              <span class="toolbar-label">Користувач:</span>
+
+              <select id="orderPersonRoleFilter" class="boss-select">
+                <option value="">Усі</option>
+                <option value="WORKER">Працівники</option>
+                <option value="SPECIALIST">Специ</option>
+              </select>
+
+              <select id="orderPersonFilter" class="boss-select hidden">
+                <option value="">Усі</option>
               </select>
             </div>
 
@@ -172,12 +189,21 @@
 
               <select id="accountStatusFilter" class="boss-select">
                 <option value="">Усі</option>
-                <option value="ACTIVE">ACTIVE</option>
+                <option value="ACTIVE" selected>ACTIVE</option>
+                <option value="REGISTRATION">REGISTRATION</option>
                 <option value="INACTIVE">INACTIVE</option>
               </select>
             </div>
 
             <div class="toolbar-right">
+              <span class="users-registration-indicator" title="Акаунти на реєстрації">
+                <span class="users-tab-icon" aria-hidden="true">
+                  <span class="users-tab-icon-person"></span>
+                  <span class="users-tab-icon-plus">+</span>
+                </span>
+                <span id="registrationsBadge" class="complaints-badge hidden">0</span>
+              </span>
+
               <button type="button" class="btn-primary" onclick="loadUsers()">Оновити</button>
             </div>
           </div>
@@ -187,7 +213,6 @@
               <table class="boss-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
                     <th>ПІБ</th>
                     <th>Логін</th>
                     <th>Роль</th>

@@ -89,6 +89,7 @@
             aria-selected="false"
           >
             Переробки
+            <span id="specialistReworksBadge" class="specialist-tab-badge hidden">0</span>
           </button>
 
           <button
@@ -98,6 +99,7 @@
             aria-selected="false"
           >
             Запити деталей
+            <span id="specialistDetailsBadge" class="specialist-tab-badge hidden">0</span>
           </button>
         </nav>
 
@@ -119,7 +121,7 @@
                 <option value="DETAILS_RECEIVED">Деталі отримано</option>
                 <option value="EXECUTION">На виконанні</option>
                 <option value="REWORK">На переробці</option>
-                <option value="REWORK_REVIEW">Переробку завершено</option>
+                <option value="REWORK_REVIEW">Перероблено</option>
                 <option value="DONE">Виконана</option>
                 <option value="CANCELED">Скасована</option>
               </select>
@@ -212,7 +214,7 @@
               <summary>Як читати порівняння з відділом</summary>
               <div class="specialist-formula-note-body">
                 <div><strong>Моя частка у виконаних</strong> = мої виконані заявки / усі виконані заявки відділу × 100%.</div>
-                <div><strong>Різниця показника</strong> = мій відсоток - відсоток відділу.</div>
+                <div><strong>Різниця показника</strong> = відхилення мого відсотка від відсотка відділу.</div>
               </div>
             </details>
 

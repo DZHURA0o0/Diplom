@@ -525,10 +525,26 @@ function renderDetailRequestForm(orderId, title = "Створити запит �
   `;
 }
 
+function hasActiveDetailRequests(order) {
+  return getDetailRequests(order).some(request => {
+    const status = normalizeStatus(request.status);
+    return status === "CREATED" || status === "WAITING";
+  });
+}
+
+function hasApprovedDetailRequests(order) {
+  return getDetailRequests(order).some(request => {
+    const status = normalizeStatus(request.status);
+    return status === "APPROVED" || status === "RECEIVED";
+  });
+}
+
 /* ===================== ORDER DETAILS ===================== */
 
 function renderOrderDetails(order, container) {
   const orderId = getOrderId(order);
+  const previousReportsHistory = document.getElementById(`reports-history-${orderId}`)?.innerHTML;
+  const reportsHistoryHtml = previousReportsHistory || renderReportsHistory([]);
 
   container.innerHTML = `
     <div class="details-card" onclick="event.stopPropagation()">
@@ -549,7 +565,7 @@ function renderOrderDetails(order, container) {
 
         ${createDetailsField(
           "Історія звітів",
-          `<div id="reports-history-${escapeAttr(orderId)}">Завантаження...</div>`,
+          `<div id="reports-history-${escapeAttr(orderId)}">${reportsHistoryHtml}</div>`,
           { full: true }
         )}
 
@@ -693,6 +709,24 @@ function renderActionBlock(order, orderId) {
   }
 
   if (status === "WAITING_DETAILS") {
+    if (!hasActiveDetailRequests(order)) {
+      return `
+        <div class="action-block">
+          <div class="action-row">
+            <span class="state-badge">${hasApprovedDetailRequests(order) ? "Деталі отримано" : "Запити закрито"}</span>
+          </div>
+
+          <div class="inactive-text">
+            Активних запитів деталей немає. Можна перейти до виконання заявки.
+          </div>
+
+          <div class="action-row execution-action-row">
+            ${createActionButton("Перевести до виконання", "handleMoveToExecution", orderId)}
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="action-block">
         <div class="locked-action-block">
@@ -739,7 +773,7 @@ function renderActionBlock(order, orderId) {
 
   if (status === "REWORK_REVIEW") {
     return renderLockedAction(
-      "Переробку завершено",
+      "Перероблено",
       "Повторний звіт надіслано начальнику. Заявка очікує остаточного закриття начальником."
     );
   }
@@ -855,6 +889,54 @@ function collectSpecialistDetailRequests() {
   return result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
+function isActiveSpecialistDetailRequest(request) {
+  const status = normalizeStatus(request?.status);
+  return status === "CREATED" || status === "WAITING";
+}
+
+function setSpecialistTabBadge(tabName, badgeId, count, title) {
+  const badge = document.getElementById(badgeId);
+  const tab = document.querySelector(`[data-specialist-tab="${tabName}"]`);
+
+  if (!badge) {
+    return;
+  }
+
+  badge.textContent = String(count);
+
+  if (count > 0) {
+    badge.classList.remove("hidden");
+    badge.title = title ? `${title}: ${count}` : "";
+    tab?.classList.add("has-alerts");
+  } else {
+    badge.classList.add("hidden");
+    badge.title = "";
+    tab?.classList.remove("has-alerts");
+  }
+}
+
+function updateSpecialistTabBadges() {
+  const detailRequestsCount = collectSpecialistDetailRequests()
+    .filter(isActiveSpecialistDetailRequest)
+    .length;
+
+  const reworksCount = collectSpecialistReworkOrders().length;
+
+  setSpecialistTabBadge(
+    "details",
+    "specialistDetailsBadge",
+    detailRequestsCount,
+    "Активних запитів деталей"
+  );
+
+  setSpecialistTabBadge(
+    "reworks",
+    "specialistReworksBadge",
+    reworksCount,
+    "Активних переробок"
+  );
+}
+
 function isDetailRequestVisibleByFilter(request) {
   if (!specialistDetailRequestFilter) {
     return true;
@@ -919,6 +1001,8 @@ function renderSpecialistDetailRequestCard(request) {
 function renderSpecialistDetailRequestsTab() {
   const container = document.getElementById("specialistDetailRequestsList");
   if (!container) return;
+
+  updateSpecialistTabBadges();
 
   const requests = collectSpecialistDetailRequests().filter(isDetailRequestVisibleByFilter);
 
@@ -988,6 +1072,8 @@ function renderSpecialistReworksTab() {
   const container = document.getElementById("specialistReworksList");
   if (!container) return;
 
+  updateSpecialistTabBadges();
+
   const orders = collectSpecialistReworkOrders();
 
   if (orders.length === 0) {
@@ -1014,3 +1100,4 @@ window.removeSpecialistRenderedOrder = removeSpecialistRenderedOrder;
 window.setSpecialistDetailRequestFilter = setSpecialistDetailRequestFilter;
 window.renderSpecialistDetailRequestsTab = renderSpecialistDetailRequestsTab;
 window.renderSpecialistReworksTab = renderSpecialistReworksTab;
+window.updateSpecialistTabBadges = updateSpecialistTabBadges;

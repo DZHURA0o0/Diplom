@@ -259,7 +259,16 @@ public class SpecialistAnalyticsService
 
     private static bool HasComplaint(DomainOrder order)
     {
-        return order.Complaint != null && order.Complaint.IsSubmitted;
+        return order.Complaint != null &&
+               order.Complaint.IsSubmitted &&
+               !IsRejectedComplaint(order);
+    }
+
+    private static bool IsRejectedComplaint(DomainOrder order)
+    {
+        return order.Complaint != null &&
+               order.Complaint.ClosedAt != null &&
+               string.IsNullOrWhiteSpace(order.Complaint.ResolvedByReportId);
     }
 
     private static bool IsReworkRelated(DomainOrder order)

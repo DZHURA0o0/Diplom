@@ -137,6 +137,30 @@ async function updateUserAccountStatus(userId, accountStatus) {
   });
 }
 
+async function updateUserDetails(userId, data) {
+  return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+window.updateUserDetails = updateUserDetails;
+
+async function updateUserPassword(userId, newPassword) {
+  return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}/password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ newPassword })
+  });
+}
+
+window.updateUserPassword = updateUserPassword;
+
 /* ===========================
    CURRENT USER
 =========================== */

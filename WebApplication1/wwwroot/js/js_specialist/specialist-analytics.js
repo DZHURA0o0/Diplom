@@ -166,6 +166,16 @@ function specialistAnalyticsSignedPercent(value) {
   return `${number > 0 ? "+" : ""}${number.toFixed(1)}%`;
 }
 
+function specialistAnalyticsAbsolutePercent(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "0.0%";
+  }
+
+  return `${Math.abs(number).toFixed(1)}%`;
+}
+
 function specialistAnalyticsCompareClass(value, inverse = false) {
   const number = Number(value);
 
@@ -202,7 +212,7 @@ function renderSpecialistAnalyticsComparison(comparison) {
     <div class="specialist-comparison-card">
       <div class="specialist-comparison-label">Різниця % скарг від виконаних з відділом</div>
       <div class="specialist-comparison-value ${specialistAnalyticsCompareClass(comparison.complaintRateDifferencePercent, true)}">
-        ${escapeHtml(specialistAnalyticsSignedPercent(comparison.complaintRateDifferencePercent))}
+        ${escapeHtml(specialistAnalyticsAbsolutePercent(comparison.complaintRateDifferencePercent))}
       </div>
     </div>
   `;

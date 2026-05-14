@@ -227,7 +227,7 @@ public class OrderService
             return (false, "Позначити отримання деталей можна тільки для заявки у статусі WAITING_DETAILS.");
 
         var activeRequests = (await GetOrderDetailRequestsAsync(order))
-            .Where(x => IsDetailStatus(x, "CREATED"))
+            .Where(IsActiveDetailRequest)
             .ToList();
 
         if (activeRequests.Count == 0)
@@ -254,7 +254,17 @@ public class OrderService
         var order = result.order!;
 
         if (IsStatus(order, "WAITING_DETAILS"))
-            return (false, "Заявка ще очікує деталей. Спочатку потрібно отримати всі активні запити.");
+        {
+            var requests = await GetOrderDetailRequestsAsync(order);
+
+            if (requests.Any(IsActiveDetailRequest))
+                return (false, "Заявка ще очікує деталей. Спочатку потрібно отримати всі активні запити.");
+
+            await RecalculateOrderDetailStatusAsync(order);
+
+            if (IsStatus(order, "WAITING_DETAILS"))
+                return (false, "Заявка ще очікує деталей. Спочатку потрібно отримати всі активні запити.");
+        }
 
         if (!IsAnyStatus(order, "INSPECTION", "DETAILS_RECEIVED", "REWORK"))
             return (false, "Перевести до виконання можна тільки після огляду, деталей або під час переробки.");
@@ -422,17 +432,17 @@ public class OrderService
         {
             order.Status = "INSPECTION";
         }
-        else if (requests.Any(x => IsDetailStatus(x, "CREATED")))
+        else if (requests.Any(IsActiveDetailRequest))
         {
             order.Status = "WAITING_DETAILS";
         }
         else
         {
-            var usefulRequests = requests
-                .Where(x => !IsDetailStatus(x, "REJECTED") && !IsDetailStatus(x, "CANCELED"))
+            var approvedRequests = requests
+                .Where(IsApprovedDetailRequest)
                 .ToList();
 
-            order.Status = usefulRequests.Count > 0 && usefulRequests.All(x => IsDetailStatus(x, "APPROVED"))
+            order.Status = approvedRequests.Count > 0
                 ? "DETAILS_RECEIVED"
                 : "INSPECTION";
         }
@@ -505,4 +515,10 @@ public class OrderService
 
     private static bool IsDetailStatus(DetailRequest request, string status)
         => string.Equals(request.Status, status, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsActiveDetailRequest(DetailRequest request)
+        => IsDetailStatus(request, "CREATED") || IsDetailStatus(request, "WAITING");
+
+    private static bool IsApprovedDetailRequest(DetailRequest request)
+        => IsDetailStatus(request, "APPROVED") || IsDetailStatus(request, "RECEIVED");
 }

@@ -110,6 +110,26 @@ public class UserRepository
 
         await _users.UpdateOneAsync(filter, update);
     }
+
+    public async Task UpdateDetailsAsync(User user)
+    {
+        var filter = Builders<User>.Filter.Eq(x => x.Id, user.Id);
+
+        var update = Builders<User>.Update
+            .Set(x => x.FullName, user.FullName)
+            .Set(x => x.Login, user.Login)
+            .Set(x => x.PassNumber, user.PassNumber)
+            .Set(x => x.RoleInSystem, user.RoleInSystem)
+            .Set(x => x.Position, user.Position)
+            .Set(x => x.Phone, user.Phone)
+            .Set(x => x.Email, user.Email)
+            .Set(x => x.AccountStatus, user.AccountStatus)
+            .Set(x => x.FloorNumber, user.FloorNumber)
+            .Set(x => x.OfficeNumber, user.OfficeNumber)
+            .Set(x => x.WorkshopNumber, user.WorkshopNumber);
+
+        await _users.UpdateOneAsync(filter, update);
+    }
 public async Task<List<User>> GetAllSpecialistsAsync()
 {
     return await _users

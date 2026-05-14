@@ -6,10 +6,10 @@ using WebApplication1.Application.Services.Order;
 using WebApplication1.Application.Services.Reports;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Application.Services.Analytics;
+using WebApplication1.Application.Services.Realtime;
 using WebApplication1.Infrastructure.Extensions;
 using WebApplication1.Infrastructure.Repositories;
 using WebApplication1.Application.Services.Details;
-using WebApplication1.Application.Services.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,14 +55,8 @@ builder.Services.AddHostedService<DetailRequestChangeStreamService>();
 // Work reports / rework reports
 builder.Services.AddScoped<SpecialistWorkReportService>();
 
-// Email notifications
-builder.Services.AddSingleton<EmailNotificationService>();
-
-// MongoDB watcher for order notifications
-builder.Services.AddHostedService<OrderStatusWatcherService>();
-
-// Test email on application startup
-builder.Services.AddHostedService<StartupEmailTestService>();
+// Realtime notifications
+builder.Services.AddSingleton<RealtimeNotificationService>();
 
 var app = builder.Build();
 
@@ -81,6 +75,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // SignalR hub
-app.MapHub<SpecialistNotificationHub>("/hubs/specialist");
+app.MapHub<RealtimeNotificationHub>("/hubs/realtime");
+app.MapHub<RealtimeNotificationHub>("/hubs/specialist");
 
 app.Run();

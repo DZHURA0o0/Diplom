@@ -219,6 +219,35 @@ function replaceWorkerRenderedOrder(order) {
   return true;
 }
 
+function removeWorkerRenderedOrder(orderId) {
+  const id = String(orderId);
+  const oldDetails = document.getElementById(`details-${id}`);
+
+  if (!oldDetails) {
+    return false;
+  }
+
+  const oldItem = oldDetails.closest(".order-item");
+
+  if (!oldItem) {
+    return false;
+  }
+
+  oldItem.remove();
+
+  if (openedOrderId === id) {
+    openedOrderId = null;
+  }
+
+  const container = document.getElementById("orders");
+
+  if (container && !container.querySelector(".order-item")) {
+    container.innerHTML = `<div class="empty">Заявок не знайдено.</div>`;
+  }
+
+  return true;
+}
+
 function renderOrderDetails(order, container) {
   const hasComplaint = !!order.complaint?.isSubmitted;
   const isDone = isDoneStatus(order.status);
@@ -343,4 +372,5 @@ window.renderOrders = renderOrders;
 window.renderOrderDetails = renderOrderDetails;
 window.toggleDetails = toggleDetails;
 window.replaceWorkerRenderedOrder = replaceWorkerRenderedOrder;
+window.removeWorkerRenderedOrder = removeWorkerRenderedOrder;
 window.setWorkerOrderDetailsOpen = setWorkerOrderDetailsOpen;

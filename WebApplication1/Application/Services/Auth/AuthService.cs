@@ -77,7 +77,7 @@ public class AuthService
             Position = request.Position?.Trim() ?? "",
             Phone = request.Phone?.Trim() ?? "",
             Email = request.Email?.Trim() ?? "",
-            AccountStatus = "ACTIVE",
+            AccountStatus = "REGISTRATION",
             FloorNumber = request.FloorNumber,
             OfficeNumber = request.OfficeNumber,
             WorkshopNumber = request.WorkshopNumber,

@@ -1,4 +1,5 @@
 using WebApplication1.Domain;
+using WebApplication1.Application.Services.Realtime;
 using WebApplication1.Infrastructure.Repositories;
 using DomainOrder = WebApplication1.Domain.Order;
 
@@ -8,15 +9,18 @@ public class DetailRequestStatusSyncService
 {
     private readonly DetailRequestRepository _detailRequests;
     private readonly OrderRepository _orders;
+    private readonly RealtimeNotificationService _realtime;
     private readonly ILogger<DetailRequestStatusSyncService> _logger;
 
     public DetailRequestStatusSyncService(
         DetailRequestRepository detailRequests,
         OrderRepository orders,
+        RealtimeNotificationService realtime,
         ILogger<DetailRequestStatusSyncService> logger)
     {
         _detailRequests = detailRequests;
         _orders = orders;
+        _realtime = realtime;
         _logger = logger;
     }
 
@@ -79,31 +83,23 @@ public class DetailRequestStatusSyncService
 
         SyncOrderDetailRequestIds(order, requests);
 
-        if (requests.Any(x => IsDetailStatus(x, "CREATED") || IsDetailStatus(x, "WAITING")))
+        if (requests.Any(IsActiveDetailRequest))
         {
             await UpdateOrderStatusIfNeededAsync(order, "WAITING_DETAILS");
             return;
         }
 
-        var usefulRequests = requests
-            .Where(x =>
-                !IsDetailStatus(x, "REJECTED") &&
-                !IsDetailStatus(x, "CANCELED"))
+        var approvedRequests = requests
+            .Where(IsApprovedDetailRequest)
             .ToList();
 
-        if (usefulRequests.Count == 0)
+        if (approvedRequests.Count == 0)
         {
             await UpdateOrderStatusIfNeededAsync(order, "INSPECTION");
             return;
         }
 
-        if (usefulRequests.All(x => IsDetailStatus(x, "APPROVED") || IsDetailStatus(x, "RECEIVED")))
-        {
-            await UpdateOrderStatusIfNeededAsync(order, "DETAILS_RECEIVED");
-            return;
-        }
-
-        await UpdateOrderStatusIfNeededAsync(order, "WAITING_DETAILS");
+        await UpdateOrderStatusIfNeededAsync(order, "DETAILS_RECEIVED");
     }
 
     private async Task UpdateOrderStatusIfNeededAsync(DomainOrder order, string newStatus)
@@ -111,6 +107,7 @@ public class DetailRequestStatusSyncService
         if (IsStatus(order.Status, newStatus))
         {
             await _orders.UpdateAsync(order);
+            await _realtime.NotifyOrderChangedAsync(order, "detailRequestSynced", "Detail request updated");
 
             _logger.LogInformation(
                 "Order {OrderId} detail status sync completed. Status unchanged: {Status}",
@@ -125,6 +122,7 @@ public class DetailRequestStatusSyncService
         order.Status = newStatus;
 
         await _orders.UpdateAsync(order);
+        await _realtime.NotifyOrderChangedAsync(order, "detailRequestSynced", "Detail request updated");
 
         _logger.LogInformation(
             "Order {OrderId} status changed by detail request sync: {OldStatus} -> {NewStatus}",
@@ -176,5 +174,17 @@ public class DetailRequestStatusSyncService
             status,
             StringComparison.OrdinalIgnoreCase
         );
+    }
+
+    private static bool IsActiveDetailRequest(DetailRequest request)
+    {
+        return IsDetailStatus(request, "CREATED") ||
+               IsDetailStatus(request, "WAITING");
+    }
+
+    private static bool IsApprovedDetailRequest(DetailRequest request)
+    {
+        return IsDetailStatus(request, "APPROVED") ||
+               IsDetailStatus(request, "RECEIVED");
     }
 }

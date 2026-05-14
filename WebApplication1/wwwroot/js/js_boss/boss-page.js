@@ -17,6 +17,10 @@ function resetBossPeopleCache() {
         bossWorkersMap = {};
     }
 
+    if (typeof bossWorkers !== "undefined") {
+        bossWorkers = [];
+    }
+
     if (typeof bossSpecialists !== "undefined") {
         bossSpecialists = [];
     }
@@ -54,6 +58,30 @@ function initBossFilters() {
         if (typeof updateComplaintsBadge === "function") {
             await updateComplaintsBadge();
         }
+    });
+
+    bindBossFilterChange("orderPersonRoleFilter", async () => {
+        const personSelect = document.getElementById("orderPersonFilter");
+
+        if (personSelect) {
+            personSelect.value = "";
+        }
+
+        if (typeof refreshOrderPeopleFilterOptions === "function") {
+            await refreshOrderPeopleFilterOptions();
+        }
+
+        if (typeof loadOrders !== "function") return;
+
+        resetOrdersCache();
+        await loadOrders();
+    });
+
+    bindBossFilterChange("orderPersonFilter", async () => {
+        if (typeof loadOrders !== "function") return;
+
+        resetOrdersCache();
+        await loadOrders();
     });
 
     ["roleFilter", "accountStatusFilter"].forEach(id => {
@@ -157,6 +185,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (typeof updateComplaintsBadge === "function") {
         await updateComplaintsBadge();
+    }
+
+    if (typeof updateRegistrationsBadge === "function") {
+        await updateRegistrationsBadge();
     }
 
     showTab("orders");

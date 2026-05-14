@@ -120,6 +120,10 @@ async function refreshSpecialistOrderOnly(orderId) {
 
     updateOrderInCaches(order);
 
+    if (typeof updateSpecialistTabBadges === "function") {
+      updateSpecialistTabBadges();
+    }
+
     if (activeSpecialistTab !== "orders") {
       return order;
     }
@@ -147,7 +151,19 @@ async function refreshSpecialistOrderOnly(orderId) {
     return order;
   } catch (e) {
     console.error("refreshSpecialistOrderOnly error:", e);
-    setPageStatus("Не вдалося оновити заявку: " + e.message, true);
+
+    const id = String(orderId);
+    specialistOrders = specialistOrders.filter(order => getSpecialistOrderId(order) !== id);
+    specialistAllOrders = specialistAllOrders.filter(order => getSpecialistOrderId(order) !== id);
+
+    if (typeof removeSpecialistRenderedOrder === "function") {
+      removeSpecialistRenderedOrder(id);
+    }
+
+    if (typeof updateSpecialistTabBadges === "function") {
+      updateSpecialistTabBadges();
+    }
+
     return null;
   }
 }
@@ -178,6 +194,10 @@ async function loadOrders(options = {}) {
 
     if (!status || updateAllCache || statusOverride === "") {
       specialistAllOrders = orders;
+    }
+
+    if (typeof updateSpecialistTabBadges === "function") {
+      updateSpecialistTabBadges();
     }
 
     if (render && activeSpecialistTab === "orders") {
@@ -218,6 +238,10 @@ async function ensureSpecialistAllOrdersLoaded(force = false) {
     Array.isArray(specialistAllOrders) &&
     specialistAllOrders.length > 0
   ) {
+    if (typeof updateSpecialistTabBadges === "function") {
+      updateSpecialistTabBadges();
+    }
+
     return specialistAllOrders;
   }
 

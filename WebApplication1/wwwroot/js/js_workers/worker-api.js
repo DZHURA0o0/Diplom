@@ -11,6 +11,12 @@ async function fetchMyOrders(status = "") {
   return data;
 }
 
+async function fetchMyOrderById(orderId) {
+  return await apiRequest(`/api/worker/orders/${encodeURIComponent(orderId)}`, {
+    method: "GET"
+  });
+}
+
 async function submitWorkerComplaint(orderId, text) {
   return await apiRequest(`/api/worker/orders/${encodeURIComponent(orderId)}/complaint`, {
     method: "POST",

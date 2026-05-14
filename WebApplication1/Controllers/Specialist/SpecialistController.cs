@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApplication1.Application.Services.Order;
+using WebApplication1.Application.Services.Realtime;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Models;
 
@@ -14,11 +15,16 @@ public class SpecialistController : ControllerBase
 {
     private readonly OrderService _service;
     private readonly UserService _userService;
+    private readonly RealtimeNotificationService _realtime;
 
-    public SpecialistController(OrderService service, UserService userService)
+    public SpecialistController(
+        OrderService service,
+        UserService userService,
+        RealtimeNotificationService realtime)
     {
         _service = service;
         _userService = userService;
+        _realtime = realtime;
     }
 
     [HttpGet]
@@ -77,6 +83,8 @@ public class SpecialistController : ControllerBase
         if (!ok)
             return BadRequest(new { message });
 
+        await NotifyOrderChangedAsync(orderId, "workStarted", message);
+
         return Ok(new { message });
     }
 
@@ -93,6 +101,8 @@ public class SpecialistController : ControllerBase
 
         if (!ok)
             return BadRequest(new { message });
+
+        await NotifyOrderChangedAsync(orderId, "inspectionSaved", message);
 
         return Ok(new { message });
     }
@@ -112,6 +122,8 @@ public class SpecialistController : ControllerBase
         if (!ok)
             return BadRequest(new { message });
 
+        await NotifyOrderChangedAsync(orderId, "detailRequestCreated", message);
+
         return Ok(new { message });
     }
 
@@ -125,6 +137,8 @@ public class SpecialistController : ControllerBase
         if (!ok)
             return BadRequest(new { message });
 
+        await NotifyOrderChangedAsync(orderId, "detailsReceived", message);
+
         return Ok(new { message });
     }
 
@@ -137,6 +151,8 @@ public class SpecialistController : ControllerBase
 
         if (!ok)
             return BadRequest(new { message });
+
+        await NotifyOrderChangedAsync(orderId, "movedToExecution", message);
 
         return Ok(new { message });
     }
@@ -155,7 +171,15 @@ public class SpecialistController : ControllerBase
         if (!ok)
             return BadRequest(new { message });
 
+        await NotifyOrderChangedAsync(orderId, "orderFinished", message);
+
         return Ok(new { message });
+    }
+
+    private async Task NotifyOrderChangedAsync(string orderId, string eventType, string? message)
+    {
+        var order = await _service.GetByIdAsync(orderId);
+        await _realtime.NotifyOrderChangedAsync(order, eventType, message);
     }
 
     private static object ToSpecialistOrderResponse(OrderDto o, string? workerName)

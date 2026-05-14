@@ -15,7 +15,7 @@ const COMMON_STATUS_LABELS = {
   EXECUTION: "На виконанні",
   UNDER_COMPLAINT: "На оскарженні",
   REWORK: "На переробці",
-  REWORK_REVIEW: "Переробку завершено",
+  REWORK_REVIEW: "Перероблено",
   DONE: "Виконана",
   CANCELED: "Скасована"
 };
@@ -39,6 +39,7 @@ const COMMON_SERVICE_TYPE_LABELS = {
   ELECTRICAL: "Електроживлення / електрика",
   PC_PROBLEM: "Проблема з комп’ютером",
   PRINTER_PROBLEM: "Проблема з принтером",
+  CARTRIDGE_REFILL: "Заправка картриджа",
   SOFTWARE_BUG: "Баг програмного забезпечення",
   INTERNET: "Інтернет / мережа",
   SEAL_DAMAGE: "Відсутня пломба / пошкоджена",
@@ -56,7 +57,8 @@ const COMMON_ROLE_LABELS = {
 
 const COMMON_ACCOUNT_STATUS_LABELS = {
   ACTIVE: "Активний",
-  INACTIVE: "Неактивний"
+  INACTIVE: "Неактивний",
+  REGISTRATION: "На реєстрації"
 };
 
 function getToken() {

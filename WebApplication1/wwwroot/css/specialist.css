@@ -84,10 +84,6 @@
   box-shadow: var(--sp-shadow-lg);
 }
 
-.specialist-card.single-order-mode {
-  max-width: 1180px;
-}
-
 .hello-text {
   color: var(--sp-text);
   font-size: 22px;
@@ -224,6 +220,33 @@
   color: var(--sp-text);
   background: var(--sp-card-gradient);
   box-shadow: var(--sp-shadow-sm);
+}
+
+.specialist-tab-badge {
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 6px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+  border: 1px solid rgba(255, 193, 7, 0.45);
+
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffe28a;
+  background: rgba(255, 193, 7, 0.18);
+}
+
+.specialist-tab.has-alerts {
+  border-color: rgba(255, 193, 7, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(255, 193, 7, 0.25),
+    0 0 20px rgba(255, 193, 7, 0.12);
 }
 
 .specialist-tab:hover {
@@ -1105,6 +1128,10 @@
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.specialist-analytics-section + .specialist-formula-note {
+  margin-top: 14px;
 }
 
 .specialist-formula-note summary {

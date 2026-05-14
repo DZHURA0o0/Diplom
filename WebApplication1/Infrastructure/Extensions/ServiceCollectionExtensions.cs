@@ -71,7 +71,8 @@ public static class ServiceCollectionExtensions
                         var path = context.HttpContext.Request.Path;
 
                         if (!string.IsNullOrWhiteSpace(accessToken) &&
-                            path.StartsWithSegments("/hubs/specialist"))
+                            (path.StartsWithSegments("/hubs/realtime") ||
+                             path.StartsWithSegments("/hubs/specialist")))
                         {
                             context.Token = accessToken;
                         }

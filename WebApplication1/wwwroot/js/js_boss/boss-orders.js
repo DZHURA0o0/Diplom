@@ -1,6 +1,7 @@
 let ordersExpandedState = {};
 let orderDetailsCache = {};
 
+let bossWorkers = [];
 let bossWorkersMap = {};
 let bossSpecialists = [];
 let bossSpecialistsMap = {};
@@ -27,7 +28,7 @@ const STATUS_LABELS = {
     EXECUTION: "Виконання",
     UNDER_COMPLAINT: "Під скаргою",
     REWORK: "На переробці",
-    REWORK_REVIEW: "Переробку завершено",
+    REWORK_REVIEW: "Перероблено",
     DONE: "Виконана",
     CANCELED: "Скасована"
 };
@@ -36,6 +37,7 @@ const SERVICE_TYPE_LABELS = {
     ELECTRICAL: "Електроживлення / електрика",
     PC_PROBLEM: "Проблема з комп’ютером",
     PRINTER_PROBLEM: "Проблема з принтером",
+    CARTRIDGE_REFILL: "Заправка картриджа",
     SOFTWARE_BUG: "Баг програмного забезпечення",
     INTERNET: "Інтернет / мережа",
     SEAL_DAMAGE: "Відсутня пломба / пошкоджена",
@@ -103,8 +105,7 @@ function formatServiceType(value) {
 function normalizeStatusClass(status) {
     return String(status || "UNKNOWN")
         .trim()
-        .toUpperCase()
-        .replaceAll("_", "-");
+        .toUpperCase();
 }
 
 function formatLocation(order) {
@@ -282,20 +283,38 @@ async function ensurePeopleLoaded(force = false) {
         fetchSpecialists()
     ]);
 
+    bossWorkers = workers
+        .map(worker => {
+            const id = normalizeBossId(worker.id || worker.Id || worker._id);
+
+            return {
+                id,
+                fullName:
+                    worker.fullName ||
+                    worker.FullName ||
+                    worker.full_name ||
+                    worker.login ||
+                    worker.Login ||
+                    id,
+                login:
+                    worker.login ||
+                    worker.Login ||
+                    "",
+                accountStatus:
+                    worker.accountStatus ||
+                    worker.account_status ||
+                    ""
+            };
+        })
+        .filter(x => x.id);
+
     bossWorkersMap = {};
 
-    for (const worker of workers) {
-        const id = normalizeBossId(worker.id || worker.Id || worker._id);
-
-        if (!id) continue;
-
-        bossWorkersMap[id] =
+    for (const worker of bossWorkers) {
+        bossWorkersMap[worker.id] =
             worker.fullName ||
-            worker.FullName ||
-            worker.full_name ||
             worker.login ||
-            worker.Login ||
-            id;
+            worker.id;
     }
 
     bossSpecialists = specialists
@@ -341,6 +360,91 @@ async function ensurePeopleLoaded(force = false) {
     }
 
     bossPeopleLoaded = true;
+}
+
+function getOrderPeopleFilterRole() {
+    return String(document.getElementById("orderPersonRoleFilter")?.value || "")
+        .trim()
+        .toUpperCase();
+}
+
+function getOrderPeopleFilterId() {
+    return normalizeBossId(document.getElementById("orderPersonFilter")?.value || "");
+}
+
+function getBossPeopleOptions(role) {
+    return role === "WORKER" ? bossWorkers : bossSpecialists;
+}
+
+function updateOrderPeopleFilterOptions() {
+    const role = getOrderPeopleFilterRole();
+    const personSelect = document.getElementById("orderPersonFilter");
+
+    if (!personSelect) {
+        return;
+    }
+
+    const selectedPersonId = normalizeBossId(personSelect.value || "");
+
+    personSelect.innerHTML = "";
+    personSelect.appendChild(new Option("Усі", ""));
+
+    if (!role) {
+        personSelect.classList.add("hidden");
+        personSelect.value = "";
+        return;
+    }
+
+    const people = getBossPeopleOptions(role)
+        .map(person => ({
+            id: normalizeBossId(person.id || person._id),
+            fullName: person.fullName || person.full_name || person.login || "—",
+            accountStatus: person.accountStatus || person.account_status || ""
+        }))
+        .filter(person => person.id)
+        .sort((a, b) => a.fullName.localeCompare(b.fullName, "uk"));
+
+    for (const person of people) {
+        const label = person.accountStatus === "INACTIVE"
+            ? `${person.fullName} (неактивний)`
+            : person.fullName;
+
+        personSelect.appendChild(new Option(label, person.id));
+    }
+
+    if (selectedPersonId && people.some(person => person.id === selectedPersonId)) {
+        personSelect.value = selectedPersonId;
+    }
+
+    personSelect.classList.remove("hidden");
+}
+
+async function refreshOrderPeopleFilterOptions() {
+    await ensurePeopleLoaded();
+    updateOrderPeopleFilterOptions();
+}
+
+function matchesOrderPeopleFilter(order) {
+    const role = getOrderPeopleFilterRole();
+    const personId = getOrderPeopleFilterId();
+
+    if (!role) {
+        return true;
+    }
+
+    if (!personId) {
+        return true;
+    }
+
+    const orderPersonId = role === "WORKER"
+        ? getWorkerId(order)
+        : getSpecialistId(order);
+
+    return normalizeBossId(orderPersonId) === personId;
+}
+
+function filterOrdersByBossFilters(orders) {
+    return orders.filter(matchesOrderPeopleFilter);
 }
 
 /* ===================== COMPLAINT HELPERS ===================== */
@@ -459,7 +563,7 @@ function getComplaintStatusLabel(order) {
 
     if (status === "SUBMITTED") return "Подана";
     if (status === "IN_REWORK") return "На переробці";
-    if (status === "REWORK_DONE") return "Переробку завершено";
+    if (status === "REWORK_DONE") return "Перероблено";
     if (status === "RESOLVED") return "Вирішена";
     if (status === "REJECTED") return "Відхилена";
 
@@ -907,11 +1011,11 @@ function shouldOrderStayVisibleInTable(order, tbodyId) {
 
     const statusFilter = document.getElementById("statusFilter")?.value || "";
 
-    if (!statusFilter) {
-        return true;
+    if (statusFilter && getOrderStatus(order) !== String(statusFilter).trim().toUpperCase()) {
+        return false;
     }
 
-    return getOrderStatus(order) === String(statusFilter).trim().toUpperCase();
+    return matchesOrderPeopleFilter(order);
 }
 
 function ensureBossTableEmptyState(tbodyId) {
@@ -994,6 +1098,20 @@ async function updateRenderedOrderOnly(orderId, options = {}) {
     }
 
     if (!pair) {
+        const tbody = document.getElementById(tbodyId);
+
+        if (tbody) {
+            const emptyRow = tbody.querySelector("tr:not(.main-row):not(.details-row)");
+
+            if (emptyRow) {
+                emptyRow.remove();
+            }
+
+            const newPair = createRenderedOrderRows(freshOrder, tbodyId);
+            tbody.prepend(newPair.detailsRow);
+            tbody.prepend(newPair.mainRow);
+        }
+
         if (options.activeComplaintDelta) {
             adjustComplaintsBadge(options.activeComplaintDelta);
         }
@@ -1397,8 +1515,10 @@ async function loadOrders() {
         const statusFilter = document.getElementById("statusFilter");
         const status = statusFilter ? statusFilter.value : "";
 
+        updateOrderPeopleFilterOptions();
+
         const orders = await fetchOrders(status);
-        const sorted = sortOrders(orders);
+        const sorted = sortOrders(filterOrdersByBossFilters(orders));
 
         renderOrdersTable(sorted, "orders", "Немає заявок");
 
@@ -1646,3 +1766,4 @@ async function updateComplaintsBadge() {
 window.loadOrders = loadOrders;
 window.loadComplaintsOrders = loadComplaintsOrders;
 window.updateComplaintsBadge = updateComplaintsBadge;
+window.updateRenderedOrderOnly = updateRenderedOrderOnly;
