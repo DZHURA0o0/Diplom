@@ -11,7 +11,7 @@ const COMMON_STATUS_LABELS = {
   IN_PROGRESS: "У роботі",
   INSPECTION: "На перевірці",
   WAITING_DETAILS: "Очікує",
-  DETAILS_RECEIVED: "Деталі",
+  DETAILS_RECEIVED: "Матеріал видано",
   EXECUTION: "На виконанні",
   UNDER_COMPLAINT: "На оскарженні",
   REWORK: "На переробці",
@@ -26,7 +26,7 @@ const COMMON_STATUS_BADGE_LABELS = {
   IN_PROGRESS: "У РОБОТІ",
   INSPECTION: "ОГЛЯД",
   WAITING_DETAILS: "ОЧІКУЄ",
-  DETAILS_RECEIVED: "ОТРИМАНО",
+  DETAILS_RECEIVED: "ВИДАНО",
   EXECUTION: "ВИКОНАННЯ",
   UNDER_COMPLAINT: "СКАРГА",
   REWORK: "НА ПЕРЕРОБЦІ",
@@ -52,7 +52,9 @@ const COMMON_SERVICE_TYPE_LABELS = {
 const COMMON_ROLE_LABELS = {
   WORKER: "Працівник",
   SPECIALIST: "Спеціаліст",
-  BOSS: "Начальник"
+  BOSS: "Начальник",
+  WAREHOUSE_MANAGER: "Менеджер складу",
+  WAREHOUSE_WORKER: "Робочий складу"
 };
 
 const COMMON_ACCOUNT_STATUS_LABELS = {

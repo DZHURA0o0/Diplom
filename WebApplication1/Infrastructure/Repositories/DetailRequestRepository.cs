@@ -81,11 +81,10 @@ public class DetailRequestRepository
         var statuses = new[]
         {
             "CREATED",
-            "WAITING",
+            "RESERVED",
             "APPROVED",
-            "RECEIVED",
-            "REJECTED",
-            "CANCELED"
+            "CANCELED",
+            "REJECTED"
         };
 
         return await _collection

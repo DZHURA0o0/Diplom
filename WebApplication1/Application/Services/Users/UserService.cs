@@ -8,7 +8,14 @@ namespace WebApplication1.Application.Services.Users;
 
 public class UserService
 {
-    private static readonly string[] AllowedRoles = { "WORKER", "SPECIALIST", "BOSS" };
+    private static readonly string[] AllowedRoles =
+    {
+        "WORKER",
+        "SPECIALIST",
+        "BOSS",
+        "WAREHOUSE_MANAGER",
+        "WAREHOUSE_WORKER"
+    };
     private static readonly string[] AllowedStatuses = { "ACTIVE", "INACTIVE", "REGISTRATION" };
 
     private readonly UserRepository _users;

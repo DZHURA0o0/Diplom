@@ -215,36 +215,6 @@ public class OrderService
         return (true, "Запит на деталі створено.");
     }
 
-    public async Task<(bool ok, string? message)> ReceiveDetailsAsync(string orderId, string? specialistId)
-    {
-        var result = await GetAssignedOrderAsync(orderId, specialistId);
-        if (!result.ok)
-            return (false, result.message);
-
-        var order = result.order!;
-
-        if (!IsStatus(order, "WAITING_DETAILS"))
-            return (false, "Позначити отримання деталей можна тільки для заявки у статусі WAITING_DETAILS.");
-
-        var activeRequests = (await GetOrderDetailRequestsAsync(order))
-            .Where(IsActiveDetailRequest)
-            .ToList();
-
-        if (activeRequests.Count == 0)
-            return (false, "У заявки немає активних запитів на деталі.");
-
-        foreach (var request in activeRequests)
-        {
-            request.Status = "APPROVED";
-            request.ApprovedAt = DateTime.UtcNow;
-
-            await _detailRequests.UpdateAsync(request);
-        }
-
-        await RecalculateOrderDetailStatusAsync(order);
-        return (true, "Деталі отримано. Статус заявки оновлено.");
-    }
-
     public async Task<(bool ok, string? message)> MoveToExecutionAsync(string orderId, string? specialistId)
     {
         var result = await GetAssignedOrderAsync(orderId, specialistId);
@@ -514,11 +484,21 @@ public class OrderService
         => statuses.Any(status => IsStatus(order, status));
 
     private static bool IsDetailStatus(DetailRequest request, string status)
-        => string.Equals(request.Status, status, StringComparison.OrdinalIgnoreCase);
+        => string.Equals(
+            NormalizeDetailRequestStatus(request.Status),
+            status,
+            StringComparison.OrdinalIgnoreCase);
 
     private static bool IsActiveDetailRequest(DetailRequest request)
-        => IsDetailStatus(request, "CREATED") || IsDetailStatus(request, "WAITING");
+        => IsDetailStatus(request, "CREATED") ||
+           IsDetailStatus(request, "RESERVED");
 
     private static bool IsApprovedDetailRequest(DetailRequest request)
-        => IsDetailStatus(request, "APPROVED") || IsDetailStatus(request, "RECEIVED");
+        => IsDetailStatus(request, "APPROVED");
+
+    private static string NormalizeDetailRequestStatus(string? status)
+    {
+        var normalized = (status ?? "").Trim().ToUpperInvariant();
+        return normalized == "REJECTED" ? "CANCELED" : normalized;
+    }
 }

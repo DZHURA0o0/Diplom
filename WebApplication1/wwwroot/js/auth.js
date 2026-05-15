@@ -63,7 +63,7 @@ async function doLogin(e) {
 
     const role = String(data.role || "").toUpperCase();
 
-    if (role === "WORKER") {
+    if (["WORKER", "WAREHOUSE_MANAGER", "WAREHOUSE_WORKER"].includes(role)) {
       window.location.href = "/workerPage.html";
     } else if (role === "SPECIALIST") {
       window.location.href = "/specialistPage.html";

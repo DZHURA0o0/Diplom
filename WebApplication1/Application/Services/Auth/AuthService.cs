@@ -109,6 +109,11 @@ public class AuthService
             new Claim(ClaimTypes.Role, role)
         };
 
+        if (IsWorkerCompatibleRole(role) && role != "WORKER")
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "WORKER"));
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -122,5 +127,10 @@ public class AuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static bool IsWorkerCompatibleRole(string role)
+    {
+        return role is "WORKER" or "WAREHOUSE_MANAGER" or "WAREHOUSE_WORKER";
     }
 }

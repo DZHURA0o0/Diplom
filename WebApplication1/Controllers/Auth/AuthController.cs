@@ -64,7 +64,7 @@ public class AuthController : ControllerBase
         {
             userId,
             login,
-            role,
+            role = user.RoleInSystem,
             fullName = user.FullName,
             floorNumber = user.FloorNumber,
             officeNumber = user.OfficeNumber,

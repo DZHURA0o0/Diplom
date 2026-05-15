@@ -57,8 +57,10 @@ public class UserRepository
 
     public async Task<List<User>> GetWorkersAsync()
     {
+        var workerRoles = new[] { "WORKER", "WAREHOUSE_MANAGER", "WAREHOUSE_WORKER" };
+
         return await _users
-            .Find(x => x.RoleInSystem == "WORKER" && x.AccountStatus == "ACTIVE")
+            .Find(x => workerRoles.Contains(x.RoleInSystem) && x.AccountStatus == "ACTIVE")
             .SortBy(x => x.FullName)
             .ToListAsync();
     }

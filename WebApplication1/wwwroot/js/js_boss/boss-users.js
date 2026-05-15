@@ -34,7 +34,9 @@ function buildRoleBadge(role) {
     const roleClassMap = {
         BOSS: "status-INSPECTION",
         SPECIALIST: "status-IN_PROGRESS",
-        WORKER: "status-NEW"
+        WORKER: "status-NEW",
+        WAREHOUSE_MANAGER: "status-DETAILS_RECEIVED",
+        WAREHOUSE_WORKER: "status-ASSIGNED"
     };
 
     const roleKey = String(role || "").trim().toUpperCase();
@@ -61,7 +63,7 @@ function buildUserRoleControl(user) {
 
     const select = document.createElement("select");
 
-    ["WORKER", "SPECIALIST", "BOSS"].forEach(role => {
+    ["WORKER", "WAREHOUSE_MANAGER", "WAREHOUSE_WORKER", "SPECIALIST", "BOSS"].forEach(role => {
         const option = new Option(formatRole(role), role);
 
         if (user.role === role) {
@@ -255,6 +257,8 @@ function buildUserDetailsHtml(user) {
             ${userDetailValue("Номер перепустки", user.passNumber, { editable: true, field: "passNumber", type: "number" })}
             ${userDetailSelect("Роль", "role", user.role, [
                 { value: "WORKER", label: formatRole("WORKER") },
+                { value: "WAREHOUSE_MANAGER", label: formatRole("WAREHOUSE_MANAGER") },
+                { value: "WAREHOUSE_WORKER", label: formatRole("WAREHOUSE_WORKER") },
                 { value: "SPECIALIST", label: formatRole("SPECIALIST") },
                 { value: "BOSS", label: formatRole("BOSS") }
             ])}
@@ -535,7 +539,9 @@ function sortUsers(users) {
     const roleOrder = {
         BOSS: 1,
         SPECIALIST: 2,
-        WORKER: 3
+        WORKER: 3,
+        WAREHOUSE_MANAGER: 4,
+        WAREHOUSE_WORKER: 5
     };
 
     return [...users].sort((a, b) => {

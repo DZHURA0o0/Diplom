@@ -20,10 +20,22 @@ async function requireRole(roles) {
   const data = await res.json();
   const userRole = String(data.role || "").toUpperCase();
   const allowedRoles = roles.map(role => String(role).toUpperCase());
+  const effectiveUserRoles = getEffectiveRoles(userRole);
 
-  if (!allowedRoles.includes(userRole)) {
+  if (!allowedRoles.some(role => effectiveUserRoles.includes(role))) {
     window.location.href = "/";
   }
+}
+
+function getEffectiveRoles(role) {
+  const normalizedRole = String(role || "").toUpperCase();
+  const roles = [normalizedRole];
+
+  if (["WAREHOUSE_MANAGER", "WAREHOUSE_WORKER"].includes(normalizedRole)) {
+    roles.push("WORKER");
+  }
+
+  return roles;
 }
 
 function logout() {

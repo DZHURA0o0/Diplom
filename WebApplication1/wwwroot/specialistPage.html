@@ -118,7 +118,7 @@
                 <option value="IN_PROGRESS">У роботі</option>
                 <option value="INSPECTION">На перевірці</option>
                 <option value="WAITING_DETAILS">Очікує деталей</option>
-                <option value="DETAILS_RECEIVED">Деталі отримано</option>
+                <option value="DETAILS_RECEIVED">Матеріал видано</option>
                 <option value="EXECUTION">На виконанні</option>
                 <option value="REWORK">На переробці</option>
                 <option value="REWORK_REVIEW">Перероблено</option>
@@ -333,7 +333,16 @@
                 data-detail-request-filter="CREATED"
                 onclick="setSpecialistDetailRequestFilter('CREATED')"
               >
-                Очікують деталей
+                Створені
+              </button>
+
+              <button
+                type="button"
+                class="specialist-mini-filter"
+                data-detail-request-filter="RESERVED"
+                onclick="setSpecialistDetailRequestFilter('RESERVED')"
+              >
+                Зарезервовані
               </button>
 
               <button
@@ -342,7 +351,7 @@
                 data-detail-request-filter="APPROVED"
                 onclick="setSpecialistDetailRequestFilter('APPROVED')"
               >
-                Деталі отримано
+                Видано
               </button>
 
               <button
@@ -367,15 +376,15 @@
     </footer>
   </div>
 
-  <script src="/js/guard.js"></script>
+  <script src="/js/guard.js?v=2"></script>
   <script>requireRole(["SPECIALIST"]);</script>
-  <script src="/js/shared.js"></script>
+  <script src="/js/shared.js?v=4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
   <script src="/js/js_specialist/specialist-api.js"></script>
   <script src="/js/js_specialist/specialist-analytics.js?v=10"></script>
   <script src="/js/js_specialist/specialist-actions.js"></script>
-  <script src="/js/js_specialist/specialist-render.js"></script>
+  <script src="/js/js_specialist/specialist-render.js?v=3"></script>
   <script src="/js/js_specialist/specialist-page.js"></script>
   <script src="/js/js_specialist/specialist-realtime.js"></script>
 </body>

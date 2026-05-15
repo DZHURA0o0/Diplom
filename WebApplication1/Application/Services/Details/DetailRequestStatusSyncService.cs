@@ -170,7 +170,7 @@ public class DetailRequestStatusSyncService
     private static bool IsDetailStatus(DetailRequest request, string status)
     {
         return string.Equals(
-            request.Status,
+            NormalizeDetailRequestStatus(request.Status),
             status,
             StringComparison.OrdinalIgnoreCase
         );
@@ -179,12 +179,17 @@ public class DetailRequestStatusSyncService
     private static bool IsActiveDetailRequest(DetailRequest request)
     {
         return IsDetailStatus(request, "CREATED") ||
-               IsDetailStatus(request, "WAITING");
+               IsDetailStatus(request, "RESERVED");
     }
 
     private static bool IsApprovedDetailRequest(DetailRequest request)
     {
-        return IsDetailStatus(request, "APPROVED") ||
-               IsDetailStatus(request, "RECEIVED");
+        return IsDetailStatus(request, "APPROVED");
+    }
+
+    private static string NormalizeDetailRequestStatus(string? status)
+    {
+        var normalized = (status ?? "").Trim().ToUpperInvariant();
+        return normalized == "REJECTED" ? "CANCELED" : normalized;
     }
 }

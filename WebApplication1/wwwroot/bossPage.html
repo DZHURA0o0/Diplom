@@ -9,14 +9,14 @@
 <link rel="stylesheet" href="/css/header.css">
 <link rel="stylesheet" href="/css/boss.css">
 
-<script src="/js/guard.js"></script>
+<script src="/js/guard.js?v=2"></script>
 <script>requireRole(["BOSS"]);</script>
 
-<script src="/js/shared.js?v=2" defer></script>
+<script src="/js/shared.js?v=4" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" defer></script>
 <script src="/js/js_boss/boss-data.js?v=3" defer></script>
-<script src="/js/js_boss/boss-orders.js" defer></script>
-<script src="/js/js_boss/boss-users.js?v=7" defer></script>
+<script src="/js/js_boss/boss-orders.js?v=3" defer></script>
+<script src="/js/js_boss/boss-users.js?v=8" defer></script>
 <script src="/js/js_boss/boss-analytics.js?v=9" defer></script>
 <script src="/js/js_boss/boss-page.js?v=2" defer></script>
 <script src="/js/js_boss/boss-realtime.js" defer></script>
@@ -92,7 +92,7 @@
                 <option value="IN_PROGRESS">У роботі</option>
                 <option value="INSPECTION">На огляді</option>
                 <option value="WAITING_DETAILS">Очікує деталей</option>
-                <option value="DETAILS_RECEIVED">Деталі отримано</option>
+                <option value="DETAILS_RECEIVED">Матеріал видано</option>
                 <option value="EXECUTION">На виконанні</option>
                 <option value="UNDER_COMPLAINT">На оскарженні</option>
                 <option value="REWORK">На переробці</option>
@@ -180,9 +180,11 @@
 
               <select id="roleFilter" class="boss-select">
                 <option value="">Усі ролі</option>
-                <option value="WORKER">WORKER</option>
-                <option value="SPECIALIST">SPECIALIST</option>
-                <option value="BOSS">BOSS</option>
+                <option value="WORKER">Працівник</option>
+                <option value="WAREHOUSE_MANAGER">Менеджер складу</option>
+                <option value="WAREHOUSE_WORKER">Робочий складу</option>
+                <option value="SPECIALIST">Спеціаліст</option>
+                <option value="BOSS">Начальник</option>
               </select>
 
               <span class="toolbar-label">Фільтр статусу акаунта:</span>

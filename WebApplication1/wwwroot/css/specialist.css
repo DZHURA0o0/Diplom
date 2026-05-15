@@ -810,13 +810,18 @@
   border-color: rgba(255, 214, 102, 0.18);
 }
 
+.detail-request-status.RESERVED {
+  color: #7dd3fc;
+  background: rgba(14, 116, 144, 0.28);
+  border-color: rgba(125, 211, 252, 0.22);
+}
+
 .detail-request-status.APPROVED {
   color: var(--sp-green);
   background: rgba(27, 104, 93, 0.34);
   border-color: rgba(126, 240, 174, 0.18);
 }
 
-.detail-request-status.REJECTED,
 .detail-request-status.CANCELED {
   color: var(--sp-red);
   background: rgba(190, 68, 68, 0.28);

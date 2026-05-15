@@ -129,11 +129,17 @@ public class BossOrderDetailsService
             DetailNeeds = request.DetailNeeds,
             Explanation = request.Explanation,
             Photos = request.Photos ?? new List<string>(),
-            Status = request.Status,
+            Status = NormalizeDetailRequestStatus(request.Status),
             ApprovedBy = request.ApprovedBy,
             ApprovedAt = request.ApprovedAt,
             CreatedAt = request.CreatedAt
         };
+    }
+
+    private static string NormalizeDetailRequestStatus(string? status)
+    {
+        var normalized = Normalize(status);
+        return normalized == "REJECTED" ? "CANCELED" : normalized;
     }
 
     private static string? GetComplaintStatus(DomainOrder order)
