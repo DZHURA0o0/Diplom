@@ -723,6 +723,8 @@ function renderActionBlock(order, orderId) {
             Активних запитів деталей немає. Можна перейти до виконання заявки.
           </div>
 
+          ${renderDetailRequestForm(orderId, "Створити ще один запит деталей")}
+
           <div class="action-row execution-action-row">
             ${createActionButton("Перевести до виконання", "handleMoveToExecution", orderId)}
           </div>
@@ -735,8 +737,7 @@ function renderActionBlock(order, orderId) {
         <div class="locked-action-block">
           <div class="locked-title">Очікування деталей</div>
           <div class="locked-text">
-            У заявки є активний запит деталей. Якщо під час очікування стало зрозуміло,
-            що потрібні ще додаткові деталі, можна створити ще один запит.
+            У заявки є активний запит деталей. Перейти до виконання можна після статусу "Видано" або "Скасовано".
           </div>
         </div>
 
@@ -898,8 +899,7 @@ function isActiveSpecialistDetailRequest(request) {
 }
 
 function shouldIndicateSpecialistDetailRequest(request) {
-  const status = normalizeDetailRequestStatus(request?.status);
-  return status === "RESERVED" || status === "CANCELED";
+  return isActiveSpecialistDetailRequest(request);
 }
 
 function setSpecialistTabBadge(tabName, badgeId, count, title) {
@@ -1010,9 +1010,10 @@ function renderSpecialistDetailRequestsTab() {
   const container = document.getElementById("specialistDetailRequestsList");
   if (!container) return;
 
+  const allRequests = collectSpecialistDetailRequests();
   updateSpecialistTabBadges();
 
-  const requests = collectSpecialistDetailRequests().filter(isDetailRequestVisibleByFilter);
+  const requests = allRequests.filter(isDetailRequestVisibleByFilter);
 
   if (requests.length === 0) {
     container.innerHTML = `<div class="specialist-subempty">Запитів деталей за вибраним фільтром немає.</div>`;

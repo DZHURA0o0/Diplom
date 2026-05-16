@@ -39,6 +39,10 @@ function getRealtimeStatusMessage(status) {
   return `Новий статус: ${formatStatus(status)}`;
 }
 
+function isSpecialistDetailRequestRealtimeEvent(data = {}) {
+  return String(data.eventType || "").toLowerCase().includes("detailrequest");
+}
+
 async function refreshSpecialistPageAfterRealtime(orderId) {
   if (orderId && typeof refreshSpecialistOrderOnly === "function") {
     await refreshSpecialistOrderOnly(orderId);
@@ -74,6 +78,10 @@ function registerSpecialistRealtimeHandlers(connection) {
 
     console.log("SignalR orderChanged:", data);
 
+    if (isSpecialistDetailRequestRealtimeEvent(data)) {
+      return;
+    }
+
     if (typeof setPageStatus === "function") {
       setPageStatus(data.message);
     }
@@ -85,6 +93,24 @@ function registerSpecialistRealtimeHandlers(connection) {
     }
 
     showSpecialistToast("Заявку оновлено", getRealtimeStatusMessage(data.status));
+  });
+
+  connection.on("detailRequestChanged", async payload => {
+    const data = normalizeRealtimePayload(payload);
+
+    console.log("SignalR detailRequestChanged:", data);
+
+    if (typeof setPageStatus === "function") {
+      setPageStatus(data.message || "Запити деталей оновлено.");
+    }
+
+    try {
+      await refreshSpecialistPageAfterRealtime(data.orderId);
+    } catch (e) {
+      console.error("Detail request realtime refresh error:", e);
+    }
+
+    showSpecialistToast("Запити деталей оновлено", getRealtimeStatusMessage(data.status));
   });
 
   connection.on("orderStatusChanged", async payload => {

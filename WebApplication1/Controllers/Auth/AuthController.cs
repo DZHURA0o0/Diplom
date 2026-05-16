@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApplication1.Application.Services.Auth;
+using WebApplication1.Application.Services.Realtime;
 using WebApplication1.Application.Services.Users;
 using WebApplication1.Models;
 
@@ -13,11 +14,13 @@ public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;
     private readonly UserService _users;
+    private readonly RealtimeNotificationService _realtime;
 
-    public AuthController(AuthService auth, UserService users)
+    public AuthController(AuthService auth, UserService users, RealtimeNotificationService realtime)
     {
         _auth = auth;
         _users = users;
+        _realtime = realtime;
     }
 
     [HttpPost("login")]
@@ -41,6 +44,14 @@ public class AuthController : ControllerBase
 
         if (!ok)
             return BadRequest(new { message });
+
+        await _realtime.NotifyUserChangedAsync(
+            null,
+            "userRegistered",
+            message,
+            "REGISTRATION",
+            "WORKER"
+        );
 
         return Ok(new { message = "User registered successfully" });
     }

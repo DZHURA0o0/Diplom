@@ -37,16 +37,19 @@ public class RealtimeNotificationService
             message = message ?? "Order updated"
         };
 
-        var tasks = new List<Task>
-        {
-            _hubContext.Clients.Group("role:BOSS").SendAsync("orderChanged", payload, cancellationToken)
-        };
+        var eventNames = IsDetailRequestEvent(eventType)
+            ? new[] { "orderChanged", "detailRequestChanged" }
+            : new[] { "orderChanged" };
+
+        var tasks = new List<Task>();
+
+        AddGroupNotifications(tasks, "role:BOSS", eventNames, payload, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(order.WorkerId))
-            tasks.Add(_hubContext.Clients.Group($"user:{order.WorkerId}").SendAsync("orderChanged", payload, cancellationToken));
+            AddGroupNotifications(tasks, $"user:{order.WorkerId}", eventNames, payload, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(order.SpecialistId))
-            tasks.Add(_hubContext.Clients.Group($"user:{order.SpecialistId}").SendAsync("orderChanged", payload, cancellationToken));
+            AddGroupNotifications(tasks, $"user:{order.SpecialistId}", eventNames, payload, cancellationToken);
 
         foreach (var userId in extraUserIds ?? [])
         {
@@ -54,7 +57,7 @@ public class RealtimeNotificationService
                 !string.Equals(userId, order.WorkerId, StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(userId, order.SpecialistId, StringComparison.OrdinalIgnoreCase))
             {
-                tasks.Add(_hubContext.Clients.Group($"user:{userId}").SendAsync("orderChanged", payload, cancellationToken));
+                AddGroupNotifications(tasks, $"user:{userId}", eventNames, payload, cancellationToken);
             }
         }
 
@@ -66,5 +69,58 @@ public class RealtimeNotificationService
             eventType,
             order.Status
         );
+    }
+
+    public async Task NotifyUserChangedAsync(
+        string? userId,
+        string eventType,
+        string? message = null,
+        string? accountStatus = null,
+        string? role = null,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = new
+        {
+            userId,
+            eventType,
+            message = message ?? "User updated",
+            accountStatus,
+            role
+        };
+
+        var tasks = new List<Task>
+        {
+            _hubContext.Clients.Group("role:BOSS").SendAsync("userChanged", payload, cancellationToken)
+        };
+
+        if (!string.IsNullOrWhiteSpace(userId))
+            tasks.Add(_hubContext.Clients.Group($"user:{userId}").SendAsync("userChanged", payload, cancellationToken));
+
+        await Task.WhenAll(tasks);
+
+        _logger.LogInformation(
+            "Realtime user event sent. UserId={UserId}, EventType={EventType}, AccountStatus={AccountStatus}, Role={Role}",
+            userId,
+            eventType,
+            accountStatus,
+            role
+        );
+    }
+
+    private void AddGroupNotifications(
+        List<Task> tasks,
+        string groupName,
+        IEnumerable<string> eventNames,
+        object payload,
+        CancellationToken cancellationToken)
+    {
+        foreach (var eventName in eventNames)
+            tasks.Add(_hubContext.Clients.Group(groupName).SendAsync(eventName, payload, cancellationToken));
+    }
+
+    private static bool IsDetailRequestEvent(string? eventType)
+    {
+        return !string.IsNullOrWhiteSpace(eventType) &&
+            eventType.Contains("detailRequest", StringComparison.OrdinalIgnoreCase);
     }
 }

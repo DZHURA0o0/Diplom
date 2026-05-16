@@ -167,6 +167,15 @@ public class BossController : ControllerBase
         if (!ok)
             return BadRequest(new { message = msg });
 
+        var user = await _userService.GetByIdAsync(id);
+        await _realtime.NotifyUserChangedAsync(
+            id,
+            "userDetailsUpdated",
+            msg,
+            user?.AccountStatus,
+            user?.RoleInSystem
+        );
+
         return Ok(new { message = msg });
     }
 
@@ -178,6 +187,15 @@ public class BossController : ControllerBase
 
         if (!ok)
             return BadRequest(new { message = msg });
+
+        var user = await _userService.GetByIdAsync(id);
+        await _realtime.NotifyUserChangedAsync(
+            id,
+            "userPasswordUpdated",
+            msg,
+            user?.AccountStatus,
+            user?.RoleInSystem
+        );
 
         return Ok(new { message = msg });
     }
@@ -191,6 +209,15 @@ public class BossController : ControllerBase
         if (!ok)
             return BadRequest(new { message = msg });
 
+        var user = await _userService.GetByIdAsync(id);
+        await _realtime.NotifyUserChangedAsync(
+            id,
+            "userRoleUpdated",
+            msg,
+            user?.AccountStatus,
+            user?.RoleInSystem
+        );
+
         return Ok(new { message = msg });
     }
 
@@ -202,6 +229,15 @@ public class BossController : ControllerBase
 
         if (!ok)
             return BadRequest(new { message = msg });
+
+        var user = await _userService.GetByIdAsync(id);
+        await _realtime.NotifyUserChangedAsync(
+            id,
+            "userStatusUpdated",
+            msg,
+            user?.AccountStatus,
+            user?.RoleInSystem
+        );
 
         return Ok(new { message = msg });
     }

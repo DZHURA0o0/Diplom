@@ -14,8 +14,29 @@ function buildBossRealtimeConnection() {
         .build();
 }
 
+function isBossDetailRequestRealtimeEvent(payload = {}) {
+    const eventType = payload?.eventType || payload?.EventType || "";
+    return String(eventType).toLowerCase().includes("detailrequest");
+}
+
 async function refreshBossAfterRealtime() {
-    return;
+    if (typeof updateComplaintsBadge === "function") {
+        await updateComplaintsBadge();
+    }
+
+    if (typeof updateRegistrationsBadge === "function") {
+        await updateRegistrationsBadge();
+    }
+
+    if (activeTab === "orders" && typeof loadOrders === "function") {
+        await loadOrders();
+    } else if (activeTab === "complaints" && typeof loadComplaintsOrders === "function") {
+        await loadComplaintsOrders();
+    } else if (activeTab === "users" && typeof loadUsers === "function") {
+        await loadUsers();
+    } else if (activeTab === "analytics" && typeof loadAnalytics === "function") {
+        await loadAnalytics();
+    }
 }
 
 async function refreshBossOrderAfterRealtime(orderId) {
@@ -42,15 +63,54 @@ async function refreshBossOrderAfterRealtime(orderId) {
     }
 }
 
+async function refreshBossUsersAfterRealtime() {
+    if (typeof resetBossPeopleCache === "function") {
+        resetBossPeopleCache();
+    }
+
+    if (typeof updateRegistrationsBadge === "function") {
+        await updateRegistrationsBadge();
+    }
+
+    if (typeof activeTab !== "undefined" && activeTab === "users" && typeof loadUsers === "function") {
+        await loadUsers();
+    }
+}
+
 function registerBossRealtimeHandlers(connection) {
     connection.on("orderChanged", async payload => {
         console.log("SignalR orderChanged:", payload);
+
+        if (isBossDetailRequestRealtimeEvent(payload)) {
+            return;
+        }
 
         try {
             const orderId = payload?.orderId || payload?.OrderId || payload?.id || payload?.Id || "";
             await refreshBossOrderAfterRealtime(orderId);
         } catch (e) {
             console.error("Boss realtime refresh error:", e);
+        }
+    });
+
+    connection.on("detailRequestChanged", async payload => {
+        console.log("SignalR detailRequestChanged:", payload);
+
+        try {
+            const orderId = payload?.orderId || payload?.OrderId || payload?.id || payload?.Id || "";
+            await refreshBossOrderAfterRealtime(orderId);
+        } catch (e) {
+            console.error("Boss detail realtime refresh error:", e);
+        }
+    });
+
+    connection.on("userChanged", async payload => {
+        console.log("SignalR userChanged:", payload);
+
+        try {
+            await refreshBossUsersAfterRealtime();
+        } catch (e) {
+            console.error("Boss user realtime refresh error:", e);
         }
     });
 
