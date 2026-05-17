@@ -2,7 +2,8 @@
 
 const SPECIALIST_DETAIL_REQUEST_STATUS_LABELS = {
   CREATED: "Надіслано",
-  RESERVED: "Зарезервовано",
+  WAITING: "Готова до видачі",
+  RESERVED: "Готова до видачі",
   APPROVED: "Видано",
   CANCELED: "Скасовано"
 };
@@ -446,14 +447,16 @@ function formatDetailRequestStatus(status) {
 
 function normalizeDetailRequestStatus(status) {
   const key = normalizeStatus(status);
-  return key === "REJECTED" ? "CANCELED" : key;
+  if (key === "REJECTED") return "CANCELED";
+  if (key === "RESERVED") return "WAITING";
+  return key;
 }
 
 function normalizeDetailRequestStatusClass(status) {
   const key = normalizeDetailRequestStatus(status);
 
   if (key === "CREATED") return "CREATED";
-  if (key === "RESERVED") return "RESERVED";
+  if (key === "WAITING") return "WAITING";
   if (key === "APPROVED") return "APPROVED";
   if (key === "CANCELED") return "CANCELED";
 
@@ -530,8 +533,8 @@ function renderDetailRequestForm(orderId, title = "Створити запит �
 
 function hasActiveDetailRequests(order) {
   return getDetailRequests(order).some(request => {
-    const status = normalizeStatus(request.status);
-    return status === "CREATED" || status === "RESERVED";
+    const status = normalizeDetailRequestStatus(request.status);
+    return status === "CREATED" || status === "WAITING";
   });
 }
 
@@ -716,7 +719,7 @@ function renderActionBlock(order, orderId) {
       return `
         <div class="action-block">
           <div class="action-row">
-            <span class="state-badge">${hasApprovedDetailRequests(order) ? "Матеріал видано" : "Запити закрито"}</span>
+            <span class="state-badge">${hasApprovedDetailRequests(order) ? "Видано" : "Запити закрито"}</span>
           </div>
 
           <div class="inactive-text">
@@ -750,7 +753,7 @@ function renderActionBlock(order, orderId) {
     return `
       <div class="action-block">
         <div class="action-row">
-          <span class="state-badge">Матеріал видано</span>
+          <span class="state-badge">Видано</span>
         </div>
 
         <div class="inactive-text">
@@ -895,11 +898,11 @@ function collectSpecialistDetailRequests() {
 
 function isActiveSpecialistDetailRequest(request) {
   const status = normalizeDetailRequestStatus(request?.status);
-  return status === "CREATED" || status === "RESERVED";
+  return status === "CREATED" || status === "WAITING";
 }
 
 function shouldIndicateSpecialistDetailRequest(request) {
-  return isActiveSpecialistDetailRequest(request);
+  return normalizeDetailRequestStatus(request?.status) === "WAITING";
 }
 
 function setSpecialistTabBadge(tabName, badgeId, count, title) {

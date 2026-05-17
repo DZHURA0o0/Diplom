@@ -57,6 +57,47 @@ function buildAccountBadge(status) {
     return `<span class="status-badge ${escapeHtml(statusClass)}">${escapeHtml(formatAccountStatus(status))}</span>`;
 }
 
+function isRegistrationUser(user) {
+    return String(user?.accountStatus || "").trim().toUpperCase() === "REGISTRATION";
+}
+
+function buildDeleteRegistrationUserButton(user) {
+    const button = document.createElement("button");
+    button.className = "btn-danger";
+    button.textContent = "Видалити";
+
+    button.addEventListener("click", async function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm(`Видалити користувача "${user.fullName}"?`)) {
+            return;
+        }
+
+        const restore = setPendingButton(button, "Видалення...");
+
+        try {
+            await deleteRegistrationUser(user.id);
+
+            delete bossUsersExpandedState[user.id];
+            delete bossUsersEditState[user.id];
+
+            if (typeof resetBossPeopleCache === "function") {
+                resetBossPeopleCache();
+            }
+
+            await loadUsers();
+            setStatus("Користувача видалено");
+        } catch (e) {
+            console.error(e);
+            setStatus("Помилка видалення користувача: " + e.message, true);
+            restore?.();
+        }
+    });
+
+    return button;
+}
+
 function buildUserRoleControl(user) {
     const wrap = document.createElement("div");
     wrap.className = "assign-wrap";
@@ -114,6 +155,37 @@ function buildUserStatusControl(user) {
     const wrap = document.createElement("div");
     wrap.className = "assign-wrap";
 
+    if (isRegistrationUser(user)) {
+        const activateButton = document.createElement("button");
+        activateButton.className = "btn-success";
+        activateButton.textContent = "Активувати";
+
+        activateButton.addEventListener("click", async function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const restore = setPendingButton(activateButton, "Активація...");
+
+            try {
+                await updateUserAccountStatus(user.id, "ACTIVE");
+
+                if (typeof resetBossPeopleCache === "function") {
+                    resetBossPeopleCache();
+                }
+
+                await loadUsers();
+                setStatus("Статус оновлено");
+            } catch (e) {
+                console.error(e);
+                setStatus("Помилка зміни статусу: " + e.message, true);
+                restore?.();
+            }
+        });
+
+        wrap.append(activateButton, buildDeleteRegistrationUserButton(user));
+        return wrap;
+    }
+
     const nextStatus = user.accountStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 
     const button = document.createElement("button");
@@ -159,6 +231,11 @@ function buildExpandedUserControl(user, detailsRow) {
 
     if (bossUsersEditState[user.id]) {
         wrap.innerHTML = `<span class="muted">Редагування</span>`;
+
+        if (isRegistrationUser(user)) {
+            wrap.append(buildDeleteRegistrationUserButton(user));
+        }
+
         return wrap;
     }
 
@@ -179,6 +256,11 @@ function buildExpandedUserControl(user, detailsRow) {
     });
 
     wrap.append(button);
+
+    if (isRegistrationUser(user)) {
+        wrap.append(buildDeleteRegistrationUserButton(user));
+    }
+
     return wrap;
 }
 

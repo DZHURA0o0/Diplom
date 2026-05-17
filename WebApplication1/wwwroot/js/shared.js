@@ -11,7 +11,7 @@ const COMMON_STATUS_LABELS = {
   IN_PROGRESS: "У роботі",
   INSPECTION: "На перевірці",
   WAITING_DETAILS: "Очікує",
-  DETAILS_RECEIVED: "Матеріал видано",
+  DETAILS_RECEIVED: "Видано",
   EXECUTION: "На виконанні",
   UNDER_COMPLAINT: "На оскарженні",
   REWORK: "На переробці",

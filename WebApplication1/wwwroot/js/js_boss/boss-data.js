@@ -137,6 +137,14 @@ async function updateUserAccountStatus(userId, accountStatus) {
   });
 }
 
+async function deleteRegistrationUser(userId) {
+  return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}/delete-registration`, {
+    method: "POST"
+  });
+}
+
+window.deleteRegistrationUser = deleteRegistrationUser;
+
 async function updateUserDetails(userId, data) {
   return await apiRequest(`/api/boss/users/${encodeURIComponent(userId)}`, {
     method: "PUT",

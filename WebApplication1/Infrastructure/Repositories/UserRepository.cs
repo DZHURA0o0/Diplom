@@ -132,21 +132,28 @@ public class UserRepository
 
         await _users.UpdateOneAsync(filter, update);
     }
-public async Task<List<User>> GetAllSpecialistsAsync()
-{
-    return await _users
-        .Find(x => x.RoleInSystem == "SPECIALIST")
-        .SortBy(x => x.FullName)
-        .ToListAsync();
-}
-public async Task<User?> GetByIdAsync(string id)
-{
-    if (string.IsNullOrWhiteSpace(id))
-        return null;
 
-    return await _users
-        .Find(x => x.Id == id)
-        .FirstOrDefaultAsync();
-}
+    public async Task DeleteAsync(string id)
+    {
+        await _users.DeleteOneAsync(x => x.Id == id);
+    }
+
+    public async Task<List<User>> GetAllSpecialistsAsync()
+    {
+        return await _users
+            .Find(x => x.RoleInSystem == "SPECIALIST")
+            .SortBy(x => x.FullName)
+            .ToListAsync();
+    }
+
+    public async Task<User?> GetByIdAsync(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        return await _users
+            .Find(x => x.Id == id)
+            .FirstOrDefaultAsync();
+    }
 
 }

@@ -27,7 +27,7 @@ public class DetailRequest
     [BsonElement("photos")]
     public List<string> Photos { get; set; } = new();
 
-    // CREATED / RESERVED / APPROVED / CANCELED
+    // CREATED / WAITING / APPROVED / CANCELED
     [BsonElement("status")]
     public string Status { get; set; } = "CREATED";
 

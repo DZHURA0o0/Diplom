@@ -726,13 +726,13 @@
   white-space: nowrap;
 }
 
-.boss-detail-request-status.CREATED,
-.boss-detail-request-status.WAITING {
+.boss-detail-request-status.CREATED {
   color: var(--boss-yellow);
   background: rgba(140, 100, 18, 0.36);
   border-color: rgba(255, 214, 102, 0.18);
 }
 
+.boss-detail-request-status.WAITING,
 .boss-detail-request-status.RESERVED {
   color: #7dd3fc;
   background: rgba(14, 116, 144, 0.28);

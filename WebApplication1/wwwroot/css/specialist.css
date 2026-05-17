@@ -810,6 +810,7 @@
   border-color: rgba(255, 214, 102, 0.18);
 }
 
+.detail-request-status.WAITING,
 .detail-request-status.RESERVED {
   color: #7dd3fc;
   background: rgba(14, 116, 144, 0.28);

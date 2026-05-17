@@ -216,6 +216,28 @@ public class UserService
         return (true, "Password updated");
     }
 
+    public async Task<(bool ok, string message)> DeleteRegistrationUserAsync(string userId, string? bossId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return (false, "User id is required");
+
+        if (string.IsNullOrWhiteSpace(bossId))
+            return (false, "Boss id not found");
+
+        if (userId == bossId)
+            return (false, "You cannot delete your own account");
+
+        var user = await _users.FindByIdAsync(userId);
+        if (user == null)
+            return (false, "User not found");
+
+        if (!string.Equals(Normalize(user.AccountStatus), "REGISTRATION", StringComparison.OrdinalIgnoreCase))
+            return (false, "Only registration accounts can be deleted");
+
+        await _users.DeleteAsync(userId);
+        return (true, "User deleted");
+    }
+
     private static string Normalize(string value)
     {
         return value.Trim().ToUpperInvariant();

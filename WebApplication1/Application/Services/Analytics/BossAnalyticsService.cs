@@ -69,20 +69,22 @@ public class BossAnalyticsService
             .Where(user => IsSameText(user.RoleInSystem, "SPECIALIST"))
             .ToList();
 
-        if (!string.IsNullOrWhiteSpace(selectedSpecialistId))
-        {
-            specialists = specialists
-                .Where(user => IsSameId(user.Id, selectedSpecialistId))
-                .ToList();
-        }
-
-        var specialistAnalytics = BuildSpecialistAnalytics(
+        var allSpecialistAnalytics = BuildSpecialistAnalytics(
             allPeriodOrders,
             specialists,
-            selectedSpecialistId,
+            null,
             totalCompletedInPeriod,
             allPeriodOrders.Count
         );
+
+        var specialistAnalytics = allSpecialistAnalytics;
+
+        if (!string.IsNullOrWhiteSpace(selectedSpecialistId))
+        {
+            specialistAnalytics = specialistAnalytics
+                .Where(item => IsSameId(item.SpecialistId, selectedSpecialistId))
+                .ToList();
+        }
 
         var shareSummary = BuildSpecialistShareSummary(specialistAnalytics);
 
@@ -117,7 +119,7 @@ public class BossAnalyticsService
 
             ServiceTypes = BuildServiceTypeAnalytics(periodOrders),
 
-            BonusRecommendation = BuildBonusRecommendation(specialistAnalytics)
+            BonusRecommendation = BuildBonusRecommendation(allSpecialistAnalytics, selectedSpecialistId)
         };
     }
 
@@ -342,7 +344,8 @@ public class BossAnalyticsService
     }
 
     private static BonusRecommendationDto BuildBonusRecommendation(
-        List<SpecialistAnalyticsDto> specialistAnalytics)
+        List<SpecialistAnalyticsDto> specialistAnalytics,
+        string? selectedSpecialistId)
     {
         var candidates = specialistAnalytics
             .Where(item => item.AssignedCount > 0 && item.CompletedCount > 0)
@@ -357,32 +360,32 @@ public class BossAnalyticsService
             };
         }
 
-        var qualityCandidates = candidates
-            .Where(item => item.AdjustedComplaintRatePercent <= 30)
-            .ToList();
+        var top = candidates
+            .OrderByDescending(item => item.RatingPercent)
+            .ThenByDescending(item => item.CompletedCount)
+            .First();
 
-        if (qualityCandidates.Count == 0)
+        if (!string.IsNullOrWhiteSpace(selectedSpecialistId) &&
+            !IsSameId(top.SpecialistId, selectedSpecialistId))
         {
             return new BonusRecommendationDto
             {
                 HasCandidate = false,
-                Reason = "Немає кандидата на премію: у спеціалістів занадто високий відсоток скарг за обраний період."
+                Reason = $"Рекомендація на премію доступна тільки спеціалісту з найвищим рейтингом за обраний період: {top.FullName} ({top.RatingPercent}%)."
             };
         }
 
-        var best = qualityCandidates
-            .Select(item => new
+        if (top.AdjustedComplaintRatePercent > 30)
+        {
+            return new BonusRecommendationDto
             {
-                Specialist = item,
+                HasCandidate = false,
+                Reason = $"Спеціаліст з найвищим рейтингом ({top.FullName}, {top.RatingPercent}%) не рекомендований на премію через високий рівень скарг за обраний період."
+            };
+        }
 
-                Rating = item.RatingPercent
-            })
-            .OrderByDescending(item => item.Rating)
-            .ThenByDescending(item => item.Specialist.CompletedCount)
-            .First();
-
-        var specialist = best.Specialist;
-        var rating = Math.Round(best.Rating, 1);
+        var specialist = top;
+        var rating = Math.Round(top.RatingPercent, 1);
 
         var reason =
             $"Рекомендовано на премію, оскільки спеціаліст має рейтинг {rating}%, " +

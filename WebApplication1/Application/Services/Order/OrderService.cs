@@ -491,7 +491,7 @@ public class OrderService
 
     private static bool IsActiveDetailRequest(DetailRequest request)
         => IsDetailStatus(request, "CREATED") ||
-           IsDetailStatus(request, "RESERVED");
+           IsDetailStatus(request, "WAITING");
 
     private static bool IsApprovedDetailRequest(DetailRequest request)
         => IsDetailStatus(request, "APPROVED");
@@ -499,6 +499,11 @@ public class OrderService
     private static string NormalizeDetailRequestStatus(string? status)
     {
         var normalized = (status ?? "").Trim().ToUpperInvariant();
-        return normalized == "REJECTED" ? "CANCELED" : normalized;
+        return normalized switch
+        {
+            "REJECTED" => "CANCELED",
+            "RESERVED" => "WAITING",
+            _ => normalized
+        };
     }
 }

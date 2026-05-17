@@ -242,6 +242,34 @@ public class BossController : ControllerBase
         return Ok(new { message = msg });
     }
 
+    [HttpDelete("~/api/boss/users/{id}")]
+    public async Task<ActionResult> DeleteRegistrationUser(string id)
+        => await DeleteRegistrationUserCore(id);
+
+    [HttpPost("~/api/boss/users/{id}/delete-registration")]
+    public async Task<ActionResult> DeleteRegistrationUserPost(string id)
+        => await DeleteRegistrationUserCore(id);
+
+    private async Task<ActionResult> DeleteRegistrationUserCore(string id)
+    {
+        var bossId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = await _userService.GetByIdAsync(id);
+        var (ok, msg) = await _userService.DeleteRegistrationUserAsync(id, bossId);
+
+        if (!ok)
+            return BadRequest(new { message = msg });
+
+        await _realtime.NotifyUserChangedAsync(
+            id,
+            "userDeleted",
+            msg,
+            user?.AccountStatus,
+            user?.RoleInSystem
+        );
+
+        return Ok(new { message = msg });
+    }
+
     [HttpGet("/api/boss/analytics")]
     public async Task<ActionResult<BossAnalyticsDto>> GetAnalytics(
         [FromQuery] DateTime? from,

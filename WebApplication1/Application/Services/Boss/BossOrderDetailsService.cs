@@ -139,7 +139,12 @@ public class BossOrderDetailsService
     private static string NormalizeDetailRequestStatus(string? status)
     {
         var normalized = Normalize(status);
-        return normalized == "REJECTED" ? "CANCELED" : normalized;
+        return normalized switch
+        {
+            "REJECTED" => "CANCELED",
+            "RESERVED" => "WAITING",
+            _ => normalized
+        };
     }
 
     private static string? GetComplaintStatus(DomainOrder order)

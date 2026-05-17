@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <title>Specialist</title>
 
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/specialist.css">
+  <link rel="stylesheet" href="/css/base.css?v=6">
+  <link rel="stylesheet" href="/css/components.css?v=6">
+  <link rel="stylesheet" href="/css/header.css?v=6">
+  <link rel="stylesheet" href="/css/specialist.css?v=7">
 </head>
 
 <body>
@@ -118,7 +118,7 @@
                 <option value="IN_PROGRESS">У роботі</option>
                 <option value="INSPECTION">На перевірці</option>
                 <option value="WAITING_DETAILS">Очікує деталей</option>
-                <option value="DETAILS_RECEIVED">Матеріал видано</option>
+                <option value="DETAILS_RECEIVED">Видано</option>
                 <option value="EXECUTION">На виконанні</option>
                 <option value="REWORK">На переробці</option>
                 <option value="REWORK_REVIEW">Перероблено</option>
@@ -339,10 +339,10 @@
               <button
                 type="button"
                 class="specialist-mini-filter"
-                data-detail-request-filter="RESERVED"
-                onclick="setSpecialistDetailRequestFilter('RESERVED')"
+                data-detail-request-filter="WAITING"
+                onclick="setSpecialistDetailRequestFilter('WAITING')"
               >
-                Зарезервовані
+                Готові до видачі
               </button>
 
               <button
@@ -378,14 +378,14 @@
 
   <script src="/js/guard.js?v=2"></script>
   <script>requireRole(["SPECIALIST"]);</script>
-  <script src="/js/shared.js?v=4"></script>
+  <script src="/js/shared.js?v=5"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 
-  <script src="/js/js_specialist/specialist-api.js"></script>
+  <script src="/js/js_specialist/specialist-api.js?v=7"></script>
   <script src="/js/js_specialist/specialist-analytics.js?v=10"></script>
-  <script src="/js/js_specialist/specialist-actions.js"></script>
-  <script src="/js/js_specialist/specialist-render.js?v=3"></script>
-  <script src="/js/js_specialist/specialist-page.js"></script>
-  <script src="/js/js_specialist/specialist-realtime.js"></script>
+  <script src="/js/js_specialist/specialist-actions.js?v=7"></script>
+  <script src="/js/js_specialist/specialist-render.js?v=8"></script>
+  <script src="/js/js_specialist/specialist-page.js?v=7"></script>
+  <script src="/js/js_specialist/specialist-realtime.js?v=7"></script>
 </body>
 </html>

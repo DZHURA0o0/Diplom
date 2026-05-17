@@ -81,6 +81,7 @@ public class DetailRequestRepository
         var statuses = new[]
         {
             "CREATED",
+            "WAITING",
             "RESERVED",
             "APPROVED",
             "CANCELED",

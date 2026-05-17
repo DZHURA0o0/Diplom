@@ -81,7 +81,7 @@ function hasActiveDetailRequests(order) {
 
   return getDetailRequests(order).some(request => {
     const status = String(request?.status ?? "").trim().toUpperCase();
-    return status === "CREATED" || status === "RESERVED";
+    return status === "CREATED" || status === "WAITING" || status === "RESERVED";
   });
 }
 

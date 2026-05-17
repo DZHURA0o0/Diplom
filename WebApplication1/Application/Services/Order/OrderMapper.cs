@@ -88,6 +88,11 @@ public static class OrderMapper
     private static string NormalizeDetailRequestStatus(string? status)
     {
         var normalized = (status ?? "").Trim().ToUpperInvariant();
-        return normalized == "REJECTED" ? "CANCELED" : normalized;
+        return normalized switch
+        {
+            "REJECTED" => "CANCELED",
+            "RESERVED" => "WAITING",
+            _ => normalized
+        };
     }
 }

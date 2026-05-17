@@ -11,7 +11,8 @@ let bossAssignedSpecialistUiState = {};
 
 const BOSS_DETAIL_REQUEST_STATUS_LABELS = {
     CREATED: "Надіслано",
-    RESERVED: "Зарезервовано",
+    WAITING: "Готова до видачі",
+    RESERVED: "Готова до видачі",
     APPROVED: "Видано",
     CANCELED: "Скасовано"
 };
@@ -22,7 +23,7 @@ const STATUS_LABELS = {
     IN_PROGRESS: "У роботі",
     INSPECTION: "Огляд",
     WAITING_DETAILS: "Очікує деталей",
-    DETAILS_RECEIVED: "Матеріал видано",
+    DETAILS_RECEIVED: "Видано",
     EXECUTION: "Виконання",
     UNDER_COMPLAINT: "Під скаргою",
     REWORK: "На переробці",
@@ -641,14 +642,16 @@ function formatDetailRequestStatus(status) {
 
 function normalizeDetailRequestStatus(status) {
     const key = String(status || "").trim().toUpperCase();
-    return key === "REJECTED" ? "CANCELED" : key;
+    if (key === "REJECTED") return "CANCELED";
+    if (key === "RESERVED") return "WAITING";
+    return key;
 }
 
 function getDetailRequestStatusClass(status) {
     const key = normalizeDetailRequestStatus(status);
 
     if (key === "CREATED") return "CREATED";
-    if (key === "RESERVED") return "RESERVED";
+    if (key === "WAITING") return "WAITING";
     if (key === "APPROVED") return "APPROVED";
     if (key === "CANCELED") return "CANCELED";
 
