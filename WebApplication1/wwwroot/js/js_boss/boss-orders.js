@@ -826,7 +826,12 @@ function buildComplaintActionsHtml(order) {
                 <div class="complaint-actions-title">Дії по скарзі</div>
 
                 <div class="complaint-actions-buttons">
-                    <button type="button" class="btn-main js-complaint-resolve">
+                    <button
+                        type="button"
+                        class="btn-main js-complaint-resolve"
+                        disabled
+                        title="Закрити скаргу можна після завершення переробки"
+                    >
                         Закрити скаргу
                     </button>
                 </div>

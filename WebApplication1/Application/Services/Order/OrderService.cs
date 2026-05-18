@@ -359,6 +359,9 @@ public class OrderService
 
     private async Task<OrderDto> MapAsync(DomainOrder order)
     {
+        var detailRequests = await GetOrderDetailRequestsAsync(order);
+        await RecalculateOrderDetailStatusAsync(order, detailRequests);
+
         var dto = OrderMapper.ToDto(order);
 
         if (!string.IsNullOrWhiteSpace(order.LastWorkReportId))
@@ -367,11 +370,6 @@ public class OrderService
             if (report != null)
                 dto.WorkReportText = report.ReportText;
         }
-
-        var detailIds = OrderMapper.GetAllDetailRequestIds(order);
-        var detailRequests = detailIds.Count > 0
-            ? await _detailRequests.GetByIdsAsync(detailIds)
-            : await _detailRequests.GetByOrderIdAsync(order.Id);
 
         dto.DetailRequests = detailRequests
             .OrderByDescending(x => x.CreatedAt)
@@ -397,26 +395,24 @@ public class OrderService
     private async Task RecalculateOrderDetailStatusAsync(DomainOrder order)
     {
         var requests = await GetOrderDetailRequestsAsync(order);
+        await RecalculateOrderDetailStatusAsync(order, requests);
+    }
 
-        if (requests.Count == 0)
-        {
-            order.Status = "INSPECTION";
-        }
-        else if (requests.Any(IsActiveDetailRequest))
-        {
-            order.Status = "WAITING_DETAILS";
-        }
-        else
-        {
-            var approvedRequests = requests
-                .Where(IsApprovedDetailRequest)
-                .ToList();
+    private async Task RecalculateOrderDetailStatusAsync(
+        DomainOrder order,
+        List<DetailRequest> requests)
+    {
+        if (requests.Count == 0 || IsAnyStatus(order, "CANCELED", "DONE", "UNDER_COMPLAINT", "REWORK", "REWORK_REVIEW"))
+            return;
 
-            order.Status = approvedRequests.Count > 0
-                ? "DETAILS_RECEIVED"
-                : "INSPECTION";
-        }
+        var nextStatus = requests.Any(IsActiveDetailRequest)
+            ? "WAITING_DETAILS"
+            : "DETAILS_RECEIVED";
 
+        if (IsStatus(order, nextStatus))
+            return;
+
+        order.Status = nextStatus;
         await _orders.UpdateAsync(order);
     }
 
@@ -492,9 +488,6 @@ public class OrderService
     private static bool IsActiveDetailRequest(DetailRequest request)
         => IsDetailStatus(request, "CREATED") ||
            IsDetailStatus(request, "WAITING");
-
-    private static bool IsApprovedDetailRequest(DetailRequest request)
-        => IsDetailStatus(request, "APPROVED");
 
     private static string NormalizeDetailRequestStatus(string? status)
     {

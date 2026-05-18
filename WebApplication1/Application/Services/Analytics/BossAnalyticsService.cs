@@ -172,13 +172,15 @@ public class BossAnalyticsService
                 totalOrdersInPeriod,
                 averageOrdersPerSpecialist
             );
-            var adjustedComplaintRate = AdjustedRatePercent(
-                complaintsCount,
-                assignedCount,
-                totalComplaintsInPeriod,
-                totalOrdersInPeriod,
-                averageOrdersPerSpecialist
-            );
+            var adjustedComplaintRate = complaintsCount == 0
+                ? 0
+                : AdjustedRatePercent(
+                    complaintsCount,
+                    assignedCount,
+                    totalComplaintsInPeriod,
+                    totalOrdersInPeriod,
+                    averageOrdersPerSpecialist
+                );
             var rating = CalculateRating(
                 specialistShare,
                 adjustedCompletionRate,
@@ -550,9 +552,19 @@ public class BossAnalyticsService
 
     private static bool HasComplaint(DomainOrder order)
     {
+        if (IsRejectedComplaint(order))
+        {
+            return false;
+        }
+
+        if (IsStatus(order, "REWORK") || IsStatus(order, "REWORK_REVIEW"))
+        {
+            return true;
+        }
+
         return order.Complaint != null &&
-               order.Complaint.IsSubmitted &&
-               !IsRejectedComplaint(order);
+               (order.Complaint.IsSubmitted ||
+                !string.IsNullOrWhiteSpace(order.Complaint.ResolvedByReportId));
     }
 
     private static bool IsRejectedComplaint(DomainOrder order)

@@ -54,10 +54,12 @@ public class DetailRequestStatusSyncService
     public async Task SyncAsync()
     {
         var requests = await _detailRequests.GetPendingDecisionRequestsAsync();
+        var ordersWithDetailRequests = await _orders.GetWithDetailRequestsAsync();
 
         var orderIds = requests
             .Where(x => !string.IsNullOrWhiteSpace(x.OrderId))
             .Select(x => x.OrderId)
+            .Concat(ordersWithDetailRequests.Select(x => x.Id))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -69,7 +71,7 @@ public class DetailRequestStatusSyncService
 
     private async Task RecalculateOrderDetailStatusAsync(DomainOrder order)
     {
-        var requests = await _detailRequests.GetByOrderIdAsync(order.Id);
+        var requests = await GetOrderDetailRequestsAsync(order);
 
         if (requests.Count == 0)
         {
@@ -89,17 +91,25 @@ public class DetailRequestStatusSyncService
             return;
         }
 
-        var approvedRequests = requests
-            .Where(IsApprovedDetailRequest)
-            .ToList();
-
-        if (approvedRequests.Count == 0)
-        {
-            await UpdateOrderStatusIfNeededAsync(order, "INSPECTION");
-            return;
-        }
-
         await UpdateOrderStatusIfNeededAsync(order, "DETAILS_RECEIVED");
+    }
+
+    private async Task<List<DetailRequest>> GetOrderDetailRequestsAsync(DomainOrder order)
+    {
+        var ids = GetAllDetailRequestIds(order);
+
+        var byIds = ids.Count > 0
+            ? await _detailRequests.GetByIdsAsync(ids)
+            : new List<DetailRequest>();
+
+        var byOrderId = await _detailRequests.GetByOrderIdAsync(order.Id);
+
+        return byIds
+            .Concat(byOrderId)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
     }
 
     private async Task UpdateOrderStatusIfNeededAsync(DomainOrder order, string newStatus)
@@ -158,6 +168,29 @@ public class DetailRequestStatusSyncService
             order.DetailRequestId = newest.Id;
     }
 
+    private static List<string> GetAllDetailRequestIds(DomainOrder order)
+    {
+        var ids = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(order.DetailRequestId))
+        {
+            ids.Add(order.DetailRequestId.Trim());
+        }
+
+        if (order.DetailRequestIds != null)
+        {
+            ids.AddRange(
+                order.DetailRequestIds
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim())
+            );
+        }
+
+        return ids
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     private static bool IsStatus(string? current, string expected)
     {
         return string.Equals(
@@ -180,11 +213,6 @@ public class DetailRequestStatusSyncService
     {
         return IsDetailStatus(request, "CREATED") ||
                IsDetailStatus(request, "WAITING");
-    }
-
-    private static bool IsApprovedDetailRequest(DetailRequest request)
-    {
-        return IsDetailStatus(request, "APPROVED");
     }
 
     private static string NormalizeDetailRequestStatus(string? status)

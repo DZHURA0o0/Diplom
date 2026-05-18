@@ -93,4 +93,16 @@ public class OrderRepository
             .SortByDescending(x => x.CreatedAt)
             .ToListAsync();
     }
+
+    public Task<List<Order>> GetWithDetailRequestsAsync()
+    {
+        var filter =
+            Builders<Order>.Filter.Ne(x => x.DetailRequestId, null) |
+            Builders<Order>.Filter.Exists("detail_request_ids.0", true);
+
+        return _orders
+            .Find(filter)
+            .SortByDescending(x => x.CreatedAt)
+            .ToListAsync();
+    }
 }

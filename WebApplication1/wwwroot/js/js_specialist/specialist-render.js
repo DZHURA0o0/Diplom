@@ -719,7 +719,7 @@ function renderActionBlock(order, orderId) {
       return `
         <div class="action-block">
           <div class="action-row">
-            <span class="state-badge">${hasApprovedDetailRequests(order) ? "Видано" : "Запити закрито"}</span>
+            <span class="state-badge">Видано</span>
           </div>
 
           <div class="inactive-text">
@@ -905,6 +905,10 @@ function shouldIndicateSpecialistDetailRequest(request) {
   return normalizeDetailRequestStatus(request?.status) === "WAITING";
 }
 
+function shouldIndicateSpecialistRework(order) {
+  return normalizeStatus(order?.status) === "REWORK";
+}
+
 function setSpecialistTabBadge(tabName, badgeId, count, title) {
   const badge = document.getElementById(badgeId);
   const tab = document.querySelector(`[data-specialist-tab="${tabName}"]`);
@@ -931,7 +935,9 @@ function updateSpecialistTabBadges() {
     .filter(shouldIndicateSpecialistDetailRequest)
     .length;
 
-  const reworksCount = collectSpecialistReworkOrders().length;
+  const reworksCount = collectSpecialistReworkOrders()
+    .filter(shouldIndicateSpecialistRework)
+    .length;
 
   setSpecialistTabBadge(
     "details",

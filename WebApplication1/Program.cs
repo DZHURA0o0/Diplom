@@ -50,6 +50,7 @@ builder.Services.AddScoped<SpecialistAnalyticsService>();
 
 // Details status sync via MongoDB Change Stream
 builder.Services.AddScoped<DetailRequestStatusSyncService>();
+builder.Services.AddHostedService<DetailRequestStatusBackgroundService>();
 builder.Services.AddHostedService<DetailRequestChangeStreamService>();
 
 // Work reports / rework reports

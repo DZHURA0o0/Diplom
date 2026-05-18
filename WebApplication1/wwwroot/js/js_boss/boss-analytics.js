@@ -78,8 +78,8 @@ function setTableError(tbody, colspan, message) {
 function analyticsKpiClass(value) {
     const number = Number(value);
 
-    if (number >= 80) return "analytics-kpi-good";
-    if (number >= 50) return "analytics-kpi-medium";
+    if (number >= 70) return "analytics-kpi-good";
+    if (number >= 40) return "analytics-kpi-medium";
 
     return "analytics-kpi-bad";
 }
@@ -520,12 +520,12 @@ function setAnalyticsPersonalMode(analytics) {
 
     setText(
         "bonusRecommendationTitle",
-        isPersonalized ? "Оцінка вибраного спеціаліста для премії" : "Рекомендація на премію"
+        isPersonalized ? "Статистика вибраного спеціаліста" : "Рекомендація на премію"
     );
     setText(
         "bonusRecommendationSubtitle",
         isPersonalized
-            ? `Показує, чи відповідає ${selectedName} умовам рекомендації на премію за обраний період`
+            ? `Ключові показники ${selectedName}`
             : "Система пропонує кандидата на основі внеску у виконані заявки, відсотка виконання та скарг від виконаних робіт"
     );
 
@@ -575,6 +575,108 @@ function setAnalyticsPersonalMode(analytics) {
 }
 
 /* ===================== BONUS ===================== */
+
+function renderSelectedSpecialistStats(analytics) {
+    const container = document.getElementById("analyticsBonusRecommendation");
+    if (!container) return;
+
+    const selected = Array.isArray(analytics.specialists)
+        ? analytics.specialists.map(normalizeSpecialistAnalytics)[0]
+        : null;
+    const bonus = normalizeBonusRecommendation(analytics.bonusRecommendation);
+    const isBonusRecommended =
+        bonus.hasCandidate &&
+        String(bonus.specialistId) === String(selected?.specialistId);
+    const isNotTopByRating =
+        !bonus.hasCandidate &&
+        String(bonus.reason || "").toLowerCase().includes("найвищим рейтингом");
+    const bonusStatus = isBonusRecommended
+        ? "Рекомендується"
+        : isNotTopByRating
+            ? "Не рекомендується"
+            : "Не рекомендується";
+
+    if (!selected) {
+        container.innerHTML = `<div class="empty-box">Немає даних по вибраному спеціалісту за обраний період.</div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="order-details-grid">
+            <div class="order-detail-field">
+                <div class="order-detail-label">Спеціаліст</div>
+                <div class="order-detail-value">${escapeHtml(selected.fullName)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Рейтинг</div>
+                <div class="order-detail-value">${analyticsKpi(selected.ratingPercent)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Премія</div>
+                <div class="order-detail-value">${escapeHtml(bonusStatus)}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Призначено</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(selected.assignedCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Виконано</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(selected.completedCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Активні</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(selected.activeCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Скарги</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(selected.complaintsCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Переробки</div>
+                <div class="order-detail-value">${escapeHtml(analyticsNumber(selected.reworkCount))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Навантаження</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(selected.workloadPercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">% виконання своїх заявок</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(selected.completionRatePercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">ВУЗУН</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(selected.adjustedCompletionRatePercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">% скарг по заявкам</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(selected.complaintRatePercent))}</div>
+            </div>
+
+            <div class="order-detail-field">
+                <div class="order-detail-label">Скарги з урахуванням обсягу</div>
+                <div class="order-detail-value">${escapeHtml(analyticsPercent(selected.adjustedComplaintRatePercent))}</div>
+            </div>
+
+            ${!isBonusRecommended ? `
+                <div class="order-detail-field full">
+                    <div class="order-detail-label">Пояснення</div>
+                    <div class="order-detail-value long-text">На премію не рекомендовано</div>
+                </div>
+            ` : ""}
+        </div>
+    `;
+}
 
 function renderBonusRecommendation(item) {
     const container = document.getElementById("analyticsBonusRecommendation");
@@ -812,7 +914,11 @@ function renderAnalytics(data) {
     setAnalyticsPersonalMode(analytics);
     renderAnalyticsSummary(analytics);
     renderAnalyticsCharts(analytics);
-    renderBonusRecommendation(analytics.bonusRecommendation);
+    if (analytics.isPersonalized) {
+        renderSelectedSpecialistStats(analytics);
+    } else {
+        renderBonusRecommendation(analytics.bonusRecommendation);
+    }
     renderSpecialistsAnalytics(analytics.specialists);
     renderTopComplainers(analytics.topComplainers);
     renderTopRequesters(analytics.topRequesters);

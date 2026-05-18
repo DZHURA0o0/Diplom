@@ -15,9 +15,9 @@
 <script src="/js/shared.js?v=5" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" defer></script>
 <script src="/js/js_boss/boss-data.js?v=4" defer></script>
-<script src="/js/js_boss/boss-orders.js?v=7" defer></script>
+<script src="/js/js_boss/boss-orders.js?v=8" defer></script>
 <script src="/js/js_boss/boss-users.js?v=9" defer></script>
-<script src="/js/js_boss/boss-analytics.js?v=9" defer></script>
+<script src="/js/js_boss/boss-analytics.js?v=13" defer></script>
 <script src="/js/js_boss/boss-page.js?v=2" defer></script>
 <script src="/js/js_boss/boss-realtime.js" defer></script>
 </head>
@@ -363,7 +363,7 @@
               <p><code>Скарги з урахуванням обсягу = (S + DeptComplaint% × AvgA) / (A + AvgA) × 100%</code></p>
               <p><code>Якість = 100% - скарги з урахуванням обсягу, але не менше 0%</code></p>
               <p><code>Рейтинг = 0.4 × внесок у виконані заявки + 0.4 × ВУЗУН + 0.2 × якість</code></p>
-              <p>Кандидат обирається серед спеціалістів, які мають призначені та виконані заявки, а рівень скарг з урахуванням обсягу не перевищує 30%.</p>
+              <p>Кандидатом може бути тільки спеціаліст з найвищим рейтингом за період; якщо його рівень скарг з урахуванням обсягу перевищує 30%, рекомендація не формується.</p>
             </div>
           </details>
 
