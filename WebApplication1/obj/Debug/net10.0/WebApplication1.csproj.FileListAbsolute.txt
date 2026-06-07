@@ -268,5 +268,5 @@ C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\build-check\System.Identi
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\build-check\ZstdSharp.dll
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\zw4o2x7qjl-{0}-79oz4nw3v6-79oz4nw3v6.gz
 C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\sm9b745sgc-{0}-ply7av9gni-ply7av9gni.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\k1equta8m8-{0}-r0b1ega93z-r0b1ega93z.gz
-C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\0hpzxnbmqn-{0}-pctv18qte0-pctv18qte0.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\k1equta8m8-{0}-4pkttsdy9l-4pkttsdy9l.gz
+C:\Users\malts\Documents\GitHub\Diplom\WebApplication1\obj\Debug\net10.0\compressed\0hpzxnbmqn-{0}-df150jrxk1-df150jrxk1.gz

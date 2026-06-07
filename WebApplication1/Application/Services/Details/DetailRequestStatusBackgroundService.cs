@@ -19,29 +19,26 @@ public class DetailRequestStatusBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Detail request status sync service started.");
+        _logger.LogInformation("Startup detail request status sync started.");
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
+            using var scope = _scopeFactory.CreateScope();
 
-                var syncService = scope.ServiceProvider
-                    .GetRequiredService<DetailRequestStatusSyncService>();
+            var syncService = scope.ServiceProvider
+                .GetRequiredService<DetailRequestStatusSyncService>();
 
-                await syncService.SyncAsync();
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                // App is shutting down.
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Detail request status sync error.");
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            await syncService.SyncAsync();
         }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // App is shutting down.
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Startup detail request status sync error.");
+        }
+
+        _logger.LogInformation("Startup detail request status sync finished.");
     }
 }

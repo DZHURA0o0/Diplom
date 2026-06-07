@@ -42,7 +42,6 @@ public class BossOrderDetailsService
             : null;
 
         var detailRequests = await GetOrderDetailRequestsAsync(order);
-        await RecalculateOrderDetailStatusAsync(order, detailRequests);
 
         var newestDetailRequest = detailRequests
             .OrderByDescending(x => x.CreatedAt)
@@ -137,24 +136,6 @@ public class BossOrderDetailsService
         };
     }
 
-    private async Task RecalculateOrderDetailStatusAsync(
-        DomainOrder order,
-        List<DetailRequest> requests)
-    {
-        if (requests.Count == 0 || IsFinalOrComplaintStatus(order))
-            return;
-
-        var nextStatus = requests.Any(IsActiveDetailRequest)
-            ? "WAITING_DETAILS"
-            : "DETAILS_RECEIVED";
-
-        if (Normalize(order.Status) == nextStatus)
-            return;
-
-        order.Status = nextStatus;
-        await _orders.UpdateAsync(order);
-    }
-
     private static string NormalizeDetailRequestStatus(string? status)
     {
         var normalized = Normalize(status);
@@ -206,22 +187,6 @@ public class BossOrderDetailsService
         }
 
         return "SUBMITTED";
-    }
-
-    private static bool IsActiveDetailRequest(DetailRequest request)
-    {
-        var status = NormalizeDetailRequestStatus(request.Status);
-        return status == "CREATED" || status == "WAITING";
-    }
-
-    private static bool IsFinalOrComplaintStatus(DomainOrder order)
-    {
-        var status = Normalize(order.Status);
-        return status == "CANCELED" ||
-               status == "DONE" ||
-               status == "UNDER_COMPLAINT" ||
-               status == "REWORK" ||
-               status == "REWORK_REVIEW";
     }
 
     private static string Normalize(string? value)

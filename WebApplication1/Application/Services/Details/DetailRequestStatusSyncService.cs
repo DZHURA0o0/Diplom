@@ -37,10 +37,10 @@ public class DetailRequestStatusSyncService
             return;
         }
 
-        if (IsStatus(order.Status, "CANCELED") || IsStatus(order.Status, "DONE"))
+        if (!ShouldSyncDetailStatus(order))
         {
             _logger.LogInformation(
-                "Detail request sync skipped. Order {OrderId} has final status {Status}",
+                "Detail request sync skipped. Order {OrderId} has status {Status}",
                 order.Id,
                 order.Status
             );
@@ -54,12 +54,10 @@ public class DetailRequestStatusSyncService
     public async Task SyncAsync()
     {
         var requests = await _detailRequests.GetPendingDecisionRequestsAsync();
-        var ordersWithDetailRequests = await _orders.GetWithDetailRequestsAsync();
 
         var orderIds = requests
             .Where(x => !string.IsNullOrWhiteSpace(x.OrderId))
             .Select(x => x.OrderId)
-            .Concat(ordersWithDetailRequests.Select(x => x.Id))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -209,10 +207,22 @@ public class DetailRequestStatusSyncService
         );
     }
 
+    private static bool ShouldSyncDetailStatus(DomainOrder order)
+    {
+        return IsStatus(order.Status, "INSPECTION") ||
+               IsStatus(order.Status, "WAITING_DETAILS") ||
+               IsStatus(order.Status, "DETAILS_RECEIVED");
+    }
+
     private static bool IsActiveDetailRequest(DetailRequest request)
     {
         return IsDetailStatus(request, "CREATED") ||
                IsDetailStatus(request, "WAITING");
+    }
+
+    private static bool IsApprovedDetailRequest(DetailRequest request)
+    {
+        return IsDetailStatus(request, "APPROVED");
     }
 
     private static string NormalizeDetailRequestStatus(string? status)

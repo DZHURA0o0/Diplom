@@ -719,7 +719,7 @@ function renderActionBlock(order, orderId) {
       return `
         <div class="action-block">
           <div class="action-row">
-            <span class="state-badge">Видано</span>
+            <span class="state-badge">${hasApprovedDetailRequests(order) ? "Видано" : "Запити закрито"}</span>
           </div>
 
           <div class="inactive-text">
