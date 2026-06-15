@@ -8,6 +8,46 @@ function isDoneStatus(status) {
   return String(status ?? "").trim().toUpperCase() === "DONE";
 }
 
+function hasWorkerDetailsValue(value) {
+  const text = String(value ?? "").trim();
+
+  return text !== "" && text !== "—";
+}
+
+function renderWorkerDetailsField(label, value, options = {}) {
+  if (!hasWorkerDetailsValue(value)) {
+    return "";
+  }
+
+  const className = options.full ? "details-field full" : "details-field";
+  const valueClass = options.long ? "details-value long-text" : "details-value";
+
+  return `
+    <div class="${className}">
+      <div class="details-label">${escapeHtml(label)}</div>
+      <div class="${valueClass}">${escapeHtml(value)}</div>
+    </div>
+  `;
+}
+
+function renderWorkerDetailsLocation(order) {
+  const parts = [];
+
+  if (hasWorkerDetailsValue(order.productionWorkshopNumber)) {
+    parts.push(`Цех ${order.productionWorkshopNumber}`);
+  }
+
+  if (hasWorkerDetailsValue(order.floorNumber)) {
+    parts.push(`пов. ${order.floorNumber}`);
+  }
+
+  if (hasWorkerDetailsValue(order.roomNumber)) {
+    parts.push(`кімн. ${order.roomNumber}`);
+  }
+
+  return renderWorkerDetailsField("Локація", parts.join(", "), { full: true });
+}
+
 function getWorkerOrderById(orderId) {
   const id = String(orderId);
 
@@ -271,71 +311,10 @@ function renderOrderDetails(order, container) {
         Створити
       </button>
     `;
-  } else {
-    complaintActionHtml = `
-      <button
-        type="button"
-        class="btn-complaint btn-complaint-disabled"
-        disabled
-        title="Доступно тільки після виконання заявки">
-        Створити
-      </button>
-    `;
   }
 
-  container.innerHTML = `
-    <div class="details-card" onclick="event.stopPropagation()">
-      <div class="details-grid">
-
-        <div class="details-field">
-          <div class="details-label">Статус</div>
-          <div class="details-value">${escapeHtml(formatStatus(order.status))}</div>
-        </div>
-
-        <div class="details-field">
-          <div class="details-label">Тип послуги</div>
-          <div class="details-value">${escapeHtml(formatServiceType(order.serviceType))}</div>
-        </div>
-
-        <div class="details-field">
-          <div class="details-label">Спеціаліст</div>
-          <div class="details-value">${escapeHtml(order.specialistName ?? "—")}</div>
-        </div>
-
-        <div class="details-field">
-          <div class="details-label">Дата створення</div>
-          <div class="details-value">${formatDate(order.createdAt)}</div>
-        </div>
-
-        <div class="details-field">
-          <div class="details-label">Дата огляду</div>
-          <div class="details-value">${formatDate(order.inspectionAt)}</div>
-        </div>
-
-        <div class="details-field full">
-          <div class="details-label">Локація</div>
-          <div class="details-value">
-            Цех ${escapeHtml(order.productionWorkshopNumber ?? "—")},
-            пов. ${escapeHtml(order.floorNumber ?? "—")},
-            кімн. ${escapeHtml(order.roomNumber ?? "—")}
-          </div>
-        </div>
-
-        <div class="details-field full">
-          <div class="details-label">Опис проблеми</div>
-          <div class="details-value long-text">${escapeHtml(order.descriptionProblem ?? "—")}</div>
-        </div>
-
-        <div class="details-field full">
-          <div class="details-label">Результат огляду</div>
-          <div class="details-value long-text">${escapeHtml(order.inspectionResult ?? "—")}</div>
-        </div>
-
-        <div class="details-field full">
-          <div class="details-label">Звіт по роботі</div>
-          <div class="details-value long-text">${escapeHtml(order.workReportText ?? "Відсутній")}</div>
-        </div>
-
+  const complaintHtml = (hasComplaint || isDone)
+    ? `
         <div class="details-field complaint-row">
           <div class="complaint-left">
             <div class="details-label">Скарга</div>
@@ -350,18 +329,28 @@ function renderOrderDetails(order, container) {
         ${
           hasComplaint
             ? `
-              <div class="details-field full complaint-text">
-                <div class="details-label">Текст скарги</div>
-                <div class="details-value long-text">${escapeHtml(complaintBody || "—")}</div>
-              </div>
-
-              <div class="details-field">
-                <div class="details-label">Дата подання</div>
-                <div class="details-value">${escapeHtml(complaintCreatedAt)}</div>
-              </div>
+              ${renderWorkerDetailsField("Текст скарги", complaintBody, { full: true, long: true })}
+              ${renderWorkerDetailsField("Дата подання", complaintCreatedAt)}
             `
             : ""
         }
+      `
+    : "";
+
+  container.innerHTML = `
+    <div class="details-card" onclick="event.stopPropagation()">
+      <div class="details-grid">
+
+        ${renderWorkerDetailsField("Статус", formatStatus(order.status))}
+        ${renderWorkerDetailsField("Тип послуги", formatServiceType(order.serviceType))}
+        ${renderWorkerDetailsField("Спеціаліст", order.specialistName)}
+        ${renderWorkerDetailsField("Дата створення", formatDate(order.createdAt))}
+        ${renderWorkerDetailsField("Дата огляду", formatDate(order.inspectionAt))}
+        ${renderWorkerDetailsLocation(order)}
+        ${renderWorkerDetailsField("Опис проблеми", order.descriptionProblem, { full: true, long: true })}
+        ${renderWorkerDetailsField("Результат огляду", order.inspectionResult, { full: true, long: true })}
+        ${renderWorkerDetailsField("Звіт по роботі", order.workReportText, { full: true, long: true })}
+        ${complaintHtml}
 
       </div>
     </div>

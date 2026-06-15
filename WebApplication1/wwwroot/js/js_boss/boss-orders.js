@@ -1439,10 +1439,12 @@ function sortOrders(orders) {
 
 async function fillDetailsRow(order, detailsRow) {
     const orderId = getOrderId(order);
+    const tbodyId = detailsRow?.parentElement?.id || "orders";
+    const colspan = tbodyId === "complaintsOrders" ? 7 : 8;
 
     if (!orderId) {
         detailsRow.innerHTML = `
-            <td colspan="8">
+            <td colspan="${colspan}">
                 <div class="error-box">ID заявки не знайдено</div>
             </td>
         `;
@@ -1450,7 +1452,7 @@ async function fillDetailsRow(order, detailsRow) {
     }
 
     detailsRow.innerHTML = `
-        <td colspan="8">
+        <td colspan="${colspan}">
             <div class="empty-box">Завантаження повної інформації...</div>
         </td>
     `;
@@ -1459,7 +1461,7 @@ async function fillDetailsRow(order, detailsRow) {
         const fullOrder = await getFullOrderDetails(orderId);
 
         detailsRow.innerHTML = `
-            <td colspan="8">
+            <td colspan="${colspan}">
                 ${buildDetailsHtml(fullOrder)}
             </td>
         `;
@@ -1467,7 +1469,7 @@ async function fillDetailsRow(order, detailsRow) {
         attachComplaintActionHandlers(fullOrder, detailsRow);
     } catch (err) {
         detailsRow.innerHTML = `
-            <td colspan="8">
+            <td colspan="${colspan}">
                 <div class="error-box">${escapeHtml(err.message || "Помилка завантаження деталей")}</div>
             </td>
         `;
@@ -1514,6 +1516,10 @@ function createRenderedOrderRows(order, tbodyId = "orders") {
         bossAssignedSpecialistUiState[orderId] = currentSpecialistId;
     }
 
+    const assignmentCellHtml = tbodyId === "orders"
+        ? `<td class="cell-actions"></td>`
+        : "";
+
     mainRow.innerHTML = `
         <td class="cell-mono">
             ${escapeHtml(orderId || "—")}
@@ -1531,15 +1537,12 @@ function createRenderedOrderRows(order, tbodyId = "orders") {
         </td>
 
         <td>${escapeHtml(formatLocation(order))}</td>
-        <td class="cell-actions"></td>
+        ${assignmentCellHtml}
     `;
 
-    const assignCell = mainRow.lastElementChild;
-
     if (tbodyId === "orders") {
+        const assignCell = mainRow.lastElementChild;
         assignCell.appendChild(createAssignControls(order));
-    } else {
-        assignCell.innerHTML = `<span class="muted">Перегляд</span>`;
     }
 
     if (ordersExpandedState[rowStateKey]) {
@@ -1569,6 +1572,7 @@ function createRenderedOrderRows(order, tbodyId = "orders") {
 
 function renderOrdersTable(orders, tbodyId = "orders", emptyMessage = "Немає заявок") {
     const tbody = document.getElementById(tbodyId);
+    const colspan = tbodyId === "complaintsOrders" ? 7 : 8;
 
     if (!tbody) {
         return;
@@ -1580,7 +1584,7 @@ function renderOrdersTable(orders, tbodyId = "orders", emptyMessage = "Нема�
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-            <td colspan="8">
+            <td colspan="${colspan}">
                 <div class="empty-box">${escapeHtml(emptyMessage)}</div>
             </td>
         `;

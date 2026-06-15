@@ -95,7 +95,7 @@ public class BossAnalyticsService
 
             TotalOrders = periodOrders.Count,
             CompletedOrders = periodOrders.Count(IsCompleted),
-            CanceledOrders = periodOrders.Count(IsCanceled),
+            CanceledOrders = periodOrders.Count(IsRejectedComplaint),
             ActiveOrders = periodOrders.Count(IsActive),
 
             ComplaintsCount = periodOrders.Count(HasComplaint),
@@ -552,11 +552,6 @@ public class BossAnalyticsService
 
     private static bool HasComplaint(DomainOrder order)
     {
-        if (IsRejectedComplaint(order))
-        {
-            return false;
-        }
-
         if (IsStatus(order, "REWORK") || IsStatus(order, "REWORK_REVIEW"))
         {
             return true;
