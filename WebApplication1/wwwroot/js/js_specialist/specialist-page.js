@@ -4,6 +4,8 @@ let openedOrderId = null;
 let focusedOrderId = null;
 
 let activeSpecialistTab = "orders";
+let specialistOrdersCacheKey = null;
+let specialistOrdersLoaded = false;
 
 /* ===================== STATUS / UI ===================== */
 
@@ -168,6 +170,10 @@ async function refreshSpecialistOrderOnly(orderId) {
   }
 }
 
+function getSpecialistOrdersCacheKey(status) {
+  return String(status || "").trim().toUpperCase();
+}
+
 /* ===================== ORDERS LOADING ===================== */
 
 async function loadOrders(options = {}) {
@@ -175,12 +181,34 @@ async function loadOrders(options = {}) {
     render = true,
     statusOverride = null,
     silent = false,
-    updateAllCache = false
+    updateAllCache = false,
+    force = false
   } = options;
 
   const status = statusOverride !== null
     ? statusOverride
     : getStatusFilterValue();
+  const cacheKey = getSpecialistOrdersCacheKey(status);
+
+  if (
+    !force &&
+    specialistOrdersLoaded &&
+    specialistOrdersCacheKey === cacheKey
+  ) {
+    if (render && activeSpecialistTab === "orders") {
+      renderOrders(specialistOrders);
+    }
+
+    if (typeof updateSpecialistTabBadges === "function") {
+      updateSpecialistTabBadges();
+    }
+
+    if (!silent) {
+      setPageStatus(`Завантажено ${specialistOrders.length} заявок`);
+    }
+
+    return specialistOrders;
+  }
 
   try {
     if (!silent) {
@@ -191,6 +219,8 @@ async function loadOrders(options = {}) {
     const orders = sortOrdersNewFirst(data);
 
     specialistOrders = orders;
+    specialistOrdersCacheKey = cacheKey;
+    specialistOrdersLoaded = true;
 
     if (!status || updateAllCache || statusOverride === "") {
       specialistAllOrders = orders;
@@ -331,7 +361,7 @@ async function handleRefresh() {
       return;
     }
 
-    await loadOrders();
+    await loadOrders({ force: true });
     return;
   }
 
@@ -406,7 +436,9 @@ async function switchSpecialistTab(tab, shouldLoad = true) {
 
   if (targetTab === "orders") {
     if (shouldLoad) {
-      await loadOrders();
+      await loadOrders({
+        force: !specialistOrdersLoaded
+      });
     } else {
       renderOrders(specialistOrders);
     }
@@ -504,7 +536,8 @@ function initSpecialistStatusFilter() {
 
     await loadOrders({
       render: activeSpecialistTab === "orders",
-      statusOverride: getStatusFilterValue()
+      statusOverride: getStatusFilterValue(),
+      force: true
     });
   });
 }

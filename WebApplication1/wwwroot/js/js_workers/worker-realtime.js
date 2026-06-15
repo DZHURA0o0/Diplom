@@ -36,7 +36,7 @@ function registerWorkerRealtimeHandlers(connection) {
 
   connection.onreconnected(async () => {
     if (typeof loadOrders === "function") {
-      await loadOrders();
+      await loadOrders({ force: true });
     }
   });
 }

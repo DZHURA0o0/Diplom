@@ -53,7 +53,21 @@ public class BossController : ControllerBase
             productionWorkshopNumber = o.ProductionWorkshopNumber,
             floorNumber = o.FloorNumber,
             roomNumber = o.RoomNumber,
-            createdAt = o.CreatedAt
+            createdAt = o.CreatedAt,
+            complaintSubmitted = o.Complaint?.IsSubmitted ?? false,
+            complaintStatus = GetComplaintStatus(o),
+            complaintText = o.Complaint?.Text,
+            resolvedByReportId = o.Complaint?.ResolvedByReportId,
+            complaint = o.Complaint == null ? null : new
+            {
+                isSubmitted = o.Complaint.IsSubmitted,
+                text = o.Complaint.Text,
+                createdAt = o.Complaint.CreatedAt,
+                resolvedByReportId = o.Complaint.ResolvedByReportId,
+                closedAt = o.Complaint.ClosedAt,
+                closedBy = o.Complaint.ClosedBy,
+                closeComment = o.Complaint.CloseComment
+            }
         });
 
         return Ok(result);
@@ -353,6 +367,31 @@ public class BossController : ControllerBase
     }
 
     private static string? GetComplaintStatus(Order order)
+    {
+        var complaint = order.Complaint;
+
+        if (complaint == null || !complaint.IsSubmitted)
+            return null;
+
+        if (complaint.ClosedAt != null && !string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+            return "RESOLVED";
+
+        if (complaint.ClosedAt != null && string.IsNullOrWhiteSpace(complaint.ResolvedByReportId))
+            return "REJECTED";
+
+        if (string.Equals(order.Status, "REWORK_REVIEW", StringComparison.OrdinalIgnoreCase))
+            return "REWORK_DONE";
+
+        if (string.Equals(order.Status, "REWORK", StringComparison.OrdinalIgnoreCase))
+            return "IN_REWORK";
+
+        if (string.Equals(order.Status, "UNDER_COMPLAINT", StringComparison.OrdinalIgnoreCase))
+            return "SUBMITTED";
+
+        return "SUBMITTED";
+    }
+
+    private static string? GetComplaintStatus(OrderDto order)
     {
         var complaint = order.Complaint;
 

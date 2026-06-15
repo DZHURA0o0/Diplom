@@ -37,10 +37,29 @@ public class WorkerOrdersController : ControllerBase
             return Unauthorized();
 
         var orders = await _service.GetByWorkerAsync(workerId, status);
-        var result = new List<object>();
+        var worker = await _userService.GetByIdAsync(workerId);
+        var workerName = worker?.FullName;
+        var specialistIds = orders
+            .Select(o => o.SpecialistId)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var specialists = specialistIds.Count == 0
+            ? new List<User>()
+            : await _userService.GetAllSpecialistsAsync();
+        var specialistNamesById = specialists
+            .Where(s => !string.IsNullOrWhiteSpace(s.Id) && specialistIds.Contains(s.Id))
+            .GroupBy(s => s.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().FullName,
+                StringComparer.OrdinalIgnoreCase
+            );
 
-        foreach (var o in orders)
-            result.Add(await BuildOrderResponseFromDtoAsync(o));
+        var result = orders
+            .Select(o => BuildOrderResponseFromDto(o, workerName, specialistNamesById))
+            .ToList();
 
         return Ok(result);
     }
@@ -65,20 +84,16 @@ public class WorkerOrdersController : ControllerBase
         return Ok(result);
     }
 
-    private async Task<object> BuildOrderResponseFromDtoAsync(OrderDto o)
+    private static object BuildOrderResponseFromDto(
+        OrderDto o,
+        string? workerName,
+        Dictionary<string, string> specialistNamesById)
     {
-        string? workerName = null;
         string? specialistName = null;
-
-        var worker = await _userService.GetByIdAsync(o.WorkerId);
-        if (worker != null)
-            workerName = worker.FullName;
 
         if (!string.IsNullOrWhiteSpace(o.SpecialistId))
         {
-            var specialist = await _userService.GetByIdAsync(o.SpecialistId);
-            if (specialist != null)
-                specialistName = specialist.FullName;
+            specialistNamesById.TryGetValue(o.SpecialistId, out specialistName);
         }
 
         return new

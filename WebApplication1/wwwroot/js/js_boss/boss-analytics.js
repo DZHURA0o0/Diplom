@@ -753,7 +753,7 @@ function renderSpecialistsAnalytics(items) {
     const rows = Array.isArray(items) ? items.map(normalizeSpecialistAnalytics) : [];
 
     if (rows.length === 0) {
-        setTableEmpty(body, 11, "Немає даних по спеціалістах");
+        setTableEmpty(body, 10, "Немає даних по спеціалістах");
         return;
     }
 
@@ -771,7 +771,6 @@ function renderSpecialistsAnalytics(items) {
                 <td>${escapeHtml(analyticsNumber(item.completedCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.activeCount))}</td>
                 <td>${escapeHtml(analyticsNumber(item.complaintsCount))}</td>
-                <td>${escapeHtml(analyticsNumber(item.reworkCount))}</td>
                 <td>${analyticsKpi(item.ratingPercent)}</td>
                 <td>${escapeHtml(analyticsPercent(item.workloadPercent))}</td>
                 <td>${escapeHtml(analyticsPercent(item.completionRatePercent))}</td>

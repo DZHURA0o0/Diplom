@@ -115,7 +115,7 @@
             </div>
 
             <div class="toolbar-right">
-              <button type="button" class="btn-primary" onclick="loadOrders()">Оновити</button>
+              <button type="button" class="btn-primary" onclick="loadOrders({ force: true })">Оновити</button>
             </div>
           </div>
 
@@ -148,7 +148,7 @@
             </div>
 
             <div class="toolbar-right">
-              <button type="button" class="btn-primary" onclick="loadComplaintsOrders()">Оновити</button>
+              <button type="button" class="btn-primary" onclick="loadComplaintsOrders({ force: true })">Оновити</button>
             </div>
           </div>
 
@@ -422,7 +422,6 @@
                       <th>Виконано</th>
                       <th>Активні</th>
                       <th>Скарги</th>
-                      <th>Переробки</th>
                       <th>Рейтинг</th>
                       <th>Навантаження</th>
                       <th>% виконання своїх</th>

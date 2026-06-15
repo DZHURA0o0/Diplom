@@ -9,6 +9,7 @@ const SPECIALIST_DETAIL_REQUEST_STATUS_LABELS = {
 };
 
 let specialistDetailRequestFilter = "";
+const specialistReportsHistoryCache = {};
 
 function getWorkerDisplayName(order) {
   return order?.workerName || order?.workerFullName || order?.workerId || "—";
@@ -34,7 +35,20 @@ function normalizeStatus(status) {
   return String(status ?? "").trim().toUpperCase();
 }
 
+function hasDisplayValue(value) {
+  if (value === null || value === undefined) {
+    return false;
+  }
+
+  const text = String(value).trim();
+  return text !== "" && text !== "â€”" && text !== "—";
+}
+
 function createDetailsField(label, value, options = {}) {
+  if (!options.showEmpty && !hasDisplayValue(value)) {
+    return "";
+  }
+
   const fullClass = options.full ? " full" : "";
   const valueClass = options.valueClass ? ` ${options.valueClass}` : "";
   const safeValue = value === null || value === undefined || value === "" ? "—" : value;
@@ -463,8 +477,68 @@ function normalizeDetailRequestStatusClass(status) {
   return "UNKNOWN";
 }
 
-function renderDetailRequestItem(request, index, total) {
+function renderCleanDetailRequestItem(request, index, total) {
   const statusClass = normalizeDetailRequestStatusClass(request.status);
+  const rows = [];
+
+  if (hasDisplayValue(request.detailNeeds)) {
+    rows.push(`
+      <div class="detail-request-row">
+        <span>\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u0456 \u0434\u0435\u0442\u0430\u043b\u0456</span>
+        <p>${escapeHtml(request.detailNeeds)}</p>
+      </div>
+    `);
+  }
+
+  if (hasDisplayValue(request.explanation)) {
+    rows.push(`
+      <div class="detail-request-row">
+        <span>\u041f\u043e\u044f\u0441\u043d\u0435\u043d\u043d\u044f</span>
+        <p>${escapeHtml(request.explanation)}</p>
+      </div>
+    `);
+  }
+
+  return `
+    <div class="detail-request-item">
+      <div class="detail-request-head">
+        <div>
+          <strong>\u0417\u0430\u043f\u0438\u0442 \u0434\u0435\u0442\u0430\u043b\u0435\u0439 ${total - index}</strong>
+          <span class="detail-request-date">${formatDate(request.createdAt)}</span>
+        </div>
+
+        <span class="detail-request-status ${escapeAttr(statusClass)}">
+          ${escapeHtml(formatDetailRequestStatus(request.status))}
+        </span>
+      </div>
+
+      <div class="detail-request-body">
+        ${rows.join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderDetailRequestItem(request, index, total) {
+  return renderCleanDetailRequestItem(request, index, total);
+
+  const statusClass = normalizeDetailRequestStatusClass(request.status);
+  const detailNeedsHtml = hasDisplayValue(request.detailNeeds)
+    ? `
+        <div class="detail-request-row">
+          <span>ÐŸÐ¾Ñ‚Ñ€Ñ–Ð±Ð½Ñ– Ð´ÐµÑ‚Ð°Ð»Ñ–</span>
+          <p>${escapeHtml(request.detailNeeds)}</p>
+        </div>
+      `
+    : "";
+  const explanationHtml = hasDisplayValue(request.explanation)
+    ? `
+        <div class="detail-request-row">
+          <span>ÐŸÐ¾ÑÑÐ½ÐµÐ½Ð½Ñ</span>
+          <p>${escapeHtml(request.explanation)}</p>
+        </div>
+      `
+    : "";
 
   return `
     <div class="detail-request-item">
@@ -480,15 +554,18 @@ function renderDetailRequestItem(request, index, total) {
       </div>
 
       <div class="detail-request-body">
+        ${detailNeedsHtml || `<div class="detail-request-row hidden">
         <div class="detail-request-row">
           <span>Потрібні деталі</span>
           <p>${escapeHtml(request.detailNeeds || "—")}</p>
         </div>
 
+        </div>`}
+        ${explanationHtml || `<div class="detail-request-row hidden">
         <div class="detail-request-row">
           <span>Пояснення</span>
           <p>${escapeHtml(request.explanation || "—")}</p>
-        </div>
+        </div>`}
       </div>
     </div>
   `;
@@ -550,7 +627,17 @@ function hasApprovedDetailRequests(order) {
 function renderOrderDetails(order, container) {
   const orderId = getOrderId(order);
   const previousReportsHistory = document.getElementById(`reports-history-${orderId}`)?.innerHTML;
-  const reportsHistoryHtml = previousReportsHistory || renderReportsHistory([]);
+  const reportsHistoryHtml = previousReportsHistory || specialistReportsHistoryCache[orderId] || "";
+  const detailRequestsHistoryHtml = getDetailRequests(order).length > 0
+    ? renderDetailRequestsHistory(order)
+    : "";
+  const reportsHistoryField = reportsHistoryHtml
+    ? createDetailsField(
+        "Історія звітів",
+        `<div id="reports-history-${escapeAttr(orderId)}">${reportsHistoryHtml}</div>`,
+        { full: true }
+      )
+    : `<div id="reports-history-${escapeAttr(orderId)}" class="hidden"></div>`;
 
   container.innerHTML = `
     <div class="details-card" onclick="event.stopPropagation()">
@@ -566,16 +653,12 @@ function renderOrderDetails(order, container) {
         ${renderComplaintBlock(order)}
 
         ${createDetailsField("Результат огляду", escapeHtml(order.inspectionResult ?? "—"), { full: true, valueClass: "long-text" })}
-        ${createDetailsField("Історія запитів деталей", renderDetailRequestsHistory(order), { full: true })}
+        ${createDetailsField("Історія запитів деталей", detailRequestsHistoryHtml, { full: true })}
         ${createDetailsField("Останній звіт", escapeHtml(order.workReport ?? order.workReportText ?? "—"), { full: true, valueClass: "long-text" })}
 
-        ${createDetailsField(
-          "Історія звітів",
-          `<div id="reports-history-${escapeAttr(orderId)}">${reportsHistoryHtml}</div>`,
-          { full: true }
-        )}
+        ${reportsHistoryField}
 
-        ${createDetailsField("Дії", renderActionBlock(order, orderId), { full: true })}
+        ${createDetailsField("Дії", renderActionBlock(order, orderId), { full: true, showEmpty: true })}
       </div>
     </div>
   `;
@@ -822,7 +905,7 @@ function renderReportHistoryItem(report, index) {
 
 function renderReportsHistory(reports) {
   if (!Array.isArray(reports) || reports.length === 0) {
-    return `<div class="details-value long-text">—</div>`;
+    return "";
   }
 
   return `
@@ -836,9 +919,23 @@ async function loadReportsHistory(orderId) {
   const target = document.getElementById(`reports-history-${orderId}`);
   if (!target) return;
 
+  if (specialistReportsHistoryCache[orderId]) {
+    target.classList.remove("hidden");
+    target.innerHTML = specialistReportsHistoryCache[orderId];
+    return;
+  }
+
   try {
     const reports = await fetchOrderReports(orderId);
-    target.innerHTML = renderReportsHistory(reports);
+    const html = renderReportsHistory(reports);
+
+    if (!html) {
+      return;
+    }
+
+    specialistReportsHistoryCache[orderId] = html;
+    target.classList.remove("hidden");
+    target.innerHTML = html;
   } catch (e) {
     console.error(e);
     target.innerHTML = `<div class="details-value long-text">Помилка завантаження</div>`;

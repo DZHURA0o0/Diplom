@@ -42,6 +42,14 @@ function resetOrdersCache() {
     if (typeof orderDetailsCache !== "undefined") {
         orderDetailsCache = {};
     }
+
+    if (typeof bossOrdersCacheLoaded !== "undefined") {
+        bossOrdersCacheLoaded = false;
+    }
+
+    if (typeof bossComplaintsCacheLoaded !== "undefined") {
+        bossComplaintsCacheLoaded = false;
+    }
 }
 
 function bindBossFilterChange(id, handler) {
@@ -122,13 +130,13 @@ function setActiveTabButton(tabName) {
     });
 }
 
-function refreshComplaintsBadgeIfPossible() {
+async function refreshComplaintsBadgeIfPossible() {
     if (typeof updateComplaintsBadge === "function") {
-        updateComplaintsBadge();
+        await updateComplaintsBadge();
     }
 }
 
-function showTab(tabName) {
+async function showTab(tabName) {
     activeTab = tabName;
 
     setVisibleTab(tabName);
@@ -142,10 +150,10 @@ function showTab(tabName) {
     };
 
     if (typeof tabLoaders[tabName] === "function") {
-        tabLoaders[tabName]();
+        await tabLoaders[tabName]();
     }
 
-    refreshComplaintsBadgeIfPossible();
+    await refreshComplaintsBadgeIfPossible();
 }
 
 async function loadHeaderUser() {
@@ -183,13 +191,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     await loadHeaderUser();
 
-    if (typeof updateComplaintsBadge === "function") {
-        await updateComplaintsBadge();
-    }
-
     if (typeof updateRegistrationsBadge === "function") {
         await updateRegistrationsBadge();
     }
 
-    showTab("orders");
+    await showTab("orders");
 });

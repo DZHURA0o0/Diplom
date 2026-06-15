@@ -2,22 +2,42 @@ const ordersElement = document.getElementById("orders");
 const statusElement = document.getElementById("status");
 
 window.workerOrdersState = window.workerOrdersState || {
-  orders: []
+  orders: [],
+  cacheKey: null,
+  loaded: false
 };
 
-async function loadOrders() {
+function getWorkerOrdersCacheKey(status) {
+  return String(status || "").trim().toUpperCase();
+}
+
+async function loadOrders(options = {}) {
   if (!ordersElement) {
     return;
   }
 
   ordersElement.innerHTML = `<div class="empty">Завантаження...</div>`;
 
+  const force = Boolean(options.force);
+  const status = statusElement?.value?.trim() ?? "";
+  const cacheKey = getWorkerOrdersCacheKey(status);
+
+  if (
+    !force &&
+    window.workerOrdersState.loaded &&
+    window.workerOrdersState.cacheKey === cacheKey
+  ) {
+    renderOrders(window.workerOrdersState.orders);
+    return;
+  }
+
   try {
-    const status = statusElement?.value?.trim() ?? "";
     const data = await fetchMyOrders(status);
     const sorted = sortOrdersNewFirst(data);
 
     window.workerOrdersState.orders = sorted;
+    window.workerOrdersState.cacheKey = cacheKey;
+    window.workerOrdersState.loaded = true;
 
     renderOrders(sorted);
   } catch (e) {
@@ -125,10 +145,10 @@ async function initWorkerPage() {
     await loadHeaderUser();
 
     if (statusElement) {
-      statusElement.addEventListener("change", loadOrders);
+      statusElement.addEventListener("change", () => loadOrders({ force: true }));
     }
 
-    await loadOrders();
+    await loadOrders({ force: true });
   } catch (e) {
     console.error("worker-page init error:", e);
 

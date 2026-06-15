@@ -1,5 +1,10 @@
 let ordersExpandedState = {};
 let orderDetailsCache = {};
+let bossOrdersCache = [];
+let bossOrdersCacheStatus = null;
+let bossOrdersCacheLoaded = false;
+let bossComplaintsCache = [];
+let bossComplaintsCacheLoaded = false;
 
 let bossWorkers = [];
 let bossWorkersMap = {};
@@ -690,16 +695,65 @@ function getOrderDetailRequests(order) {
     ];
 }
 
+function buildCleanBossDetailRequestHtml(request, index, total) {
+    const statusClass = getDetailRequestStatusClass(request.status);
+    const rows = [];
+
+    if (hasBossDetailValue(request.detailNeeds)) {
+        rows.push(`
+            <div class="boss-detail-request-row">
+                <span>\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u0456 \u0434\u0435\u0442\u0430\u043b\u0456</span>
+                <p>${escapeHtml(request.detailNeeds)}</p>
+            </div>
+        `);
+    }
+
+    if (hasBossDetailValue(request.explanation)) {
+        rows.push(`
+            <div class="boss-detail-request-row">
+                <span>\u041f\u043e\u044f\u0441\u043d\u0435\u043d\u043d\u044f</span>
+                <p>${escapeHtml(request.explanation)}</p>
+            </div>
+        `);
+    }
+
+    return `
+        <div class="boss-detail-request-item">
+            <div class="boss-detail-request-head">
+                <div>
+                    <strong>\u0417\u0430\u043f\u0438\u0442 \u0434\u0435\u0442\u0430\u043b\u0435\u0439 ${total - index}</strong>
+                    <span>${escapeHtml(formatDate(request.createdAt))}</span>
+                </div>
+
+                <div class="boss-detail-request-status ${statusClass}">
+                    ${escapeHtml(formatDetailRequestStatus(request.status))}
+                </div>
+            </div>
+
+            <div class="boss-detail-request-body">
+                ${rows.join("")}
+            </div>
+        </div>
+    `;
+}
+
 function buildDetailRequestsHtml(order) {
     const requests = getOrderDetailRequests(order);
 
     if (requests.length === 0) {
+        return "";
         return `
             <div class="boss-detail-request-empty">
                 Запитів деталей ще немає.
             </div>
         `;
     }
+
+    return `
+        <div class="boss-detail-request-history">
+            ${requests.map((request, index) => buildCleanBossDetailRequestHtml(request, index, requests.length)).join("")}
+        </div>
+    `;
 
     return `
         <div class="boss-detail-request-history">
@@ -741,6 +795,7 @@ function buildDetailRequestsHtml(order) {
 
 function buildReportsHtml(reports) {
     if (!Array.isArray(reports) || reports.length === 0) {
+        return "";
         return "—";
     }
 
@@ -772,7 +827,20 @@ function buildReportsHtml(reports) {
 
 /* ===================== DETAILS ===================== */
 
+function hasBossDetailValue(value) {
+    if (value === null || value === undefined) {
+        return false;
+    }
+
+    const text = String(value).trim();
+    return text !== "" && text !== "â€”" && text !== "—";
+}
+
 function createDetailsField(label, value, options = {}) {
+    if (!options.showEmpty && !hasBossDetailValue(value)) {
+        return "";
+    }
+
     const fullClass = options.full ? " full" : "";
     const valueClass = options.valueClass ? ` ${options.valueClass}` : "";
     const safeValue =
@@ -883,6 +951,13 @@ function buildDetailsHtml(order) {
     const complaintStatusLabel = getComplaintStatusLabel(order);
     const reportsHtml = buildReportsHtml(order.reports);
     const detailRequestsHtml = buildDetailRequestsHtml(order);
+    const complaintFieldsHtml = complaintSubmitted
+        ? `
+            ${createDetailsField("Скарга подана", "Так")}
+            ${createDetailsField("Статус скарги", escapeHtml(complaintStatusLabel || "—"))}
+            ${createDetailsField("Текст скарги", escapeHtml(getComplaintText(order)), { full: true, valueClass: "long-text" })}
+        `
+        : "";
 
     return `
         <div class="order-details-grid">
@@ -910,9 +985,7 @@ function buildDetailsHtml(order) {
             ${createDetailsField("Історія запитів деталей", detailRequestsHtml, { full: true })}
             ${createDetailsField("Усі звіти", reportsHtml, { full: true, valueClass: "long-text" })}
 
-            ${createDetailsField("Скарга подана", complaintSubmitted ? "Так" : "Ні")}
-            ${createDetailsField("Статус скарги", escapeHtml(complaintStatusLabel || "—"))}
-            ${createDetailsField("Текст скарги", escapeHtml(getComplaintText(order)), { full: true, valueClass: "long-text" })}
+            ${complaintFieldsHtml}
         </div>
 
         ${buildComplaintActionsHtml(order)}
@@ -1079,6 +1152,35 @@ function adjustComplaintsBadge(delta) {
     }
 }
 
+function updateBossOrderCaches(order) {
+    const orderId = getOrderId(order);
+
+    if (!orderId) {
+        return;
+    }
+
+    if (bossOrdersCacheLoaded) {
+        if (bossOrdersCacheStatus && getOrderStatus(order) !== bossOrdersCacheStatus) {
+            bossOrdersCache = bossOrdersCache.filter(item => getOrderId(item) !== orderId);
+            bossComplaintsCacheLoaded = false;
+            return;
+        }
+
+        const index = bossOrdersCache.findIndex(item => getOrderId(item) === orderId);
+
+        if (index >= 0) {
+            bossOrdersCache[index] = {
+                ...bossOrdersCache[index],
+                ...order
+            };
+        } else if (!bossOrdersCacheStatus || getOrderStatus(order) === bossOrdersCacheStatus) {
+            bossOrdersCache.unshift(order);
+        }
+    }
+
+    bossComplaintsCacheLoaded = false;
+}
+
 async function updateRenderedOrderOnly(orderId, options = {}) {
     if (!orderId) {
         return;
@@ -1088,6 +1190,7 @@ async function updateRenderedOrderOnly(orderId, options = {}) {
     const pair = findRenderedOrderPair(tbodyId, orderId);
 
     const freshOrder = await fetchFullOrderDetailsFresh(orderId);
+    updateBossOrderCaches(freshOrder);
 
     if (bossAssignedSpecialistUiState[orderId]) {
         freshOrder.specialistId = bossAssignedSpecialistUiState[orderId];
@@ -1501,7 +1604,7 @@ function renderOrdersTable(orders, tbodyId = "orders", emptyMessage = "Нема�
 
 /* ===================== LOAD ORDERS ===================== */
 
-async function loadOrders() {
+async function loadOrders(options = {}) {
     if (typeof activeTab !== "undefined" && activeTab !== "orders") {
         return;
     }
@@ -1509,6 +1612,25 @@ async function loadOrders() {
     const tbody = document.getElementById("orders");
 
     if (!tbody) {
+        return;
+    }
+
+    const force = Boolean(options.force);
+    const statusFilter = document.getElementById("statusFilter");
+    const status = statusFilter ? statusFilter.value : "";
+    const cacheStatus = String(status || "").trim().toUpperCase();
+
+    if (
+        !force &&
+        bossOrdersCacheLoaded &&
+        bossOrdersCacheStatus === cacheStatus
+    ) {
+        await ensurePeopleLoaded();
+        updateOrderPeopleFilterOptions();
+
+        const sorted = sortOrders(filterOrdersByBossFilters(bossOrdersCache));
+        renderOrdersTable(sorted, "orders", "Немає заявок");
+        setStatus(`Завантажено ${sorted.length} заявок`);
         return;
     }
 
@@ -1523,12 +1645,14 @@ async function loadOrders() {
     try {
         await ensurePeopleLoaded();
 
-        const statusFilter = document.getElementById("statusFilter");
-        const status = statusFilter ? statusFilter.value : "";
-
         updateOrderPeopleFilterOptions();
 
         const orders = await fetchOrders(status);
+        bossOrdersCache = Array.isArray(orders) ? orders : [];
+        bossOrdersCacheStatus = cacheStatus;
+        bossOrdersCacheLoaded = true;
+        bossComplaintsCacheLoaded = false;
+
         const sorted = sortOrders(filterOrdersByBossFilters(orders));
 
         renderOrdersTable(sorted, "orders", "Немає заявок");
@@ -1661,38 +1785,28 @@ function isActiveComplaintOrder(order) {
 }
 
 async function getOrdersWithDetailsForComplaints() {
-    const orders = await fetchOrders("");
+    let orders = bossOrdersCacheLoaded && bossOrdersCacheStatus === ""
+        ? bossOrdersCache
+        : null;
 
-    const detailedOrders = await Promise.all(
-        orders.map(async (order) => {
-            const orderId = getOrderId(order);
+    if (!orders) {
+        orders = await fetchOrders("");
+        bossOrdersCache = Array.isArray(orders) ? orders : [];
+        bossOrdersCacheStatus = "";
+        bossOrdersCacheLoaded = true;
+    }
 
-            if (!orderId) {
-                return order;
-            }
+    return orders.map(order => {
+        const orderId = getOrderId(order);
+        const details = orderId ? orderDetailsCache[orderId] : null;
 
-            try {
-                let details = orderDetailsCache[orderId];
-
-                if (!details) {
-                    details = await fetchOrderDetails(orderId);
-                    orderDetailsCache[orderId] = details;
-                }
-
-                return {
-                    ...order,
-                    ...details
-                };
-            } catch {
-                return order;
-            }
-        })
-    );
-
-    return detailedOrders;
+        return details
+            ? { ...order, ...details }
+            : order;
+    });
 }
 
-async function loadComplaintsOrders() {
+async function loadComplaintsOrders(options = {}) {
     if (typeof activeTab !== "undefined" && activeTab !== "complaints") {
         return;
     }
@@ -1700,6 +1814,23 @@ async function loadComplaintsOrders() {
     const tbody = document.getElementById("complaintsOrders");
 
     if (!tbody) {
+        return;
+    }
+
+    const force = Boolean(options.force);
+    const filter = document.getElementById("complaintStatusFilter");
+    const filterValue = filter ? filter.value : "";
+
+    if (!force && bossComplaintsCacheLoaded) {
+        let complaintOrders = bossComplaintsCache;
+
+        if (filterValue === "active") {
+            complaintOrders = complaintOrders.filter(isActiveComplaintOrder);
+        }
+
+        const sorted = sortOrders(complaintOrders);
+        renderOrdersTable(sorted, "complaintsOrders", "Немає заявок зі скаргами");
+        setStatus(`Завантажено ${sorted.length} скарг`);
         return;
     }
 
@@ -1718,9 +1849,10 @@ async function loadComplaintsOrders() {
 
         let complaintOrders = detailedOrders.filter(isComplaintOrder);
 
-        const filter = document.getElementById("complaintStatusFilter");
+        bossComplaintsCache = complaintOrders;
+        bossComplaintsCacheLoaded = true;
 
-        if (filter && filter.value === "active") {
+        if (filterValue === "active") {
             complaintOrders = complaintOrders.filter(isActiveComplaintOrder);
         }
 
